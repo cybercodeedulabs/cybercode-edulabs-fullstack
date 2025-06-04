@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import ScrollToTop from "./components/ScrollToTop";
+import VoiceWelcome from "./components/VoiceWelcome"; // ✅ Import here
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-
 import CourseCategoryTabs from "./components/CourseCategoryTabs";
 import FeatureItem from "./components/FeatureItem";
 import RegistrationCTA from "./components/RegistrationCTA";
@@ -22,32 +22,14 @@ import Contact from "./pages/Contact";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // ✅ Welcome voice logic
-  useEffect(() => {
-    if (!isMuted && window.speechSynthesis) {
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => voice.lang === "en-US" && voice.name.includes("Female")) || voices[0];
-
-      const welcomeMessage = new SpeechSynthesisUtterance("Welcome to Cybercode EduLabs. Learn. Build. Excel.");
-      welcomeMessage.voice = preferredVoice;
-      welcomeMessage.rate = 1;
-      welcomeMessage.pitch = 1;
-      window.speechSynthesis.speak(welcomeMessage);
-    }
-
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, [isMuted]);
-
   const HomePage = () => (
     <>
+      {/* ✅ Hero Section */}
       <section className="relative bg-gray-900 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -95,15 +77,6 @@ function App() {
               <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
               Sign in with Google
             </Link>
-            <button
-              onClick={() => {
-                window.speechSynthesis.cancel();
-                setIsMuted(true);
-              }}
-              className="text-sm mt-4 sm:mt-0 underline text-gray-300 hover:text-white"
-            >
-              🔇 Mute Voice
-            </button>
           </motion.div>
         </div>
       </section>
@@ -141,6 +114,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
+        <VoiceWelcome /> {/* ✅ Trigger voice on first interaction */}
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
         <main className="flex-grow">
           <ScrollToTop />
