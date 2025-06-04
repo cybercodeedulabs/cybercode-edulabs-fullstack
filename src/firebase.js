@@ -4,12 +4,12 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; // 👈 Add Firestore
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBUhccYUdLPH1ERnNyh9BGz0qYXoil3lmk",
-  authDomain: "cybercode-edulabs.firebaseapp.com",
-  projectId: "cybercode-edulabs",
-  storageBucket: "cybercode-edulabs.firebasestorage.app",
-  messagingSenderId: "820167153224",
-  appId: "1:820167153224:web:ff15d0549bb4bdf1e32a7d",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
