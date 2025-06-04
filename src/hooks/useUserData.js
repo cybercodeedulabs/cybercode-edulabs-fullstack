@@ -53,4 +53,19 @@ export default function useUserData() {
     });
   };
 
-  // 🟦 Grant 1-year server ac
+  // 🟦 Grant 1-year server access (after payment)
+  const grantServerAccess = async () => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, {
+      hasServerAccess: true,
+    });
+  };
+
+  return {
+    ...userData,
+    enrollInCourse,
+    grantCertificationAccess,
+    grantServerAccess,
+  };
+}
