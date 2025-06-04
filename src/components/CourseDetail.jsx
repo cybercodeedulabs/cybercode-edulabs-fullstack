@@ -1,11 +1,17 @@
+// src/pages/CourseDetail.jsx
 import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
+import useUserData from "../hooks/useUserData"; // 👈 Import the hook
 
 function CourseDetail() {
   const { courseSlug } = useParams();
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
+
+  const { enrolledCourses, enrollInCourse } = useUserData(); // 👈 Get data & function
+
+  const isEnrolled = enrolledCourses.includes(courseSlug); // 👈 Check enrollment
 
   if (!course) {
     return (
@@ -62,12 +68,18 @@ function CourseDetail() {
 
         {/* Call to Action */}
         <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <Link
-            to="/#register"
-            className="inline-block px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
-          >
-            📝 Register for this Course
-          </Link>
+          {!isEnrolled ? (
+            <button
+              onClick={() => enrollInCourse(courseSlug)}
+              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+            >
+              ✅ Enroll in this Course
+            </button>
+          ) : (
+            <span className="inline-block px-6 py-3 bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200 font-semibold rounded-lg">
+              🎉 You are enrolled in this course
+            </span>
+          )}
           <Link
             to="/courses"
             className="text-sm text-gray-600 dark:text-gray-400 underline hover:text-indigo-600 dark:hover:text-indigo-400"

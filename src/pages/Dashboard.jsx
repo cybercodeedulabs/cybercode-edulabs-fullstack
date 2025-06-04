@@ -1,5 +1,6 @@
+// src/pages/Dashboard.jsx
 import { useUser } from "../contexts/UserContext";
-import useUserData from "../hooks/useUserData"; // ✅ default import
+import useUserData from "../hooks/useUserData";
 import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
@@ -7,6 +8,7 @@ import { auth } from "../firebase";
 export default function Dashboard() {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
+
   const {
     enrolledCourses = [],
     projects = [],
@@ -46,6 +48,7 @@ export default function Dashboard() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          {/* Courses */}
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">📚 My Courses</h2>
             {enrolledCourses.length > 0 ? (
@@ -61,6 +64,7 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Projects */}
           <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">📁 My Projects</h2>
             {projects.length > 0 ? (
@@ -77,7 +81,9 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Access Controls */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          {/* Certification */}
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
             <h2 className="text-lg font-semibold mb-2">🎓 Certification Access</h2>
             {hasCertificationAccess ? (
@@ -92,6 +98,7 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Server */}
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
             <h2 className="text-lg font-semibold mb-2">🖥️ 1-Year Server Access</h2>
             {hasServerAccess ? (
@@ -107,6 +114,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Logout */}
         <button
           onClick={handleLogout}
           className="mt-8 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
