@@ -74,7 +74,7 @@ function App() {
         to="/register"
         className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 rounded-lg text-base font-medium shadow transition gap-2"
       >
-        <img src="/src/assets/google.svg" alt="Google" className="w-5 h-5" />
+        <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
         Sign in with Google
       </Link>
     </motion.div>
