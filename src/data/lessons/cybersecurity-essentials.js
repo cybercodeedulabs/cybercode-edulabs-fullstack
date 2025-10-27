@@ -1,109 +1,173 @@
 // src/data/courses/cybersecurityEssentials.js
 
 const cybersecurityEssentials = [
-  {
+   {
     slug: "cybersecurity-intro",
     title: "Cybersecurity Essentials — Overview & Ethics",
     content: [
       {
         type: "text",
-        value:
-`Welcome to Cybersecurity Essentials. This module covers fundamentals, ethics, and the responsible mindset.
-Learners will understand different attacker motives, the importance of legal permission, and how professional pentesting differs from malicious hacking.`
+        value: `
+Welcome to *Cybersecurity Essentials*! Before touching a single tool or command, every cybersecurity professional must understand the **mindset** behind ethical hacking and digital defense.
+
+Cybersecurity is not just about protecting machines — it’s about safeguarding people, businesses, and national interests. One careless click or misconfigured system can expose millions of records.
+        `
       },
       {
         type: "text",
-        value:
-`Learning objectives:
-1. Define confidentiality, integrity, availability (CIA triad).
-2. Understand attacker motivations (crime, espionage, research, activism).
-3. Learn laws, consent, and rules of engagement for testing systems.`
+        value: `
+### Why This Matters in the Real World
+- Every company — from banks to hospitals — faces constant attacks from around the globe.  
+- Professionals are trusted with **sensitive data** and **critical infrastructure**, so ethical awareness and legal boundaries are non-negotiable.  
+- Mistakes in ethics can lead to **criminal charges**, even if the intent was educational.
+        `
       },
       {
         type: "text",
-        value:
-`Ethics & Safety — mandatory:  
-• Always get explicit written permission before interacting with systems you don't own.  
-• Use isolated lab environments (local VMs, Docker, or cloud sandboxes).  
-• Follow responsible disclosure for discovered vulnerabilities.`
+        value: `
+### How It’s Used in Practice
+Ethical hackers, auditors, and SOC analysts work under **rules of engagement** that define exactly what they can test.  
+For example:
+- A bank may authorize a penetration test on its *staging* servers, not production.  
+- A security researcher must report a bug responsibly — never exploit it publicly.
+
+These professional boundaries separate a **licensed ethical hacker** from a **criminal attacker**.
+        `
       },
       {
         type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Show an interactive “Ethics Decision Tree” graphic — user chooses scenarios (e.g., "Found open port on client host") and the tree shows legal/ethical responses and consequences. Use color-coded outcomes (green = allowed, yellow = ask/notify, red = forbidden).`
+        value: `
+### Visualization Idea
+An *Interactive “Ethics Decision Tree”*:  
+Learner clicks through real-life scenarios like:
+- “You found an exposed database on the internet.”
+- “You received leaked credentials of your employer.”
+and the system visually shows the correct legal/ethical path — green for allowed, red for forbidden.
+        `
       },
       {
         type: "text",
-        value:
-`Exercise: Draft a simple written “Rules of Engagement” (one page) for a mock pentest of a demo web app — include scope, allowed methods, timings, and contact points.`
+        value: `
+### Exercise
+Write a one-page *Rules of Engagement (RoE)* for a fictional web app pentest.  
+Include:
+- Scope (what’s allowed)  
+- Timing (when testing happens)  
+- Emergency contacts (in case of accidental disruption)
+        `
       }
     ]
   },
 
   {
     slug: "threat-landscape-and-actors",
-    title: "Threat Landscape & Attackers",
+    title: "Threat Landscape & Attackers — Understanding the Battlefield",
     content: [
       {
         type: "text",
-        value:
-`Deep dive: Understand threat actors (script kiddies, cybercriminal gangs, nation-states, insiders) and typical attack lifecycles.`
+        value: `
+Cybersecurity is like modern warfare — defenders must understand who the enemies are, what motivates them, and how they operate.
+
+### Why This Matters in the Real World
+If you don’t know your enemy, you can’t defend effectively.  
+- Security Operations Centers (SOCs) track threat groups daily.  
+- CISOs use threat intelligence to prioritize defenses.  
+- Penetration testers use this knowledge to simulate realistic attack behavior.
+
+Without context, even a strong firewall can miss what’s coming next.
+        `
       },
       {
         type: "text",
-        value:
-`Topics covered:
-- Attack surface and attack vectors
-- Kill chain and MITRE ATT&CK high-level mapping
-- Risk vs likelihood vs impact`
+        value: `
+### How It’s Used in Practice
+Security teams classify attackers as:
+- **Script Kiddies:** beginners using ready-made tools (low risk but noisy).  
+- **Cybercriminals:** organized groups motivated by profit (ransomware, data theft).  
+- **Nation-State Actors:** highly funded attackers targeting governments.  
+- **Insiders:** employees who intentionally or accidentally cause breaches.
+
+Defenders map attacks using the **MITRE ATT&CK framework** to identify where in the attack lifecycle they’re being targeted.
+        `
       },
       {
         type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Interactive MITRE ATT&CK map — clickable tactics (Initial Access, Persistence, Exfiltration). Clicking a tactic shows non-actionable examples, detection signals, and controls. Use timeline visualization to show progression of an attack.`
+        value: `
+### Visualization Idea
+A *Threat Map Dashboard* showing animated global attacks in real time — similar to Kaspersky/Norwegian threat visualizers.  
+Users click on attack paths to see the **MITRE stage** (e.g., Initial Access → Privilege Escalation → Data Exfiltration).
+        `
       },
       {
         type: "text",
-        value:
-`Exercise: Pick a small web service and draw its attack surface diagram (hosts, ports, services, external integrations). Mark high-risk components.`
+        value: `
+### Exercise
+Choose a simple web service (like a to-do app).  
+Draw its attack surface diagram:
+- Web server  
+- Database  
+- APIs  
+- Third-party plugins  
+Mark high-risk areas (like user input fields or admin panels).
+        `
       }
     ]
   },
 
   {
     slug: "networking-basics-for-security",
-    title: "Networking Fundamentals for Security",
+    title: "Networking Fundamentals for Cybersecurity",
     content: [
       {
         type: "text",
-        value:
-`A practical networking primer: IP addressing, subnets, ports, TCP vs UDP, DNS basics, HTTP(S), TLS at a conceptual level — all from a defender/pentester perspective.`
+        value: `
+Networking is the foundation of every cyberattack and defense strategy.  
+Understanding how data travels helps you spot when something goes wrong.
+        `
       },
       {
         type: "text",
-        value:
-`Key concepts:
-- IP addressing & subnetting (how segmentation reduces exposure)
-- Ports & services: why open ports matter
-- Protocol flows: TCP 3-way handshake, TLS handshake (high level)`
+        value: `
+### Why This Matters in the Real World
+- Attackers exploit open ports and misconfigured network services.  
+- Defenders monitor network flows to detect abnormal traffic.  
+- Almost every incident investigation starts with packet analysis.
+
+Without networking fundamentals, you can’t analyze an intrusion or secure communication.
+        `
       },
       {
         type: "text",
-        value:
-`Lab (safe): Use a local virtual lab (e.g., Docker Compose with two containers) to capture and visualize traffic between client and server. The emphasis is reading and interpreting flows, not tampering.`
+        value: `
+### How It’s Used in Practice
+- Security analysts use tools like Wireshark to inspect traffic patterns.  
+- Network engineers segment traffic to prevent attackers from moving laterally.  
+- Penetration testers identify which ports and protocols reveal sensitive data.
+
+Knowing TCP handshakes, DNS queries, and HTTPS flows lets you read a network trace like a story of what happened.
+        `
       },
       {
         type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Packet Flow Animator — show a simplified animated handshake between client and server. Highlight fields (SYN, SYN-ACK, ACK) and TLS steps. Allow users to step through the handshake with annotations.`
+        value: `
+### Visualization Idea
+A *Packet Flow Animator* showing step-by-step handshake:
+1. Client sends SYN  
+2. Server responds SYN-ACK  
+3. Client confirms with ACK  
+Then the TLS negotiation begins — color-coded to show encrypted vs plain segments.
+        `
       },
       {
         type: "text",
-        value:
-`Exercise: Diagram the path of an HTTPS request to your demo app — show DNS lookup, TCP setup, TLS negotiation, HTTP request/response.`
+        value: `
+### Exercise
+Use a local virtual lab with two containers (client + server).  
+Capture the handshake in Wireshark and annotate each step:
+- What port is used?  
+- Is encryption applied?  
+- Can you identify the protocol in use?
+        `
       }
     ]
   },
