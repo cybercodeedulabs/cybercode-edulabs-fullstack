@@ -61,42 +61,149 @@ export default function LessonDetail() {
   //     setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
   //   }
   // };
-  const handleRunCode = (idx, language) => {
+//   const handleRunCode = (idx, language) => {
+//   const code = codeInputs[idx] || "";
+
+//   // 🧠 Handle JavaScript (local execution)
+//   if (language === "javascript") {
+//     try {
+//       const result = eval(code);
+//       setOutputs((prev) => ({ ...prev, [idx]: String(result) }));
+//     } catch (err) {
+//       setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
+//     }
+//     return;
+//   }
+
+//   // // 🌐 Handle Golang (redirect to Go Playground)
+//   // if (language === "go" || language === "golang") {
+//   //   const encoded = encodeURIComponent(code);
+//   //   window.open(`https://go.dev/play/p/#${encoded}`, "_blank");
+//   //   setOutputs((prev) => ({
+//   //     ...prev,
+//   //     [idx]: "Opened in Go Playground for execution.",
+//   //   }));
+//   //   return;
+//   // }
+
+//   // 🌐 Handle Golang (redirect to Replit for instant execution)
+// if (language === "go" || language === "golang") {
+//   const encoded = encodeURIComponent(code);
+//   window.open(`https://replit.com/new/go?code=${encoded}`, "_blank");
+//   setOutputs((prev) => ({
+//     ...prev,
+//     [idx]: "Opened in Replit Go runner for execution.",
+//   }));
+//   return;
+// }
+
+//   // // 🐍 Handle Python (optional placeholder)
+//   // if (language === "python") {
+//   //   window.open(
+//   //     `https://www.programiz.com/python/online-compiler/?code=${encodeURIComponent(
+//   //       code
+//   //     )}`,
+//   //     "_blank"
+//   //   );
+//   //   setOutputs((prev) => ({
+//   //     ...prev,
+//   //     [idx]: "Opened in external Python runner.",
+//   //   }));
+//   //   return;
+//   // }
+//   // 🌐 Handle Python - open in Replit
+// if (language === "python") {
+//   const encoded = encodeURIComponent(code);
+//   window.open(
+//     `https://replit.com/new/python3?code=${encoded}`,
+//     "_blank"
+//   );
+//   setOutputs((prev) => ({
+//     ...prev,
+//     [idx]: "Opened in Replit Python runner for execution.",
+//   }));
+//   return;
+// }
+
+
+//   // ⚙️ Default message for unsupported languages
+//   setOutputs((prev) => ({
+//     ...prev,
+//     [idx]: `Execution for ${language} is not supported in this environment.`,
+//   }));
+// };
+
+const handleRunCode = (idx, language) => {
   const code = codeInputs[idx] || "";
 
-  // 🧠 Handle JavaScript (local execution)
+  // 🧠 Handle JavaScript (local execution with colorized console capture)
   if (language === "javascript") {
     try {
+      let consoleOutput = "";
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
+
+      const formatLine = (text, color) =>
+        `<span style="color:${color}">${text}</span>`;
+
+      console.log = (...args) => {
+        consoleOutput += formatLine(args.join(" "), "#22c55e") + "<br>"; // green
+        originalLog(...args);
+      };
+      console.warn = (...args) => {
+        consoleOutput +=
+          formatLine("⚠️ WARNING: " + args.join(" "), "#eab308") + "<br>"; // yellow
+        originalWarn(...args);
+      };
+      console.error = (...args) => {
+        consoleOutput +=
+          formatLine("❌ ERROR: " + args.join(" "), "#ef4444") + "<br>"; // red
+        originalError(...args);
+      };
+
       const result = eval(code);
-      setOutputs((prev) => ({ ...prev, [idx]: String(result) }));
+
+      // Restore console
+      console.log = originalLog;
+      console.warn = originalWarn;
+      console.error = originalError;
+
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]:
+          consoleOutput ||
+          (result !== undefined
+            ? `<span style="color:#60a5fa">${String(result)}</span>` // blue for returned result
+            : "<span style='color:#22c55e'>✅ Code executed successfully (no output)</span>"),
+      }));
     } catch (err) {
-      setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: `<span style='color:#ef4444'>${String(err)}</span>`,
+      }));
     }
     return;
   }
 
-  // 🌐 Handle Golang (redirect to Go Playground)
+  // 🌐 Handle Golang (redirect to Replit for instant execution)
   if (language === "go" || language === "golang") {
     const encoded = encodeURIComponent(code);
-    window.open(`https://go.dev/play/p/#${encoded}`, "_blank");
+    window.open(`https://replit.com/new/go?code=${encoded}`, "_blank");
     setOutputs((prev) => ({
       ...prev,
-      [idx]: "Opened in Go Playground for execution.",
+      [idx]: "Opened in Replit Go runner for execution.",
     }));
     return;
   }
 
-  // 🐍 Handle Python (optional placeholder)
+  // 🌐 Handle Python - open in Replit
   if (language === "python") {
-    window.open(
-      `https://www.programiz.com/python/online-compiler/?code=${encodeURIComponent(
-        code
-      )}`,
-      "_blank"
-    );
+    const encoded = encodeURIComponent(code);
+    window.open(`https://replit.com/new/python3?code=${encoded}`, "_blank");
     setOutputs((prev) => ({
       ...prev,
-      [idx]: "Opened in external Python runner.",
+      [idx]: "Opened in Replit Python runner for execution.",
     }));
     return;
   }
