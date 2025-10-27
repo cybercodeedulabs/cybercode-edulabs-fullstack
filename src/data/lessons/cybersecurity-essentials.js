@@ -1,6 +1,6 @@
-// src/data/courses/cybersecurityEssentials.js
+// src/data/courses/cyberSecurityEssentials.js
 
-const cybersecurityEssentials = [
+const cyberSecurityEssentials = [
   {
     slug: "cybersecurity-intro",
     title: "Cybersecurity Essentials — Overview & Ethics",
