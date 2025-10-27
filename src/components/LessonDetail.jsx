@@ -4,6 +4,9 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useState, useEffect } from "react";
 import { Copy } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 export default function LessonDetail() {
   const { courseSlug, lessonSlug } = useParams();
@@ -47,152 +50,67 @@ export default function LessonDetail() {
     }
   };
 
-  // const handleRunCode = (idx, language) => {
-  //   const code = codeInputs[idx] || "";
-
-  //   // 🧠 Handle JavaScript (local execution with colorized console capture)
-  //   if (language === "javascript") {
-  //     try {
-  //       let consoleOutput = "";
-  //       const originalLog = console.log;
-  //       const originalError = console.error;
-  //       const originalWarn = console.warn;
-
-  //       const formatLine = (text, color) =>
-  //         `<span style="color:${color}">${text}</span>`;
-
-  //       console.log = (...args) => {
-  //         consoleOutput += formatLine(args.join(" "), "#22c55e") + "<br>"; // green
-  //         originalLog(...args);
-  //       };
-  //       console.warn = (...args) => {
-  //         consoleOutput +=
-  //           formatLine("⚠️ WARNING: " + args.join(" "), "#eab308") + "<br>"; // yellow
-  //         originalWarn(...args);
-  //       };
-  //       console.error = (...args) => {
-  //         consoleOutput +=
-  //           formatLine("❌ ERROR: " + args.join(" "), "#ef4444") + "<br>"; // red
-  //         originalError(...args);
-  //       };
-
-  //       const result = eval(code);
-
-  //       // Restore console
-  //       console.log = originalLog;
-  //       console.warn = originalWarn;
-  //       console.error = originalError;
-
-  //       setOutputs((prev) => ({
-  //         ...prev,
-  //         [idx]:
-  //           consoleOutput ||
-  //           (result !== undefined
-  //             ? `<span style="color:#60a5fa">${String(result)}</span>` // blue for returned result
-  //             : "<span style='color:#22c55e'>✅ Code executed successfully (no output)</span>"),
-  //       }));
-  //     } catch (err) {
-  //       setOutputs((prev) => ({
-  //         ...prev,
-  //         [idx]: `<span style='color:#ef4444'>${String(err)}</span>`,
-  //       }));
-  //     }
-  //     return;
-  //   }
-
-  //   // 🌐 Handle Golang (redirect to Replit for instant execution)
-  //   if (language === "go" || language === "golang") {
-  //     const encoded = encodeURIComponent(code);
-  //     window.open(`https://replit.com/new/go?code=${encoded}`, "_blank");
-  //     setOutputs((prev) => ({
-  //       ...prev,
-  //       [idx]: `<span style='color:#60a5fa'>🌐 Opened in Replit Go runner for execution.</span>`,
-  //     }));
-  //     return;
-  //   }
-
-  //   // 🌐 Handle Python - open in Replit
-  //   if (language === "python") {
-  //     const encoded = encodeURIComponent(code);
-  //     window.open(`https://replit.com/new/python3?code=${encoded}`, "_blank");
-  //     setOutputs((prev) => ({
-  //       ...prev,
-  //       [idx]: `<span style='color:#60a5fa'>🌐 Opened in Replit Python runner for execution.</span>`,
-  //     }));
-  //     return;
-  //   }
-
-  //   // ⚙️ Default message for unsupported languages
-  //   setOutputs((prev) => ({
-  //     ...prev,
-  //     [idx]: `<span style='color:#eab308'>⚙️ Execution for ${language} is not supported in this environment.</span>`,
-  //   }));
-  // };
-
   const handleRunCode = (idx, language) => {
-  const code = codeInputs[idx] || "";
+    const code = codeInputs[idx] || "";
 
-  // 🟡 1️⃣ JavaScript — Local execution
-  if (language === "javascript") {
-    try {
-      const result = eval(code);
-      setOutputs(prev => ({ ...prev, [idx]: String(result) || "✅ Code executed successfully (no output)" }));
-    } catch (err) {
-      setOutputs(prev => ({ ...prev, [idx]: String(err) }));
+    if (language === "javascript") {
+      try {
+        const result = eval(code);
+        setOutputs((prev) => ({
+          ...prev,
+          [idx]: String(result) || "✅ Code executed successfully (no output)",
+        }));
+      } catch (err) {
+        setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
+      }
+      return;
     }
-    return;
-  }
 
-  // 🟢 2️⃣ Go — Official Playground with prefilled code
-  if (language === "go" || language === "golang") {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "https://go.dev/play/";
-    form.target = "_blank";
+    if (language === "go" || language === "golang") {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "https://go.dev/play/";
+      form.target = "_blank";
 
-    const textarea = document.createElement("textarea");
-    textarea.name = "body";
-    textarea.value = code;
-    form.appendChild(textarea);
+      const textarea = document.createElement("textarea");
+      textarea.name = "body";
+      textarea.value = code;
+      form.appendChild(textarea);
 
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
 
-    setOutputs(prev => ({
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: "Opened in Go Playground with code preloaded.",
+      }));
+      return;
+    }
+
+    if (language === "python") {
+      window.open("https://replit.com/new/python3", "_blank");
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: "Opened in Replit Python runner (code cannot be prefilled).",
+      }));
+      return;
+    }
+
+    if (["c", "cpp", "java"].includes(language)) {
+      window.open("https://onecompiler.com", "_blank");
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: `Opened ${language.toUpperCase()} editor in OneCompiler.`,
+      }));
+      return;
+    }
+
+    setOutputs((prev) => ({
       ...prev,
-      [idx]: "Opened in Go Playground with code preloaded.",
+      [idx]: `Execution for ${language} is not supported in this environment.`,
     }));
-    return;
-  }
-
-  // 🟣 3️⃣ Python — Replit (blank environment)
-  if (language === "python") {
-    window.open("https://replit.com/new/python3", "_blank");
-    setOutputs(prev => ({
-      ...prev,
-      [idx]: "Opened in Replit Python runner (code cannot be prefilled).",
-    }));
-    return;
-  }
-
-  // 🟠 4️⃣ Other languages (e.g., C, Java)
-  if (["c", "cpp", "java"].includes(language)) {
-    window.open("https://onecompiler.com", "_blank");
-    setOutputs(prev => ({
-      ...prev,
-      [idx]: `Opened ${language.toUpperCase()} editor in OneCompiler.`,
-    }));
-    return;
-  }
-
-  // ⚙️ Default fallback
-  setOutputs(prev => ({
-    ...prev,
-    [idx]: `Execution for ${language} is not supported in this environment.`,
-  }));
-};
-
+  };
 
   const handleCopy = (value, idx) => {
     navigator.clipboard.writeText(value);
@@ -217,12 +135,14 @@ export default function LessonDetail() {
         {lesson.content.map((block, idx) => {
           if (block.type === "text") {
             return (
-              <p
+              <div
                 key={idx}
-                className="text-lg text-justify text-gray-800 dark:text-gray-300 leading-relaxed tracking-wide"
+                className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-justify"
               >
-                {block.value}
-              </p>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                  {block.value}
+                </ReactMarkdown>
+              </div>
             );
           } else if (block.type === "image") {
             return (
@@ -300,7 +220,6 @@ export default function LessonDetail() {
                         : "Run Code"}
                     </button>
 
-                    {/* ✅ Fixed Output Section */}
                     <div
                       className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono"
                       dangerouslySetInnerHTML={{ __html: outputs[idx] || "" }}
