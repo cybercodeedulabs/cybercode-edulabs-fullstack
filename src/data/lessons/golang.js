@@ -793,5 +793,64 @@ func main() {
     },
   ],
 },
+{
+  slug: 'json-handling-in-go',
+  title: 'Working with JSON in Go',
+  content: [
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+type Student struct {
+    Name string \`json:"name"\`
+    Age  int    \`json:"age"\`
+}
+
+func main() {
+    s := Student{Name: "Asha", Age: 21}
+    jsonData, _ := json.Marshal(s)
+    fmt.Println(string(jsonData))
+
+    var decoded Student
+    json.Unmarshal(jsonData, &decoded)
+    fmt.Println(decoded.Name, decoded.Age)
+}`,
+      runnable: true
+    },
+  ],
+},
+{
+  slug: 'go-web-server',
+  title: 'Building a Simple Web Server',
+  content: [
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Welcome to Cybercode EduLabs Golang Server!")
+}
+
+func main() {
+    http.HandleFunc("/", handler)
+    http.ListenAndServe(":8080", nil)
+}`,
+      runnable: true
+    },
+  ],
+},
+
 ];
 export default golangLessons;

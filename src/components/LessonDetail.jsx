@@ -47,20 +47,66 @@ export default function LessonDetail() {
     }
   };
 
+  // const handleRunCode = (idx, language) => {
+  //   const code = codeInputs[idx] || "";
+  //   try {
+  //     let result;
+  //     if (language === "javascript") {
+  //       result = eval(code);
+  //     } else {
+  //       result = `Execution for ${language} is not supported in this environment.`;
+  //     }
+  //     setOutputs((prev) => ({ ...prev, [idx]: String(result) }));
+  //   } catch (err) {
+  //     setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
+  //   }
+  // };
   const handleRunCode = (idx, language) => {
-    const code = codeInputs[idx] || "";
+  const code = codeInputs[idx] || "";
+
+  // 🧠 Handle JavaScript (local execution)
+  if (language === "javascript") {
     try {
-      let result;
-      if (language === "javascript") {
-        result = eval(code);
-      } else {
-        result = `Execution for ${language} is not supported in this environment.`;
-      }
+      const result = eval(code);
       setOutputs((prev) => ({ ...prev, [idx]: String(result) }));
     } catch (err) {
       setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
     }
-  };
+    return;
+  }
+
+  // 🌐 Handle Golang (redirect to Go Playground)
+  if (language === "go" || language === "golang") {
+    const encoded = encodeURIComponent(code);
+    window.open(`https://go.dev/play/p/#${encoded}`, "_blank");
+    setOutputs((prev) => ({
+      ...prev,
+      [idx]: "Opened in Go Playground for execution.",
+    }));
+    return;
+  }
+
+  // 🐍 Handle Python (optional placeholder)
+  if (language === "python") {
+    window.open(
+      `https://www.programiz.com/python/online-compiler/?code=${encodeURIComponent(
+        code
+      )}`,
+      "_blank"
+    );
+    setOutputs((prev) => ({
+      ...prev,
+      [idx]: "Opened in external Python runner.",
+    }));
+    return;
+  }
+
+  // ⚙️ Default message for unsupported languages
+  setOutputs((prev) => ({
+    ...prev,
+    [idx]: `Execution for ${language} is not supported in this environment.`,
+  }));
+};
 
   const handleCopy = (value, idx) => {
     navigator.clipboard.writeText(value);
@@ -153,12 +199,23 @@ export default function LessonDetail() {
                       className="w-full p-3 text-sm font-mono bg-white dark:bg-gray-900 text-black dark:text-white border border-gray-300 dark:border-gray-600 rounded-md"
                       placeholder="Write your code here..."
                     />
-                    <button
+                    {/* <button
                       onClick={() => handleRunCode(idx, block.language)}
                       className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
                     >
                       Run Code
-                    </button>
+                    </button> */}
+                    <button
+  onClick={() => handleRunCode(idx, block.language)}
+  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+>
+  {block.language === "go"
+    ? "Open in Go Playground"
+    : block.language === "python"
+    ? "Open in Python Runner"
+    : "Run Code"}
+</button>
+
                     <pre className="p-3 bg-black text-white rounded-md overflow-x-auto text-sm">
                       {outputs[idx] || ""}
                     </pre>
