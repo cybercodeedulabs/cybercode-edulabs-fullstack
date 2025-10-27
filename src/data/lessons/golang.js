@@ -1183,6 +1183,503 @@ func main() {
     },
   ],
 },
+[
+{
+  slug: 'file-handling-in-go',
+  title: 'File Handling in Go',
+  content: [
+    {
+      type: 'text',
+      value: `File handling allows Go programs to create, modify, and retrieve data stored in files. 
+In backend systems, logs, configuration files, and persistent user data all rely on efficient file management.  
+Go simplifies this using the **os**, **io**, and **bufio** packages.  
+Before Go 1.16, the \`ioutil\` package handled these tasks, but it’s now merged into the \`os\` and \`io\` packages.`
+    },
+    {
+      type: 'text',
+      value: `Let’s explore file creation, writing, reading, and appending step-by-step, 
+and understand what happens inside the OS each time a file operation occurs.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    // Step 1: Create or open a file for writing
+    file, err := os.Create("example.txt")
+    if err != nil {
+        fmt.Println("Error creating file:", err)
+        return
+    }
+
+    // Step 2: Ensure file resources are released at the end
+    defer file.Close()
+
+    // Step 3: Write text data into the file
+    _, err = file.WriteString("Welcome to Cybercode EduLabs Golang lessons!")
+    if err != nil {
+        fmt.Println("Error writing to file:", err)
+        return
+    }
+
+    fmt.Println("File created and written successfully.")
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: `### 🧠 Deep Explanation
+
+- **os.Create("example.txt")**  
+  Requests the OS to create or empty an existing file. If it doesn’t exist, Go creates it with default permissions (0644).  
+  Under the hood, the OS allocates a *file descriptor* — a numeric handle to that open file — which Go keeps track of internally.
+
+- **defer file.Close()**  
+  The \`defer\` statement postpones execution until the surrounding function finishes, ensuring even in case of panic or early return, 
+  the file handle gets closed and memory is freed.
+
+- **file.WriteString()**  
+  Converts your string into bytes (\`[]byte\`) and streams them to the file through the descriptor.
+
+- **Error Handling**  
+  Go forces explicit error checking to make the program reliable and predictable.`
+    },
+    {
+      type: 'text',
+      value: `### 📘 Reading from a File
+Reading a file simply reverses the process — Go reads bytes from disk and converts them back into text.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    data, err := os.ReadFile("example.txt")
+    if err != nil {
+        fmt.Println("Error reading file:", err)
+        return
+    }
+
+    fmt.Println("File contents:")
+    fmt.Println(string(data))
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: `### 🔍 Internal Process:
+- \`os.ReadFile()\` opens, reads, and closes the file automatically.
+- It loads all bytes into memory (best for small/medium files).
+- For huge files, use buffered reading:
+
+\`\`\`go
+scanner := bufio.NewScanner(file)
+for scanner.Scan() {
+    fmt.Println(scanner.Text())
+}
+\`\`\`
+
+This reads line by line, using far less memory.`
+    },
+    {
+      type: 'text',
+      value: `### ⚙️ Appending to Files
+To add new data without overwriting:
+
+\`\`\`go
+file, err := os.OpenFile("example.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+\`\`\`
+
+- **O_APPEND**: writes at the end of the file  
+- **O_CREATE**: creates if it doesn’t exist  
+- **O_WRONLY**: opens in write-only mode  
+- **0644**: Unix permissions (rw-r--r--)`
+    },
+    {
+      type: 'text',
+      value: `✅ **Exercise:**  
+Create a file named \`activity.log\` and each time the program runs, append the current timestamp using:
+
+\`\`\`go
+time.Now().Format("2006-01-02 15:04:05")
+\`\`\``
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Develop a CLI "Note Saver" where you can:
+- \`add <text>\` → saves a note
+- \`list\` → lists all saved notes
+- \`delete <line>\` → deletes a note  
+
+This will solidify your understanding of reading/writing and string parsing in Go.`
+    }
+  ]
+},
+{
+  slug: 'working-with-pointers',
+  title: 'Working with Pointers in Go',
+  content: [
+    {
+      type: 'text',
+      value: `A **pointer** in Go is a variable that stores the *memory address* of another variable.  
+Instead of working with a copy of data, pointers let you work directly with the actual memory location, 
+making your programs more efficient, especially when passing large structs or arrays to functions.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "fmt"
+
+func main() {
+    x := 10
+    p := &x  // 'p' now stores the memory address of 'x'
+
+    fmt.Println("Value of x:", x)
+    fmt.Println("Address of x:", p)
+    fmt.Println("Value pointed by p:", *p)
+
+    *p = 20 // modifies 'x' through its pointer
+    fmt.Println("Updated x:", x)
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: `### 🧠 Detailed Breakdown:
+- \`&x\` gives the **address** of variable x.  
+- \`p := &x\` means p points to x’s address.  
+- \`*p\` dereferences the pointer to get or modify the original value.  
+
+When you assign \`*p = 20\`, the value stored at x’s address changes — no copying occurs!`
+    },
+    {
+      type: 'text',
+      value: `### 🔬 Why Use Pointers?
+- Functions in Go receive arguments by value (copy).  
+- For large structs or arrays, copying is inefficient.  
+- Pointers allow functions to modify the original data without copying it.
+
+For example:`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `func increment(n *int) {
+    *n = *n + 1
+}
+
+func main() {
+    val := 5
+    increment(&val)
+    fmt.Println(val) // prints 6
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: `✅ **Exercise:**  
+Write a function \`swap(a, b *int)\` that swaps two integers using pointers.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `func swap(a, b *int) {
+    temp := *a
+    *a = *b
+    *b = temp
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Create a small interactive “Pointer Playground” program that lets users input numbers, 
+modify them using functions, and display how pointers affect the data.`
+    }
+  ]
+},
+{
+  slug: 'goroutines-and-channels',
+  title: 'Channels and Synchronization in Go',
+  content: [
+    {
+      type: 'text',
+      value: `Go’s biggest strength is **concurrency** — the ability to perform multiple tasks simultaneously.  
+This is achieved using **goroutines** (lightweight threads) and **channels** (communication pipelines).`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "fmt"
+
+func worker(ch chan string) {
+    ch <- "Task completed!"
+}
+
+func main() {
+    ch := make(chan string)
+    go worker(ch)  // start worker in a separate goroutine
+
+    message := <-ch  // wait for data from the channel
+    fmt.Println(message)
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: `### 🧠 What Happens Internally:
+- \`go worker(ch)\` creates a new **goroutine** — a lightweight, independent thread managed by Go’s runtime.
+- The main function and goroutine run concurrently.
+- \`ch <- "Task completed!"\` sends data into the channel.
+- \`<-ch\` receives that data, synchronizing both routines.
+
+Channels prevent **race conditions** by ensuring safe communication.`
+    },
+    {
+      type: 'text',
+      value: `### 🧰 Buffered Channels
+Buffered channels let you send multiple messages before blocking.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `ch := make(chan int, 3)
+ch <- 10
+ch <- 20
+ch <- 30
+fmt.Println(<-ch)
+fmt.Println(<-ch)
+fmt.Println(<-ch)`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: `### ⚙️ Select Statement
+Use \`select\` to handle multiple channels simultaneously, similar to \`switch\` for concurrency:
+
+\`\`\`go
+select {
+case msg1 := <-ch1:
+    fmt.Println("Received:", msg1)
+case msg2 := <-ch2:
+    fmt.Println("Received:", msg2)
+default:
+    fmt.Println("No messages yet")
+}
+\`\`\`
+
+✅ **Exercise:**  
+Write a program that starts 3 goroutines, each sending a unique message to a shared channel. 
+The main goroutine should receive and print all messages.`
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Build a “Task Queue” system where multiple workers (goroutines) process tasks fetched from a channel.  
+This simulates how background job systems (like Celery or RabbitMQ) work in real life.`
+    }
+  ]
+},
+{
+  slug: 'working-with-databases',
+  title: 'Working with Databases in Go',
+  content: [
+    {
+      type: 'text',
+      value: `Databases allow persistent storage for real-world applications.  
+Go’s \`database/sql\` package offers a consistent interface for SQL-based systems.  
+It works with drivers like \`pq\` (PostgreSQL), \`mysql\`, or \`sqlite3\`.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "database/sql"
+    "fmt"
+    _ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+    db, err := sql.Open("sqlite3", "./students.db")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer db.Close()
+
+    _, err = db.Exec("CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, name TEXT)")
+    if err != nil {
+        fmt.Println("Table creation failed:", err)
+        return
+    }
+
+    _, err = db.Exec("INSERT INTO students (name) VALUES (?)", "Asha")
+    if err != nil {
+        fmt.Println("Insert failed:", err)
+        return
+    }
+
+    fmt.Println("Database operation successful!")
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: `### 🧠 Key Concepts:
+- **sql.Open()** initializes a connection pool.
+- The blank import \`_ "github.com/mattn/go-sqlite3"\` registers the SQLite driver.
+- **db.Exec()** executes SQL commands (CREATE, INSERT, DELETE).
+- Always close your database using \`defer db.Close()\`.`
+    },
+    {
+      type: 'text',
+      value: `✅ **Exercise:**  
+Extend this to fetch and display all student names using \`db.Query()\` and a loop.`
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Build a CLI student management tool where users can:
+- Add new student records
+- View all students
+- Delete a student by ID`
+    }
+  ]
+},
+{
+  slug: 'unit-testing-in-go',
+  title: 'Unit Testing in Go',
+  content: [
+    {
+      type: 'text',
+      value: `Testing is built into Go as a first-class feature.  
+The \`testing\` package allows developers to write tests for every function and maintain reliable, bug-free code.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+func Add(a, b int) int {
+    return a + b
+}`,
+      runnable: false
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "testing"
+
+func TestAdd(t *testing.T) {
+    got := Add(2, 3)
+    want := 5
+
+    if got != want {
+        t.Errorf("got %d, want %d", got, want)
+    }
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: `### 🧠 Deep Explanation:
+- Tests live in files ending with \`_test.go\`.
+- Functions must start with \`Test\` and take a \`*testing.T\` argument.
+- Use \`go test\` to run all tests in the package.
+- Failures print with \`t.Errorf\` or stop immediately with \`t.Fatalf\`.`
+    },
+    {
+      type: 'text',
+      value: `✅ **Exercise:**  
+Write a test for a \`Multiply\` function that checks multiple input combinations.`
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Create a calculator module with Add, Subtract, Multiply, and Divide functions — and test each thoroughly.`
+    }
+  ]
+},
+{
+  slug: 'go-deployment-and-best-practices',
+  title: 'Go Deployment & Best Practices',
+  content: [
+    {
+      type: 'text',
+      value: `Now that you can build functional Go programs, let’s learn how to deploy them safely and efficiently.  
+Go’s single binary model means you can compile once and run anywhere — a huge advantage over languages that require runtimes.`
+    },
+    {
+      type: 'text',
+      value: `### 🏗️ Building Your Application:
+\`\`\`
+go build -o myapp
+./myapp
+\`\`\`
+This generates a portable binary that runs on your OS.`
+    },
+    {
+      type: 'text',
+      value: `### 🔐 Environment Variables:
+Store sensitive values (like database URLs, API keys) securely using environment variables.`
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    dbURL := os.Getenv("DB_URL")
+    fmt.Println("Database URL:", dbURL)
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: `### 💡 Best Practices:
+- Use clear, descriptive names.
+- Always handle errors.
+- Keep functions small and testable.
+- Use Go modules for dependency management.
+- Use goroutines wisely — avoid blocking main threads.
+- Run \`go fmt ./...\` for code consistency.`
+    },
+    {
+      type: 'text',
+      value: `🚀 **Mini Project Idea:**  
+Deploy your Go web API to Render or Railway.  
+Set environment variables for DB credentials and PORT.  
+Use \`go build\` to create a binary before pushing to your cloud host.`
+    },
+  ],
+},
+],
 
 
 ];
