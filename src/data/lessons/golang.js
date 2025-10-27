@@ -1183,7 +1183,6 @@ func main() {
     },
   ],
 },
-[
 {
   slug: 'file-handling-in-go',
   title: 'File Handling in Go',
@@ -1679,8 +1678,5 @@ Use \`go build\` to create a binary before pushing to your cloud host.`
     },
   ],
 },
-],
-
-
 ];
 export default golangLessons;
