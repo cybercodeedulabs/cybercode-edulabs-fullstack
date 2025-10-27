@@ -31,7 +31,7 @@ const lessonsData = {
     "basics-cloudcom": basicsCloudComputing,
     "linux-essentials": linuxEssentials,
     "networking-ccna": networkingCCNA,
-    "cybersecurity-essentials": cyberSecurityEssentials,
+    "cybersecurity-essentials": cybersecurityEssentials,
     "home-lab-setup-cloud-practice": homeLabCloud,
 };
 
