@@ -851,6 +851,339 @@ func main() {
     },
   ],
 },
+{
+  slug: 'file-handling-in-go',
+  title: 'File Handling in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Go provides the `os` and `io/ioutil` (deprecated in Go 1.16, replaced by `os` and `io`) packages to read, write, and manipulate files easily. Let’s learn how to handle files safely and efficiently.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    // Create a new file
+    file, err := os.Create("example.txt")
+    if err != nil {
+        fmt.Println("Error creating file:", err)
+        return
+    }
+    defer file.Close()
+
+    // Write content to file
+    file.WriteString("Welcome to Cybercode EduLabs Golang lessons!")
+
+    fmt.Println("File created and written successfully.")
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: '✅ **Reading from a File** — Let’s read the same file we just created.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    data, err := os.ReadFile("example.txt")
+    if err != nil {
+        fmt.Println("Error reading file:", err)
+        return
+    }
+
+    fmt.Println("File contents:")
+    fmt.Println(string(data))
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: '🧠 **Explanation**:\n- `os.Create` creates or truncates a file.\n- Always `defer file.Close()` to free system resources.\n- `os.ReadFile` reads the entire file into memory as bytes.\n- Convert bytes to a string for printing.'
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Write a program that creates a log file named `activity.log` and appends a timestamped message each time it runs.'
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Build a small "Note Saver" CLI app that allows the user to save, read, and delete text notes using file operations.'
+    }
+  ]
+},
+{
+  slug: 'working-with-pointers',
+  title: 'Working with Pointers in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Pointers in Go store memory addresses of variables. They allow you to modify values at a specific memory location and are a crucial concept for memory efficiency.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "fmt"
+
+func main() {
+    x := 10
+    p := &x
+
+    fmt.Println("Value of x:", x)
+    fmt.Println("Address of x:", p)
+    fmt.Println("Value at pointer:", *p)
+
+    *p = 20
+    fmt.Println("Updated x:", x)
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: '🧠 **Explanation:**\n- `&x` gets the memory address of `x`.\n- `*p` dereferences the pointer to access the value.\n- Changes to `*p` reflect in the original variable.'
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Write a function `swap(a, b *int)` that swaps the values of two integers using pointers.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `func swap(a, b *int) {
+    temp := *a
+    *a = *b
+    *b = temp
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Implement a small “Pointer Playground” where you modify values and observe how pointers affect data in functions.'
+    }
+  ]
+},
+{
+  slug: 'goroutines-and-channels',
+  title: 'Channels and Synchronization in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Channels in Go are used to safely communicate between goroutines. They help avoid data races by providing synchronized message passing.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "fmt"
+
+func worker(ch chan string) {
+    ch <- "Task completed!"
+}
+
+func main() {
+    ch := make(chan string)
+    go worker(ch)
+
+    message := <-ch
+    fmt.Println(message)
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: '🧠 **Explanation:**\n- `make(chan string)` creates a new channel.\n- `ch <- value` sends data into the channel.\n- `<-ch` receives data from the channel.'
+    },
+    {
+      type: 'text',
+      value: '✅ **Buffered Channels:** Channels can also have buffers allowing multiple messages before blocking.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `ch := make(chan int, 3)
+ch <- 10
+ch <- 20
+ch <- 30
+fmt.Println(<-ch)
+fmt.Println(<-ch)
+fmt.Println(<-ch)`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Create a program that launches 3 goroutines, each sending a message to a shared channel, then receives and prints them all.'
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Build a small “Task Queue” system where multiple goroutines send tasks to a central channel for processing.'
+    }
+  ]
+},
+{
+  slug: 'working-with-databases',
+  title: 'Working with Databases in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Go supports connecting to SQL databases using the `database/sql` package and drivers like `pq` (PostgreSQL), `mysql`, or `sqlite3`.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "database/sql"
+    "fmt"
+    _ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+    db, err := sql.Open("sqlite3", "./students.db")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer db.Close()
+
+    _, err = db.Exec("CREATE TABLE IF NOT EXISTS students (id INTEGER PRIMARY KEY, name TEXT)")
+    if err != nil {
+        fmt.Println("Table creation failed:", err)
+        return
+    }
+
+    _, err = db.Exec("INSERT INTO students (name) VALUES (?)", "Asha")
+    if err != nil {
+        fmt.Println("Insert failed:", err)
+        return
+    }
+
+    fmt.Println("Database operation successful!")
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: '🧠 **Explanation:**\n- The `_` before import means we’re importing for side effects (driver registration).\n- Always close the DB connection with `defer db.Close()`.\n- Use parameterized queries to avoid SQL injection.'
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Extend this code to fetch and print all student names from the table.'
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Build a CLI student management tool that lets you add, list, and delete records using SQLite.'
+    }
+  ]
+},
+{
+  slug: 'unit-testing-in-go',
+  title: 'Unit Testing in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Testing is a first-class feature in Go. The `testing` package allows you to write and run unit tests easily using the `go test` command.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+func Add(a, b int) int {
+    return a + b
+}`,
+      runnable: false
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "testing"
+
+func TestAdd(t *testing.T) {
+    got := Add(2, 3)
+    want := 5
+
+    if got != want {
+        t.Errorf("got %d, want %d", got, want)
+    }
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: '🧠 **Explanation:**\n- Test files must end with `_test.go`.\n- Use `t.Errorf` or `t.Fatalf` for assertions.\n- Run tests using `go test` in the terminal.'
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Write a test for a `Multiply` function that verifies the correct output for multiple inputs.'
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Create a mini calculator package with `Add`, `Subtract`, `Multiply`, and `Divide` functions — and write unit tests for each.'
+    }
+  ]
+},
+{
+  slug: 'go-deployment-and-best-practices',
+  title: 'Go Deployment & Best Practices',
+  content: [
+    {
+      type: 'text',
+      value: 'Now that you’ve built Go applications, let’s talk about deploying and maintaining them efficiently. Go compiles into a single binary, making deployment extremely simple.'
+    },
+    {
+      type: 'text',
+      value: '### Building and Running a Go Binary:\nRun the following command to compile your app into an executable:\n```\ngo build -o appname\n./appname\n```'
+    },
+    {
+      type: 'text',
+      value: '### Environment Variables:\nStore secrets like database URLs or API keys in environment variables and access them using `os.Getenv()`.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    dbURL := os.Getenv("DB_URL")
+    fmt.Println("Database URL:", dbURL)
+}`,
+      runnable: false
+    },
+    {
+      type: 'text',
+      value: '### Best Practices:\n- Use meaningful variable names.\n- Always handle errors.\n- Write unit tests.\n- Use Go modules for dependency tracking.\n- Keep functions small and focused.\n- Leverage goroutines responsibly for concurrency.'
+    },
+    {
+      type: 'text',
+      value: '🚀 **Mini Project Idea:** Deploy your Go web server to Render or Railway using `go build` and an environment variable for the port.'
+    },
+  ],
+},
+
 
 ];
 export default golangLessons;
