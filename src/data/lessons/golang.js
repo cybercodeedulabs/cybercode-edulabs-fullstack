@@ -752,5 +752,46 @@ runnable : true
       },
     ],
   },
+  {
+  slug: 'go-interfaces',
+  title: 'Interfaces in Go',
+  content: [
+    {
+      type: 'text',
+      value: 'Interfaces define behavior through method signatures. Any type that implements all methods of an interface automatically satisfies it.'
+    },
+    {
+      type: 'code',
+      language: 'go',
+      value: `package main
+
+import "fmt"
+
+type Speaker interface {
+    Speak()
+}
+
+type Human struct{}
+func (h Human) Speak() { fmt.Println("Hello, I’m a human!") }
+
+type Robot struct{}
+func (r Robot) Speak() { fmt.Println("Beep boop!") }
+
+func main() {
+    var s Speaker
+    s = Human{}
+    s.Speak()
+
+    s = Robot{}
+    s.Speak()
+}`,
+      runnable: true
+    },
+    {
+      type: 'text',
+      value: '✅ **Exercise:** Create an interface `Shape` with methods `Area()` and `Perimeter()`, and implement it for `Circle` and `Rectangle`.'
+    },
+  ],
+},
 ];
 export default golangLessons;
