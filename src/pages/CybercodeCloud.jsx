@@ -68,13 +68,16 @@ function CloudLanding({ onLaunch }) {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden">
               <CardContent>
+                <span className="absolute top-2 right-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                  NEW
+                </span>
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100">
                   Startup Tier
                 </h3>
                 <p className="text-sm text-gray-500">
-                  4 vCPU • 8GB RAM • 100GB storage • Business-ready cloud sandbox
+                  4 vCPU • 8GB RAM • 100GB SSD • Scalable cloud workspace for startups
                 </p>
               </CardContent>
             </Card>
@@ -95,9 +98,9 @@ function CloudLanding({ onLaunch }) {
             </p>
             <div className="mt-5 flex justify-center">
               <img
-                src="/images/cloud.png"
+                src="/images/cloud-startup.png"
                 alt="Cybercode Cloud Illustration"
-                className="w-56 h-auto object-contain"
+                className="w-64 h-auto object-contain drop-shadow-md"
               />
             </div>
           </motion.div>
@@ -219,7 +222,9 @@ function CloudDeploy({ onSuccess }) {
           </h3>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium">Git Repository (optional)</label>
+              <label className="block text-sm font-medium">
+                Git Repository (optional)
+              </label>
               <Input
                 value={gitUrl}
                 onChange={(e) => setGitUrl(e.target.value)}
@@ -240,7 +245,11 @@ function CloudDeploy({ onSuccess }) {
               <Button type="submit" disabled={creating}>
                 {creating ? "Creating..." : "Create Workspace"}
               </Button>
-              <Button variant="secondary" type="button" onClick={() => setGitUrl("")}>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setGitUrl("")}
+              >
                 Cancel
               </Button>
             </div>
