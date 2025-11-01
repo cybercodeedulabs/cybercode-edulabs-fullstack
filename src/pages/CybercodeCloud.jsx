@@ -11,6 +11,9 @@ const api = {
   getUsage: "/api/cloud/usage", // GET
 };
 
+// =============================
+// LANDING SECTION
+// =============================
 function CloudLanding({ onLaunch }) {
   return (
     <section className="px-6 py-12 max-w-6xl mx-auto">
@@ -34,36 +37,56 @@ function CloudLanding({ onLaunch }) {
           <div className="mt-6 flex gap-3 flex-wrap">
             <Button onClick={onLaunch}>🚀 Launch Cloud Console</Button>
             <Button
-              variant="ghost"
+              variant="secondary"
               onClick={() => window.open("/pricing", "_self")}
             >
               💰 Explore Pricing
             </Button>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-4">
+          {/* Plan Cards */}
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardContent>
-                <h3 className="font-semibold">Student Tier</h3>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                  Student Tier
+                </h3>
                 <p className="text-sm text-gray-500">
-                  1 vCPU • 512MB RAM • 5GB storage • Free for learning
+                  1 vCPU • 512MB RAM • 5GB storage • Free forever
                 </p>
               </CardContent>
             </Card>
+
             <Card>
               <CardContent>
-                <h3 className="font-semibold">Edu+ Tier</h3>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                  Edu+ Tier
+                </h3>
                 <p className="text-sm text-gray-500">
                   2 vCPU • 2GB RAM • 25GB storage • 1-year validity
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                  Startup Tier
+                </h3>
+                <p className="text-sm text-gray-500">
+                  4 vCPU • 8GB RAM • 100GB storage • Business-ready cloud sandbox
                 </p>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Right illustration */}
+        {/* Right Illustration */}
         <div className="w-full lg:w-1/2">
-          <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg text-center">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg text-center"
+          >
             <h4 className="text-lg font-medium text-gray-700 dark:text-gray-200">
               One-click labs
             </h4>
@@ -77,13 +100,16 @@ function CloudLanding({ onLaunch }) {
                 className="w-56 h-auto object-contain"
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     </section>
   );
 }
 
+// =============================
+// CONSOLE SECTION
+// =============================
 function CloudConsole({ onCreate }) {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -145,7 +171,7 @@ function CloudConsole({ onCreate }) {
                       Open
                     </a>
                   </Button>
-                  <Button variant="ghost">Logs</Button>
+                  <Button variant="secondary">Logs</Button>
                 </div>
               </div>
             </CardContent>
@@ -156,6 +182,9 @@ function CloudConsole({ onCreate }) {
   );
 }
 
+// =============================
+// DEPLOY SECTION
+// =============================
 function CloudDeploy({ onSuccess }) {
   const [gitUrl, setGitUrl] = useState("");
   const [plan, setPlan] = useState("student");
@@ -200,10 +229,10 @@ function CloudDeploy({ onSuccess }) {
 
             <div>
               <label className="block text-sm font-medium">Plan</label>
-              <Select value={plan} onValueChange={(v) => setPlan(v)}>
-                <SelectItem value="student">Student (free)</SelectItem>
-                <SelectItem value="edu">Edu+</SelectItem>
-                <SelectItem value="startup">Startup</SelectItem>
+              <Select value={plan} onChange={(e) => setPlan(e.target.value)}>
+                <SelectItem value="student" label="Student (free)" />
+                <SelectItem value="edu" label="Edu+" />
+                <SelectItem value="startup" label="Startup" />
               </Select>
             </div>
 
@@ -211,7 +240,7 @@ function CloudDeploy({ onSuccess }) {
               <Button type="submit" disabled={creating}>
                 {creating ? "Creating..." : "Create Workspace"}
               </Button>
-              <Button variant="ghost" type="button" onClick={() => setGitUrl("")}>
+              <Button variant="secondary" type="button" onClick={() => setGitUrl("")}>
                 Cancel
               </Button>
             </div>
@@ -222,6 +251,9 @@ function CloudDeploy({ onSuccess }) {
   );
 }
 
+// =============================
+// USAGE SECTION
+// =============================
 function CloudUsage() {
   const [usage, setUsage] = useState(null);
 
@@ -262,6 +294,9 @@ function CloudUsage() {
   );
 }
 
+// =============================
+// MAIN MODULE EXPORT
+// =============================
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [lastCreated, setLastCreated] = useState(null);
@@ -299,13 +334,13 @@ export default function CybercodeCloudModule() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => setView("landing")}>
+            <Button variant="secondary" onClick={() => setView("landing")}>
               Overview
             </Button>
-            <Button variant="ghost" onClick={() => setView("console")}>
+            <Button variant="secondary" onClick={() => setView("console")}>
               My Console
             </Button>
-            <Button variant="ghost" onClick={() => setView("deploy")}>
+            <Button variant="secondary" onClick={() => setView("deploy")}>
               Deploy
             </Button>
           </div>
