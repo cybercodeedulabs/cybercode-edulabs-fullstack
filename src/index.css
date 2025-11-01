@@ -161,3 +161,27 @@ button:focus-visible {
 .prose hr {
   @apply border-t border-gray-300 dark:border-gray-700 my-6;
 }
+
+/* =========================================
+   🌥️ Cloud Vision Scroller Animation
+   ========================================= */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 20s linear infinite;
+  white-space: nowrap;
+}
+
+/* ⏸️ Pause on Hover */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
