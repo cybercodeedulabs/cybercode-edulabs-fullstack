@@ -3,6 +3,7 @@ export function Button({
   children,
   className = "",
   variant = "primary",
+  asChild = false,
   ...props
 }) {
   const baseStyles =
@@ -14,7 +15,20 @@ export function Button({
     secondary:
       "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600",
     danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+    ghost:
+      "bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-400",
   };
+
+  if (asChild && children?.type === "a") {
+    return (
+      <a
+        {...props}
+        className={`${baseStyles} ${variants[variant]} ${className}`}
+      >
+        {children.props.children}
+      </a>
+    );
+  }
 
   return (
     <button

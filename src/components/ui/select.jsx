@@ -1,5 +1,5 @@
 // src/components/ui/select.jsx
-export function Select({ label, options = [], value, onChange, className = "" }) {
+export function Select({ label, children, value, onValueChange, className = "" }) {
   return (
     <div className="flex flex-col space-y-2">
       {label && (
@@ -9,14 +9,10 @@ export function Select({ label, options = [], value, onChange, className = "" })
       )}
       <select
         value={value}
-        onChange={onChange}
+        onChange={(e) => onValueChange(e.target.value)}
         className={`w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${className}`}
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
+        {children}
       </select>
     </div>
   );
