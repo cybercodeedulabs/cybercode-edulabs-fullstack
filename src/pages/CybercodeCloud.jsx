@@ -14,7 +14,7 @@ const api = {
 // =============================
 // LANDING SECTION
 // =============================
-function CloudLanding({ onLaunch }) {
+function CloudLanding({ onLaunch, onSelectPlan }) {
   return (
     <section className="px-6 py-12 max-w-6xl mx-auto">
       <motion.div
@@ -46,41 +46,45 @@ function CloudLanding({ onLaunch }) {
 
           {/* Plan Cards */}
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardContent>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                  Student Tier
-                </h3>
-                <p className="text-sm text-gray-500">
-                  1 vCPU • 512MB RAM • 5GB storage • Free forever
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                  Edu+ Tier
-                </h3>
-                <p className="text-sm text-gray-500">
-                  2 vCPU • 2GB RAM • 25GB storage • 1-year validity
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden">
-              <CardContent>
-                <span className="absolute top-2 right-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                  NEW
-                </span>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                  Startup Tier
-                </h3>
-                <p className="text-sm text-gray-500">
-                  4 vCPU • 8GB RAM • 100GB SSD • Scalable cloud workspace for startups
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              {
+                name: "Student Tier",
+                desc: "1 vCPU • 512MB RAM • 5GB storage • Free forever",
+                plan: "student",
+              },
+              {
+                name: "Edu+ Tier",
+                desc: "2 vCPU • 2GB RAM • 25GB storage • 1-year validity",
+                plan: "edu",
+              },
+              {
+                name: "Startup Tier",
+                desc: "4 vCPU • 8GB RAM • 100GB SSD • Scalable workspace",
+                plan: "startup",
+                badge: "NEW",
+              },
+            ].map((tier) => (
+              <motion.div
+                key={tier.name}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => onSelectPlan(tier.plan)}
+                className="cursor-pointer"
+              >
+                <Card className="relative overflow-hidden hover:shadow-lg transition">
+                  <CardContent>
+                    {tier.badge && (
+                      <span className="absolute top-2 right-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                        {tier.badge}
+                      </span>
+                    )}
+                    <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                      {tier.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{tier.desc}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
 
@@ -88,7 +92,8 @@ function CloudLanding({ onLaunch }) {
         <div className="w-full lg:w-1/2">
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg text-center"
+            onClick={onLaunch}
+            className="cursor-pointer bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg text-center"
           >
             <h4 className="text-lg font-medium text-gray-700 dark:text-gray-200">
               One-click labs
@@ -188,9 +193,9 @@ function CloudConsole({ onCreate }) {
 // =============================
 // DEPLOY SECTION
 // =============================
-function CloudDeploy({ onSuccess }) {
+function CloudDeploy({ onSuccess, preselectedPlan }) {
   const [gitUrl, setGitUrl] = useState("");
-  const [plan, setPlan] = useState("student");
+  const [plan, setPlan] = useState(preselectedPlan || "student");
   const [creating, setCreating] = useState(false);
 
   async function handleCreate(e) {
@@ -309,6 +314,7 @@ function CloudUsage() {
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [lastCreated, setLastCreated] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState("student");
 
   function handleLaunch() {
     setView("console");
@@ -321,6 +327,11 @@ export default function CybercodeCloudModule() {
   function onCreated(instance) {
     setLastCreated(instance);
     setView("console");
+  }
+
+  function handleSelectPlan(plan) {
+    setSelectedPlan(plan);
+    setView("deploy");
   }
 
   return (
@@ -356,9 +367,13 @@ export default function CybercodeCloudModule() {
         </div>
       </header>
 
-      {view === "landing" && <CloudLanding onLaunch={handleLaunch} />}
+      {view === "landing" && (
+        <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
+      )}
       {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
-      {view === "deploy" && <CloudDeploy onSuccess={onCreated} />}
+      {view === "deploy" && (
+        <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
+      )}
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         <CloudUsage />
