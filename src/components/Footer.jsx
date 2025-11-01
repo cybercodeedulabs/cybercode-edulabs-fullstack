@@ -59,7 +59,7 @@ function Footer() {
             </a>
           </p>
           <p className="text-sm">© {new Date().getFullYear()} Cybercode EduLabs</p>
-          <p className="text-xs mt-1 opacity-75">Made with ❤️ in India</p>
+          <p className="text-xs mt-1 opacity-75">Made in India</p>
         </div>
       </div>
     </footer>
