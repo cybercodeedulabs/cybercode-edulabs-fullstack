@@ -241,7 +241,7 @@ export default function CybercodeCloudModule() {
       <div className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src="/logo192.png" alt="logo" className="w-10 h-10 rounded" />
+            <img src="/images/logo.png" alt="logo" className="w-10 h-10 rounded" />
             <div>
               <h4 className="font-bold">Cybercode Cloud</h4>
               <p className="text-xs text-neutral-500">India • Education • Affordable</p>
