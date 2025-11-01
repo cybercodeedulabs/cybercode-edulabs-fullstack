@@ -82,7 +82,7 @@ export default function Dashboard() {
         </div>
 
         {/* Access Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {/* Certification */}
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
             <h2 className="text-lg font-semibold mb-2">🎓 Certification Access</h2>
@@ -98,7 +98,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Server */}
+          {/* Server Access */}
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
             <h2 className="text-lg font-semibold mb-2">🖥️ 1-Year Server Access</h2>
             {hasServerAccess ? (
@@ -111,6 +111,20 @@ export default function Dashboard() {
                 Activate Server Access
               </Link>
             )}
+          </div>
+
+          {/* Cloud Console Access */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
+            <h2 className="text-lg font-semibold mb-2">☁️ Cybercode Cloud Console</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
+              Launch your AI, Cloud, or IoT projects instantly.
+            </p>
+            <Link
+              to="/cloud"
+              className="inline-block mt-2 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm"
+            >
+              Open Cloud Console
+            </Link>
           </div>
         </div>
 

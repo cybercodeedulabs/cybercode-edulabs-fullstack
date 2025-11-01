@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import ScrollToTop from "./components/ScrollToTop";
-import VoiceWelcome from "./components/VoiceWelcome"; // ✅ Import here
+import VoiceWelcome from "./components/VoiceWelcome";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -19,6 +19,9 @@ import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+
+// ✅ Import the new Cybercode Cloud page
+import CybercodeCloud from "./pages/CybercodeCloud";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -114,7 +117,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
-        <VoiceWelcome /> {/* ✅ Trigger voice on first interaction */}
+        <VoiceWelcome />
         <Header darkMode={darkMode} setDarkMode={setDarkMode} />
         <main className="flex-grow">
           <ScrollToTop />
@@ -128,6 +131,10 @@ function App() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+
+            {/* ✅ New route for Cybercode Cloud */}
+            <Route path="/cloud" element={<CybercodeCloud />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

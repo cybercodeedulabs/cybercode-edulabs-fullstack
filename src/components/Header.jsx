@@ -4,6 +4,7 @@ import logo from "/images/logo.png";
 function Header({ darkMode, setDarkMode }) {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
+      {/* Logo & Brand */}
       <div className="flex items-center space-x-3">
         <img src={logo} alt="Cybercode EduLabs Logo" className="h-10 w-auto" />
         <div className="text-xl font-bold tracking-wide">Cybercode EduLabs</div>
@@ -14,6 +15,9 @@ function Header({ darkMode, setDarkMode }) {
         <Link to="/" className="hover:underline">Home</Link>
         <Link to="/courses" className="hover:underline">Courses</Link>
         <Link to="/projects" className="hover:underline">Projects</Link>
+        <Link to="/cloud" className="hover:underline text-indigo-600 dark:text-indigo-400 font-semibold">
+          ☁️ Cloud
+        </Link>
         <Link to="/register" className="hover:underline">Register</Link>
         <Link to="/dashboard" className="hover:underline">Dashboard</Link>
         <Link to="/contact" className="hover:underline">Contact</Link>
@@ -22,7 +26,7 @@ function Header({ darkMode, setDarkMode }) {
       {/* Dark mode toggle */}
       <button
         onClick={() => setDarkMode(!darkMode)}
-        className="ml-4 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded"
+        className="ml-4 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded transition hover:bg-gray-300 dark:hover:bg-gray-600"
       >
         {darkMode ? "☀️ Light" : "🌙 Dark"}
       </button>
