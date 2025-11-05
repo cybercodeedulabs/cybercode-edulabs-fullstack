@@ -59,10 +59,10 @@ function Footer() {
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Legal & Policies</h3>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/privacy-policy" className="hover:text-indigo-500 transition-colors">Privacy Policy</Link></li>
+            <li><Link to="/privacy" className="hover:text-indigo-500 transition-colors">Privacy Policy</Link></li>
             <li><Link to="/terms" className="hover:text-indigo-500 transition-colors">Terms of Service</Link></li>
             <li><Link to="/cookie-policy" className="hover:text-indigo-500 transition-colors">Cookie Policy</Link></li>
-            <li><Link to="/refund-policy" className="hover:text-indigo-500 transition-colors">Refund & Cancellation</Link></li>
+            <li><Link to="/refund" className="hover:text-indigo-500 transition-colors">Refund & Cancellation</Link></li>
           </ul>
         </div>
 
