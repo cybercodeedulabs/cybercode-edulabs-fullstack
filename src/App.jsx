@@ -28,6 +28,10 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import RefundPolicy from "./pages/RefundPolicy";
 import LegalIndex from "./pages/LegalIndex";
+import CookiePolicy from "./pages/CookiePolicy";
+import FAQ from "./pages/FAQ";
+import Support from "./pages/Support";
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -144,6 +148,10 @@ function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
             <Route path="/refund" element={<RefundPolicy />} />
+            <Route path="/cookie" element={<CookiePolicy />} />
+<Route path="/faq" element={<FAQ />} />
+<Route path="/support" element={<Support />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

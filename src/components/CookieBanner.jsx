@@ -1,23 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 
+function CookieBanner() {
+  const [visible, setVisible] = useState(false);
 
-export default function CookieBanner(){
-const [accepted, setAccepted] = useState(localStorage.getItem('cc_cookies') === '1');
-useEffect(()=>{
-if(!accepted) return;
-localStorage.setItem('cc_cookies','1');
-},[accepted]);
+  useEffect(() => {
+    // Check if consent already given
+    const consent = localStorage.getItem("cybercode_cookie_consent");
+    if (!consent) {
+      const timer = setTimeout(() => setVisible(true), 1000); // delay for smoother appearance
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
+  const handleAccept = () => {
+    localStorage.setItem("cybercode_cookie_consent", "true");
+    setVisible(false);
+  };
 
-if(accepted) return null;
-return (
-<div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 z-50">
-<div className="bg-white dark:bg-gray-800 border p-4 rounded shadow flex items-center justify-between">
-<div className="max-w-lg text-sm">We use cookies for analytics and to improve your experience. By continuing you agree to our <a className="underline" href="/privacy">Privacy Policy</a>.</div>
-<div className="ml-4">
-<button className="px-4 py-1 bg-indigo-600 text-white rounded" onClick={()=>setAccepted(true)}>Accept</button>
-</div>
-</div>
-</div>
-);
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          className="fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-6"
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          <div className="max-w-3xl w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
+            
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed flex-1">
+              🍪 We use cookies to enhance your experience, analyze site traffic,
+              and serve relevant content. By continuing to use Cybercode EduLabs,
+              you agree to our{" "}
+              <Link
+                to="/privacy"
+                className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+              >
+                Privacy Policy
+              </Link>.
+            </p>
+
+            <button
+              onClick={handleAccept}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
+            >
+              Accept
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
+
+export default CookieBanner;
