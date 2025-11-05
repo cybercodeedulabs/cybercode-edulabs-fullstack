@@ -1,4 +1,5 @@
-// src/components/ui/button.jsx
+import { motion } from "framer-motion";
+
 export function Button({
   children,
   className = "",
@@ -19,23 +20,18 @@ export function Button({
       "bg-transparent text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-400",
   };
 
-  if (asChild && children?.type === "a") {
-    return (
-      <a
-        {...props}
-        className={`${baseStyles} ${variants[variant]} ${className}`}
-      >
-        {children.props.children}
-      </a>
-    );
-  }
+  const MotionButton = motion(asChild ? "a" : "button");
 
   return (
-    <button
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+    <MotionButton
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.97 }}
       {...props}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
     >
-      {children}
-    </button>
+      {asChild && children?.type === "a"
+        ? children.props.children
+        : children}
+    </MotionButton>
   );
 }

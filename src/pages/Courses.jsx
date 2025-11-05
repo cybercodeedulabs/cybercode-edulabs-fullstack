@@ -1,19 +1,42 @@
 // src/pages/Courses.jsx
+import React from "react";
+import { motion } from "framer-motion";
 import CourseCategoryTabs from "../components/CourseCategoryTabs";
 
 export default function Courses() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
-          Explore Our Courses
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
-          Learn from a wide range of industry-focused programs across Cloud, DevOps, Programming, and more.
-        </p>
-      </div>
+    <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <motion.h1
+            className="text-4xl md:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            Explore Our Courses
+          </motion.h1>
 
-      <CourseCategoryTabs />
-    </div>
+          <motion.p
+            className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            Learn from a wide range of industry-focused programs across Cloud, DevOps, Programming, and more.
+          </motion.p>
+        </div>
+
+        {/* Course Tabs */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <CourseCategoryTabs />
+        </motion.div>
+      </div>
+    </section>
   );
 }

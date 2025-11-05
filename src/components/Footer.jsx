@@ -81,7 +81,7 @@ function Footer() {
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Contact</h3>
           <p className="text-sm mb-2">
             <a
-              href="mailto:support@cybercodeedulabs.com"
+              href="mailto:cybercodeedulabs@gmail.com"
               className="hover:text-indigo-500 transition-colors"
             >
               support@cybercodeedulabs.com

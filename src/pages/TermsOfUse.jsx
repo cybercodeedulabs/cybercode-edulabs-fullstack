@@ -19,6 +19,16 @@ export default function TermsOfUse() {
           Last updated: {new Date().toLocaleDateString()}
         </p>
 
+        <motion.p
+  className="text-base text-gray-600 dark:text-gray-400 mb-12"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.2 }}
+>
+  Please read these terms carefully before using our platform.
+</motion.p>
+
+
         {/* Main Content */}
         <motion.div
           className="prose dark:prose-invert prose-indigo max-w-none leading-relaxed"
@@ -51,7 +61,7 @@ export default function TermsOfUse() {
             Paid features and subscriptions are processed securely through our
             payment partner. Refunds are governed by our{" "}
             <a
-              href="/refund-policy"
+              href="/refund"
               className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-500"
             >
               Refund Policy

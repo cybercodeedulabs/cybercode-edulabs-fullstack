@@ -4,6 +4,7 @@ import useUserData from "../hooks/useUserData";
 import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const { user, setUser } = useUser();
@@ -22,120 +23,182 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  // --- UNAUTHORIZED VIEW ---
   if (!user) {
     return (
-      <div className="max-w-4xl mx-auto py-16 px-4 text-center">
-        <h1 className="text-3xl font-bold text-red-600">Unauthorized</h1>
-        <p className="text-lg mt-4">Please log in to access your dashboard.</p>
-      </div>
+      <motion.div
+        className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <h1 className="text-4xl font-bold text-red-600 dark:text-red-400 mb-4">
+          Unauthorized Access
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Please log in to access your dashboard and learning resources.
+        </p>
+        <Link
+          to="/register"
+          className="inline-block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition"
+        >
+          Go to Login
+        </Link>
+      </motion.div>
     );
   }
 
+  // --- DASHBOARD VIEW ---
   return (
-    <div className="max-w-5xl mx-auto py-16 px-4">
-      <h1 className="text-4xl font-bold text-indigo-700 dark:text-indigo-300 mb-6 text-center">
-        Welcome, {user.displayName}
-      </h1>
+    <motion.section
+      className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      {/* HEADER */}
+      <motion.div
+        className="text-center mb-12"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">
+          Welcome, {user.displayName}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Manage your learning progress, access your real-time projects, and unlock exclusive certifications.
+        </p>
+      </motion.div>
 
-      <div className="flex flex-col items-center space-y-6">
+      {/* USER INFO */}
+      <motion.div
+        className="flex flex-col items-center mb-12"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3 }}
+      >
         <img
           src={user.photoURL}
           alt="User Avatar"
-          className="w-24 h-24 rounded-full shadow-md"
+          className="w-24 h-24 rounded-full shadow-lg border-4 border-indigo-500 dark:border-indigo-400"
         />
-        <p className="text-lg text-gray-700 dark:text-gray-300">
+        <p className="text-lg mt-4 text-gray-700 dark:text-gray-300">
           <strong>Email:</strong> {user.email}
         </p>
+      </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-          {/* Courses */}
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">📚 My Courses</h2>
-            {enrolledCourses.length > 0 ? (
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                {enrolledCourses.map((course) => (
-                  <li key={course}>{course}</li>
+      {/* COURSES & PROJECTS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        {[ 
+          {
+            title: "📚 My Courses",
+            items: enrolledCourses,
+            emptyText: "You haven’t enrolled in any courses yet.",
+          },
+          {
+            title: "📁 My Projects",
+            items: projects,
+            emptyText: "Your project progress will appear here once you start learning.",
+          },
+        ].map((section, index) => (
+          <motion.div
+            key={index}
+            className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 rounded-2xl shadow hover:shadow-lg transition"
+            whileHover={{ scale: 1.02 }}
+          >
+            <h2 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+              {section.title}
+            </h2>
+            {section.items.length > 0 ? (
+              <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-1">
+                {section.items.map((item) => (
+                  <li key={item}>{item}</li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-600 dark:text-gray-400">
-                You haven't enrolled in any courses yet.
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">{section.emptyText}</p>
             )}
-          </div>
+          </motion.div>
+        ))}
+      </div>
 
-          {/* Projects */}
-          <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">📁 My Projects</h2>
-            {projects.length > 0 ? (
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                {projects.map((project) => (
-                  <li key={project}>{project}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-600 dark:text-gray-400">
-                Real-time project progress will appear here once you start learning.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Access Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-          {/* Certification */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
-            <h2 className="text-lg font-semibold mb-2">🎓 Certification Access</h2>
-            {hasCertificationAccess ? (
-              <p className="text-green-600">You have access to certification exams.</p>
-            ) : (
-              <Link
-                to="/payment?type=certification"
-                className="inline-block mt-2 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm"
-              >
-                Unlock Certification
-              </Link>
-            )}
-          </div>
-
-          {/* Server Access */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow">
-            <h2 className="text-lg font-semibold mb-2">🖥️ 1-Year Server Access</h2>
-            {hasServerAccess ? (
-              <p className="text-green-600">Server access active.</p>
-            ) : (
-              <Link
-                to="/payment?type=server"
-                className="inline-block mt-2 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm"
-              >
-                Activate Server Access
-              </Link>
-            )}
-          </div>
-
-          {/* Cloud Console Access */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-xl shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">☁️ Cybercode Cloud Console</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              Launch your AI, Cloud, or IoT projects instantly.
+      {/* ACCESS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <motion.div
+          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow hover:shadow-lg transition"
+          whileHover={{ scale: 1.03 }}
+        >
+          <h2 className="text-lg font-semibold mb-3 text-indigo-600 dark:text-indigo-400">
+            🎓 Certification Access
+          </h2>
+          {hasCertificationAccess ? (
+            <p className="text-green-600 dark:text-green-400">
+              You have access to certification exams.
             </p>
+          ) : (
             <Link
-              to="/cloud"
-              className="inline-block mt-2 px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm"
+              to="/payment?type=certification"
+              className="inline-block mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition"
             >
-              Open Cloud Console
+              Unlock Certification
             </Link>
-          </div>
-        </div>
+          )}
+        </motion.div>
 
-        {/* Logout */}
+        <motion.div
+          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow hover:shadow-lg transition"
+          whileHover={{ scale: 1.03 }}
+        >
+          <h2 className="text-lg font-semibold mb-3 text-indigo-600 dark:text-indigo-400">
+            🖥️ 1-Year Server Access
+          </h2>
+          {hasServerAccess ? (
+            <p className="text-green-600 dark:text-green-400">
+              Server access active.
+            </p>
+          ) : (
+            <Link
+              to="/payment?type=server"
+              className="inline-block mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition"
+            >
+              Activate Server Access
+            </Link>
+          )}
+        </motion.div>
+
+        <motion.div
+          className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow hover:shadow-lg transition"
+          whileHover={{ scale: 1.03 }}
+        >
+          <h2 className="text-lg font-semibold mb-3 text-indigo-600 dark:text-indigo-400">
+            ☁️ Cybercode Cloud Console
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
+            Launch your AI, Cloud, or IoT projects instantly.
+          </p>
+          <Link
+            to="/cloud"
+            className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition"
+          >
+            Open Cloud Console
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* LOGOUT BUTTON */}
+      <motion.div
+        className="text-center"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
+      >
         <button
           onClick={handleLogout}
-          className="mt-8 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition"
+          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition"
         >
           🔓 Logout
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.section>
   );
 }

@@ -1,3 +1,4 @@
+// src/pages/CybercodeCloud.jsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "../components/ui/card";
@@ -6,9 +7,9 @@ import { Input } from "../components/ui/input";
 import { Select, SelectItem } from "../components/ui/select";
 
 const api = {
-  createInstance: "/api/cloud/instances", // POST
-  listInstances: "/api/cloud/instances", // GET
-  getUsage: "/api/cloud/usage", // GET
+  createInstance: "/api/cloud/instances",
+  listInstances: "/api/cloud/instances",
+  getUsage: "/api/cloud/usage",
 };
 
 // =============================
@@ -16,101 +17,106 @@ const api = {
 // =============================
 function CloudLanding({ onLaunch, onSelectPlan }) {
   return (
-    <section className="px-6 py-12 max-w-6xl mx-auto">
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800"></div>
+
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col lg:flex-row gap-10 items-center"
+        transition={{ duration: 0.6 }}
+        className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center gap-12"
       >
-        {/* Left content */}
-        <div className="flex-1">
-          <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-800 dark:text-white">
+        {/* Left Content */}
+        <div className="flex-1 text-center lg:text-left">
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
             Cybercode Cloud
           </h1>
-          <p className="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">
+          <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
             India’s first education-focused cloud workspace for students, startups, and
-            innovators. Launch isolated dev environments, deploy projects, and
-            collaborate securely — all hosted in India and billed in INR.
+            innovators. Launch isolated dev environments, deploy projects, and collaborate securely — all hosted in India and billed in INR.
           </p>
 
-          <div className="mt-6 flex gap-3 flex-wrap">
-            <Button onClick={onLaunch}>🚀 Launch Cloud Console</Button>
+          <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
+            <Button onClick={onLaunch} className="px-6 py-3 text-sm">
+              🚀 Launch Console
+            </Button>
             <Button
               variant="secondary"
               onClick={() => window.open("/pricing", "_self")}
+              className="px-6 py-3 text-sm"
             >
               💰 Explore Pricing
             </Button>
           </div>
-
-          {/* Plan Cards */}
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                name: "Student Tier",
-                desc: "1 vCPU • 512MB RAM • 5GB storage • Free forever",
-                plan: "student",
-              },
-              {
-                name: "Edu+ Tier",
-                desc: "2 vCPU • 2GB RAM • 25GB storage • 1-year validity",
-                plan: "edu",
-              },
-              {
-                name: "Startup Tier",
-                desc: "4 vCPU • 8GB RAM • 100GB SSD • Scalable workspace",
-                plan: "startup",
-                badge: "NEW",
-              },
-            ].map((tier) => (
-              <motion.div
-                key={tier.name}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => onSelectPlan(tier.plan)}
-                className="cursor-pointer"
-              >
-                <Card className="relative overflow-hidden hover:shadow-lg transition">
-                  <CardContent>
-                    {tier.badge && (
-                      <span className="absolute top-2 right-3 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                        {tier.badge}
-                      </span>
-                    )}
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                      {tier.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">{tier.desc}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
         {/* Right Illustration */}
-        <div className="w-full lg:w-1/2">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            onClick={onLaunch}
-            className="cursor-pointer bg-gradient-to-br from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-lg text-center"
-          >
-            <h4 className="text-lg font-medium text-gray-700 dark:text-gray-200">
-              One-click labs
-            </h4>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Open IDEs, deploy containers, and host projects instantly on subdomains.
-            </p>
-            <div className="mt-5 flex justify-center">
-              <img
-                src="/images/cloud-startup.png"
-                alt="Cybercode Cloud Illustration"
-                className="w-64 h-auto object-contain drop-shadow-md"
-              />
-            </div>
-          </motion.div>
-        </div>
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+          className="lg:w-1/2 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-8 rounded-2xl shadow-xl"
+          onClick={onLaunch}
+        >
+          <h4 className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 text-center">
+            One-click Labs
+          </h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+            Open IDEs, deploy containers, and host projects instantly on subdomains.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <img
+              src="/images/cloud-startup.png"
+              alt="Cybercode Cloud Illustration"
+              className="w-72 h-auto object-contain drop-shadow-lg"
+              loading="lazy"
+            />
+          </div>
+        </motion.div>
       </motion.div>
+
+      {/* Tier Cards */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {[
+            {
+              name: "Student Tier",
+              desc: "1 vCPU • 512MB RAM • 5GB storage • Free forever",
+              plan: "student",
+            },
+            {
+              name: "Edu+ Tier",
+              desc: "2 vCPU • 2GB RAM • 25GB storage • 1-year validity",
+              plan: "edu",
+            },
+            {
+              name: "Startup Tier",
+              desc: "4 vCPU • 8GB RAM • 100GB SSD • Scalable workspace",
+              plan: "startup",
+              badge: "NEW",
+            },
+          ].map((tier) => (
+            <motion.div
+              key={tier.name}
+              whileHover={{ scale: 1.03 }}
+              onClick={() => onSelectPlan(tier.plan)}
+              className="cursor-pointer"
+            >
+              <Card className="relative border border-indigo-100 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-lg transition">
+                <CardContent className="p-5">
+                  {tier.badge && (
+                    <span className="absolute top-3 right-4 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                      {tier.badge}
+                    </span>
+                  )}
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                    {tier.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">{tier.desc}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
@@ -141,51 +147,52 @@ function CloudConsole({ onCreate }) {
   }
 
   return (
-    <section className="px-6 py-10 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+    <section className="max-w-7xl mx-auto px-6 py-16">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
           My Cloud Console
         </h2>
-        <Button onClick={onCreate}>Create New Workspace</Button>
+        <Button onClick={onCreate}>+ New Workspace</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {loading && (
-          <div className="p-6 bg-white dark:bg-gray-800 shadow rounded">
-            Loading...
-          </div>
-        )}
-        {!loading && instances.length === 0 && (
-          <div className="p-6 bg-white dark:bg-gray-800 shadow rounded">
-            No active instances. Create one to get started.
-          </div>
-        )}
-
-        {instances.map((ins) => (
-          <Card key={ins.id}>
-            <CardContent>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                    {ins.name || ins.id}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {ins.plan || "Student"} • {ins.status}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button asChild>
-                    <a href={ins.url} target="_blank" rel="noreferrer">
-                      Open
-                    </a>
-                  </Button>
-                  <Button variant="secondary">Logs</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-gray-500 dark:text-gray-400">Loading instances…</p>
+      ) : instances.length === 0 ? (
+        <Card className="p-6 text-center text-gray-500 dark:text-gray-400">
+          No active instances. Create one to get started.
+        </Card>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2">
+          {instances.map((ins) => (
+            <motion.div key={ins.id} whileHover={{ scale: 1.02 }}>
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                        {ins.name || ins.id}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {ins.plan || "Student"} • {ins.status}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button asChild size="sm">
+                        <a href={ins.url} target="_blank" rel="noreferrer">
+                          Open
+                        </a>
+                      </Button>
+                      <Button variant="secondary" size="sm">
+                        Logs
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -207,7 +214,7 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gitUrl, plan }),
       });
-      if (!res.ok) throw new Error("create failed");
+      if (!res.ok) throw new Error("Create failed");
       const data = await res.json();
       onSuccess && onSuccess(data.instance);
     } catch (err) {
@@ -219,15 +226,15 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
   }
 
   return (
-    <section className="px-6 py-8 max-w-3xl mx-auto">
-      <Card>
+    <section className="max-w-3xl mx-auto px-6 py-16">
+      <Card className="shadow-lg bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
         <CardContent>
-          <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-white">
+          <h3 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
             Create a Cloud Workspace
           </h3>
-          <form onSubmit={handleCreate} className="space-y-4">
+          <form onSubmit={handleCreate} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium">
+              <label className="block text-sm font-medium mb-1">
                 Git Repository (optional)
               </label>
               <Input
@@ -238,7 +245,7 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium">Plan</label>
+              <label className="block text-sm font-medium mb-1">Plan</label>
               <Select value={plan} onChange={(e) => setPlan(e.target.value)}>
                 <SelectItem value="student" label="Student (free)" />
                 <SelectItem value="edu" label="Edu+" />
@@ -246,9 +253,9 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
               </Select>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button type="submit" disabled={creating}>
-                {creating ? "Creating..." : "Create Workspace"}
+                {creating ? "Creating…" : "Create Workspace"}
               </Button>
               <Button
                 variant="secondary"
@@ -275,70 +282,64 @@ function CloudUsage() {
     fetch(api.getUsage)
       .then((r) => r.json())
       .then((d) => setUsage(d))
-      .catch((e) => console.error(e));
+      .catch(console.error);
   }, []);
 
   return (
-    <section className="px-6 py-8 max-w-4xl mx-auto">
-      <Card>
-        <CardContent>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Usage & Quota
-          </h3>
-          {!usage && <p className="text-sm text-gray-500">Loading...</p>}
-          {usage && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">CPU (vCPU)</p>
-                <p className="font-semibold">
-                  {usage.cpuUsed} / {usage.cpuQuota}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Storage</p>
-                <p className="font-semibold">
-                  {usage.storageUsed} / {usage.storageQuota} GB
-                </p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <section className="max-w-5xl mx-auto px-6 pb-20">
+      <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">
+        Usage & Quota
+      </h3>
+      {!usage ? (
+        <p className="text-gray-500 dark:text-gray-400">Loading usage data…</p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-6">
+          <Card className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
+            <CardContent>
+              <p className="text-sm text-gray-500">CPU (vCPU)</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                {usage.cpuUsed} / {usage.cpuQuota}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
+            <CardContent>
+              <p className="text-sm text-gray-500">Storage (GB)</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                {usage.storageUsed} / {usage.storageQuota}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </section>
   );
 }
 
 // =============================
-// MAIN MODULE EXPORT
+// MAIN EXPORT
 // =============================
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [lastCreated, setLastCreated] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState("student");
 
-  function handleLaunch() {
-    setView("console");
-  }
-
-  function handleCreateClick() {
-    setView("deploy");
-  }
-
-  function onCreated(instance) {
+  const handleLaunch = () => setView("console");
+  const handleCreateClick = () => setView("deploy");
+  const onCreated = (instance) => {
     setLastCreated(instance);
     setView("console");
-  }
-
-  function handleSelectPlan(plan) {
+  };
+  const handleSelectPlan = (plan) => {
     setSelectedPlan(plan);
     setView("deploy");
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-neutral-50 dark:bg-gray-950">
+      <header className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <img
               src="/images/logo.png"
               alt="Cybercode EduLabs Logo"
@@ -353,12 +354,12 @@ export default function CybercodeCloudModule() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => setView("landing")}>
               Overview
             </Button>
             <Button variant="secondary" onClick={() => setView("console")}>
-              My Console
+              Console
             </Button>
             <Button variant="secondary" onClick={() => setView("deploy")}>
               Deploy
@@ -367,17 +368,21 @@ export default function CybercodeCloudModule() {
         </div>
       </header>
 
-      {view === "landing" && (
-        <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
-      )}
-      {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
-      {view === "deploy" && (
-        <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
-      )}
-
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        <CloudUsage />
-      </div>
+      <motion.div
+  key={view}
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.4 }}
+>
+  {view === "landing" && (
+    <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
+  )}
+  {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
+  {view === "deploy" && (
+    <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
+  )}
+</motion.div>
+      <CloudUsage />
     </div>
   );
 }

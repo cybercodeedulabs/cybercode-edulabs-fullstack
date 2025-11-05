@@ -19,6 +19,16 @@ export default function CookiePolicy() {
           Last updated: {new Date().toLocaleDateString()}
         </p>
 
+        <motion.p
+  className="text-base text-gray-600 dark:text-gray-400 mb-12"
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.2 }}
+>
+  This Cookie Policy explains how we use cookies to improve your experience on our platform.
+</motion.p>
+
+
         {/* Main Content */}
         <motion.div
           className="prose dark:prose-invert prose-indigo max-w-none leading-relaxed"

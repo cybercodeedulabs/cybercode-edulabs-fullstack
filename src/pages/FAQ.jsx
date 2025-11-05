@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Mail } from "lucide-react";
 
 export default function FAQ() {
   const faqs = [
@@ -37,7 +37,7 @@ export default function FAQ() {
   ];
 
   return (
-    <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 px-6">
+    <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-20 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <motion.h1
@@ -49,7 +49,7 @@ export default function FAQ() {
           Frequently Asked Questions
         </motion.h1>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-12 max-w-2xl">
+        <p className="text-gray-600 dark:text-gray-400 mb-12 max-w-2xl leading-relaxed">
           Get quick answers about Cybercode EduLabs — our courses, projects, and learning experience.
         </p>
 
@@ -63,22 +63,40 @@ export default function FAQ() {
           {faqs.map((faq, index) => (
             <motion.div
               key={index}
-              className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all"
+              className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all"
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex items-start gap-3">
                 <ChevronDown className="text-indigo-500 mt-1 shrink-0" />
                 <div>
-                  <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">
+                  <h2 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
                     {faq.question}
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {faq.answer}
                   </p>
                 </div>
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Contact Note */}
+        <motion.div
+          className="mt-16 text-center text-gray-600 dark:text-gray-400 text-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+        >
+          <p className="flex items-center justify-center gap-2">
+            Still have questions? Reach us at{" "}
+            <a
+              href="mailto:support@cybercodeedulabs.com"
+              className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1"
+            >
+              <Mail className="w-4 h-4" /> support@cybercodeedulabs.com
+            </a>
+          </p>
         </motion.div>
       </div>
     </section>
