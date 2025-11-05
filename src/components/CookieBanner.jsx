@@ -32,7 +32,7 @@ function CookieBanner() {
           <div className="max-w-3xl w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
             
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed flex-1">
-              🍪 We use cookies to enhance your experience, analyze site traffic,
+              We use cookies to enhance your experience, analyze site traffic,
               and serve relevant content. By continuing to use Cybercode EduLabs,
               you agree to our{" "}
               <Link
