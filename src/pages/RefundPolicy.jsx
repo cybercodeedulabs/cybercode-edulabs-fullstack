@@ -1,37 +1,82 @@
-import React from 'react';
-
+import React from "react";
+import { motion } from "framer-motion";
 
 export default function RefundPolicy() {
-return (
-<div className="max-w-4xl mx-auto p-6 prose dark:prose-invert">
-<h1>Refund & Cancellation Policy</h1>
-<p>Last updated: {new Date().toLocaleDateString()}</p>
+  return (
+    <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 px-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <motion.h1
+          className="text-4xl md:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          Refund & Cancellation Policy
+        </motion.h1>
 
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-12">
+          Last updated: {new Date().toLocaleDateString()}
+        </p>
 
-<h2>Free Content</h2>
-<p>Free lessons and trial content are not refundable.</p>
+        {/* Main Content */}
+        <motion.div
+          className="prose dark:prose-invert prose-indigo max-w-none leading-relaxed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <h2>Free Content</h2>
+          <p>
+            Free lessons, demos, and trial modules are provided for exploration
+            and learning. These materials are not eligible for refunds.
+          </p>
 
+          <h2>Paid Courses & Subscriptions</h2>
+          <p>
+            For one-time course purchases, learners may request a refund within{" "}
+            <strong>7 days</strong> of purchase, provided that less than{" "}
+            <strong>20%</strong> of the course content has been accessed or
+            completed.
+          </p>
 
-<h2>Paid Courses & Subscriptions</h2>
-<p>
-For one-time course purchases, request a refund within 7 days of
-purchase if you have not consumed more than 20% of the course content.
-</p>
+          <h2>Subscriptions</h2>
+          <p>
+            Subscription plans are billed on a recurring basis. Refunds for
+            active subscriptions are only provided under exceptional
+            circumstances, such as duplicate payments or verified technical
+            issues preventing access to content.
+          </p>
 
+          <h2>How to Request</h2>
+          <p>
+            To initiate a refund or cancellation request, please email your
+            order details and reason for the request to{" "}
+            <a
+              href="mailto:support@cybercodeedulabs.com"
+              className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-500"
+            >
+              support@cybercodeedulabs.com
+            </a>
+            . Our support team will review your case and respond within{" "}
+            <strong>5 business days</strong>.
+          </p>
 
-<h2>Subscriptions</h2>
-<p>
-Subscription fees are billed per cycle and are refundable only under
-exceptional circumstances. Contact support@cybercodeedulabs.com for
-assistance.
-</p>
-
-
-<h2>How to Request</h2>
-<p>Email your order details to support@cybercodeedulabs.com and our
-team will respond within 5 business days.</p>
-
-
-</div>
-);
+          <h2>Important Notes</h2>
+          <ul>
+            <li>
+              Refunds are processed to the original payment method only.
+            </li>
+            <li>
+              Refund eligibility may vary based on payment gateway policies.
+            </li>
+            <li>
+              Cybercode EduLabs reserves the right to decline refund requests
+              that do not meet the outlined criteria.
+            </li>
+          </ul>
+        </motion.div>
+      </div>
+    </section>
+  );
 }
