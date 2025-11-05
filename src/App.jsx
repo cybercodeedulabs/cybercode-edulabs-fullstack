@@ -31,6 +31,7 @@ import LegalIndex from "./pages/LegalIndex";
 import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
+import Payment from "./pages/Payment";
 
 
 function App() {
@@ -151,6 +152,7 @@ function App() {
             <Route path="/cookie" element={<CookiePolicy />} />
 <Route path="/faq" element={<FAQ />} />
 <Route path="/support" element={<Support />} />
+<Route path="/payment" element={<Payment />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

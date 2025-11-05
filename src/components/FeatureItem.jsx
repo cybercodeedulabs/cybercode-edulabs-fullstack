@@ -1,3 +1,4 @@
+// src/components/ui/FeatureItem.jsx
 import { Briefcase, BookOpen, Award, Users } from "lucide-react";
 
 const icons = {
@@ -9,12 +10,21 @@ const icons = {
 
 function FeatureItem({ icon, title, description }) {
   return (
-    <div className="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center text-center">
-      <div className="mb-4">
+    <div className="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center group">
+      {/* Icon with subtle hover scale */}
+      <div className="mb-4 transition-transform duration-300 group-hover:scale-110">
         {icons[icon]}
       </div>
-      <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{title}</h4>
-      <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
+
+      {/* Title */}
+      <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+        {title}
+      </h4>
+
+      {/* Description */}
+      <p className="text-sm text-gray-600 dark:text-gray-300">
+        {description}
+      </p>
     </div>
   );
 }

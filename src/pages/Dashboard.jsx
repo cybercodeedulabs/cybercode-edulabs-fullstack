@@ -15,7 +15,7 @@ export default function Dashboard() {
     projects = [],
     hasCertificationAccess = false,
     hasServerAccess = false,
-  } = useUserData(user) || {};
+  } = useUserData() || {};
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -90,16 +90,18 @@ export default function Dashboard() {
 
       {/* COURSES & PROJECTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {[ 
+        {[
           {
             title: "📚 My Courses",
             items: enrolledCourses,
             emptyText: "You haven’t enrolled in any courses yet.",
+            linkPrefix: "/courses/",
           },
           {
             title: "📁 My Projects",
             items: projects,
             emptyText: "Your project progress will appear here once you start learning.",
+            linkPrefix: "/projects/",
           },
         ].map((section, index) => (
           <motion.div
@@ -113,7 +115,14 @@ export default function Dashboard() {
             {section.items.length > 0 ? (
               <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-1">
                 {section.items.map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={item}>
+                    <Link
+                      to={`${section.linkPrefix}${item}`}
+                      className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                    >
+                      {item}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             ) : (

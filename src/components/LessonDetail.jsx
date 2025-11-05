@@ -1,8 +1,9 @@
+// src/pages/LessonDetail.jsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,6 +16,8 @@ export default function LessonDetail() {
   const [codeInputs, setCodeInputs] = useState({});
   const [outputs, setOutputs] = useState({});
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const [activeSection, setActiveSection] = useState(0);
+  const sectionRefs = useRef([]);
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains("dark"));
@@ -30,13 +33,33 @@ export default function LessonDetail() {
         <h2 className="text-3xl font-bold">Lesson not found</h2>
         <p className="mt-4">
           The lesson you're looking for doesn't exist.{" "}
-          <Link to={`/courses/${courseSlug}`} className="text-indigo-600 underline">
+          <Link to={`/courses/${courseSlug}`} className="text-indigo-600 underline hover:text-indigo-500 transition">
             Go back to course
           </Link>
         </p>
       </div>
     );
   }
+
+  // Scroll spy for TOC
+  useEffect(() => {
+    const handleScroll = () => {
+      sectionRefs.current.forEach((ref, idx) => {
+        if (ref) {
+          const rect = ref.getBoundingClientRect();
+          if (rect.top <= 100 && rect.bottom >= 100) {
+            setActiveSection(idx);
+          }
+        }
+      });
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToSection = (idx) => {
+    sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const goPrev = () => {
     if (lessonIndex > 0) {
@@ -119,47 +142,46 @@ export default function LessonDetail() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16 font-sans">
-      {/* 📘 Lesson Title Banner */}
-      <div className="mb-10 bg-indigo-100 dark:bg-indigo-900 p-6 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">
-          {lesson.title}
-        </h1>
-        <span className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300 font-medium">
-          Lesson {lessonIndex + 1} of {lessons.length}
-        </span>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 py-16 font-sans lg:flex lg:gap-8">
+      {/* Main Content */}
+      <div className="flex-1 space-y-12">
+        {/* Lesson Banner */}
+        <div className="mb-12 bg-gradient-to-r from-indigo-200 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800 p-6 rounded-2xl shadow-inner flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">
+            {lesson.title}
+          </h1>
+          <span className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300 font-medium">
+            Lesson {lessonIndex + 1} of {lessons.length}
+          </span>
+        </div>
 
-      {/* 📚 Lesson Content */}
-      <div className="space-y-10">
-        {lesson.content.map((block, idx) => {
-          if (block.type === "text") {
-            return (
-              <div
-                key={idx}
-                className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-justify"
-              >
+        {/* Lesson Content */}
+        {lesson.content.map((block, idx) => (
+          <div
+            key={idx}
+            ref={(el) => (sectionRefs.current[idx] = el)}
+            id={`section-${idx}`}
+          >
+            {block.type === "text" && (
+              <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-justify space-y-4">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                   {block.value}
                 </ReactMarkdown>
               </div>
-            );
-          } else if (block.type === "image") {
-            return (
-              <div key={idx} className="flex justify-center my-6">
+            )}
+
+            {block.type === "image" && (
+              <div className="flex justify-center my-6 transition-transform duration-300 hover:scale-105">
                 <img
                   src={block.value}
                   alt={block.alt || "Lesson Image"}
-                  className="rounded-xl shadow-md max-w-full h-auto"
+                  className="rounded-xl shadow-lg max-w-full h-auto"
                 />
               </div>
-            );
-          } else if (block.type === "code") {
-            return (
-              <div
-                key={idx}
-                className="rounded-xl border dark:border-gray-700 shadow-sm bg-white dark:bg-gray-900 overflow-hidden"
-              >
+            )}
+
+            {block.type === "code" && (
+              <div className="rounded-xl border dark:border-gray-700 shadow-md bg-white dark:bg-gray-900 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                     {block.language?.toUpperCase() || "CODE"} Snippet
@@ -220,52 +242,71 @@ export default function LessonDetail() {
                         : "Run Code"}
                     </button>
 
-                    <div
-                      className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono"
-                      dangerouslySetInnerHTML={{ __html: outputs[idx] || "" }}
-                    ></div>
+                    <pre className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono">
+                      {outputs[idx] || ""}
+                    </pre>
                   </div>
                 )}
               </div>
-            );
-          } else {
-            return null;
-          }
-        })}
+            )}
+          </div>
+        ))}
+
+        {/* Navigation Buttons */}
+        <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <button
+            onClick={goPrev}
+            disabled={lessonIndex === 0}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition shadow-md duration-200 ${
+              lessonIndex === 0
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
+            }`}
+          >
+            ← Previous Lesson
+          </button>
+
+          <Link
+            to={`/courses/${courseSlug}`}
+            className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-600 dark:border-indigo-400 rounded-xl font-medium hover:bg-indigo-50 dark:hover:bg-gray-700 transition shadow-md"
+          >
+            ← Back to Course
+          </Link>
+
+          <button
+            onClick={goNext}
+            disabled={lessonIndex === lessons.length - 1}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition shadow-md duration-200 ${
+              lessonIndex === lessons.length - 1
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
+            }`}
+          >
+            Next Lesson →
+          </button>
+        </div>
       </div>
 
-      {/* 🔄 Navigation */}
-      <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <button
-          onClick={goPrev}
-          disabled={lessonIndex === 0}
-          className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${
-            lessonIndex === 0
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700 text-white"
-          }`}
-        >
-          ← Previous Lesson
-        </button>
-
-        <Link
-          to={`/courses/${courseSlug}`}
-          className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-600 dark:border-indigo-400 rounded-xl font-medium hover:bg-indigo-50 dark:hover:bg-gray-700 transition"
-        >
-          ← Back to Course
-        </Link>
-
-        <button
-          onClick={goNext}
-          disabled={lessonIndex === lessons.length - 1}
-          className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${
-            lessonIndex === lessons.length - 1
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700 text-white"
-          }`}
-        >
-          Next Lesson →
-        </button>
+      {/* Sticky TOC */}
+      <div className="hidden lg:block w-64 sticky top-28 h-max border-l border-gray-200 dark:border-gray-700 pl-6">
+        <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+          Lesson Contents
+        </h4>
+        <ul className="space-y-2 text-sm">
+          {lesson.content.map((block, idx) => (
+            <li
+              key={idx}
+              className={`cursor-pointer p-2 rounded-md transition ${
+                activeSection === idx
+                  ? "bg-indigo-100 dark:bg-indigo-700 font-semibold"
+                  : "hover:bg-indigo-50 dark:hover:bg-gray-700"
+              }`}
+              onClick={() => scrollToSection(idx)}
+            >
+              {block.title || `Section ${idx + 1}`}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

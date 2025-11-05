@@ -2,24 +2,23 @@
 import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
-import useUserData from "../hooks/useUserData"; // 👈 Import the hook
+import useUserData from "../hooks/useUserData";
 
-function CourseDetail() {
+export default function CourseDetail() {
   const { courseSlug } = useParams();
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
 
-  const { enrolledCourses, enrollInCourse } = useUserData(); // 👈 Get data & function
-
-  const isEnrolled = enrolledCourses.includes(courseSlug); // 👈 Check enrollment
+  const { enrolledCourses, enrollInCourse } = useUserData();
+  const isEnrolled = enrolledCourses.includes(courseSlug);
 
   if (!course) {
     return (
       <div className="text-center py-20 text-red-600">
         <h2 className="text-3xl font-bold">Course not found</h2>
-        <p className="mt-4">
+        <p className="mt-4 text-gray-700 dark:text-gray-300">
           The course you're looking for doesn't exist.{" "}
-          <Link to="/" className="text-indigo-600 underline">
+          <Link to="/" className="text-indigo-600 underline hover:text-indigo-500">
             Go back home
           </Link>
         </p>
@@ -55,7 +54,7 @@ function CourseDetail() {
               <li key={lesson.slug}>
                 <Link
                   to={`/courses/${courseSlug}/lessons/${lesson.slug}`}
-                  className="block px-6 py-4 hover:bg-indigo-50 dark:hover:bg-gray-800 transition duration-200"
+                  className="block px-6 py-4 hover:bg-indigo-50 dark:hover:bg-gray-800 transition-colors duration-200"
                 >
                   <span className="text-lg font-medium text-indigo-800 dark:text-indigo-200">
                     {index + 1}. {lesson.title}
@@ -71,18 +70,19 @@ function CourseDetail() {
           {!isEnrolled ? (
             <button
               onClick={() => enrollInCourse(courseSlug)}
-              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
+              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200"
             >
               ✅ Enroll in this Course
             </button>
           ) : (
-            <span className="inline-block px-6 py-3 bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-200 font-semibold rounded-lg">
+            <span className="inline-block px-6 py-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg">
               🎉 You are enrolled in this course
             </span>
           )}
+
           <Link
             to="/courses"
-            className="text-sm text-gray-600 dark:text-gray-400 underline hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="text-sm text-gray-600 dark:text-gray-400 underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
           >
             ← Back to Courses
           </Link>
@@ -91,5 +91,3 @@ function CourseDetail() {
     </div>
   );
 }
-
-export default CourseDetail;

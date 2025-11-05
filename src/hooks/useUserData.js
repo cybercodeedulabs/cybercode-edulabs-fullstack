@@ -5,14 +5,15 @@ import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
 
 export default function useUserData() {
-  const { user } = useUser();
+  const { user, enrolledCourses, setEnrolledCourses } = useUser();
   const [userData, setUserData] = useState({
-    enrolledCourses: [],
+    enrolledCourses: enrolledCourses || [],
     projects: [],
     hasCertificationAccess: false,
     hasServerAccess: false,
   });
 
+  // Sync Firestore data with local state
   useEffect(() => {
     if (!user) return;
 
@@ -20,23 +21,33 @@ export default function useUserData() {
 
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
+        const data = docSnap.data();
         setUserData({
-          enrolledCourses: docSnap.data().enrolledCourses || [],
-          projects: docSnap.data().projects || [],
-          hasCertificationAccess: docSnap.data().hasCertificationAccess || false,
-          hasServerAccess: docSnap.data().hasServerAccess || false,
+          enrolledCourses: data.enrolledCourses || [],
+          projects: data.projects || [],
+          hasCertificationAccess: data.hasCertificationAccess || false,
+          hasServerAccess: data.hasServerAccess || false,
         });
+
+        // Also sync with context
+        setEnrolledCourses(data.enrolledCourses || []);
       }
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, setEnrolledCourses]);
 
-  // 🟩 Enroll the user in a new course
+  // 🟩 Enroll the user in a new course (updates context + Firestore)
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
-    const userRef = doc(db, "users", user.uid);
 
+    // Update context state
+    if (!enrolledCourses.includes(courseSlug)) {
+      setEnrolledCourses([...enrolledCourses, courseSlug]);
+    }
+
+    // Update Firestore
+    const userRef = doc(db, "users", user.uid);
     await setDoc(
       userRef,
       { enrolledCourses: arrayUnion(courseSlug) },
@@ -48,22 +59,19 @@ export default function useUserData() {
   const grantCertificationAccess = async () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, {
-      hasCertificationAccess: true,
-    });
+    await updateDoc(userRef, { hasCertificationAccess: true });
   };
 
   // 🟦 Grant 1-year server access (after payment)
   const grantServerAccess = async () => {
     if (!user) return;
     const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, {
-      hasServerAccess: true,
-    });
+    await updateDoc(userRef, { hasServerAccess: true });
   };
 
   return {
     ...userData,
+    enrolledCourses,
     enrollInCourse,
     grantCertificationAccess,
     grantServerAccess,
