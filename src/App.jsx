@@ -1,9 +1,11 @@
+// src/App.jsx
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
+import CookieBanner from "./components/CookieBanner";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -20,8 +22,12 @@ import Projects from "./pages/Projects";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
-// ✅ Import the new Cybercode Cloud page
+// ✅ Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
+import RefundPolicy from "./pages/RefundPolicy";
+import LegalIndex from "./pages/LegalIndex";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -30,9 +36,10 @@ function App() {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
+  // ✅ Home Page Component
   const HomePage = () => (
     <>
-      {/* ✅ Hero Section */}
+      {/* Hero Section */}
       <section className="relative bg-gray-900 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -55,6 +62,7 @@ function App() {
           >
             Learn high-demand tech skills from industry experts and earn certifications through real-world projects.
           </motion.p>
+
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -84,7 +92,7 @@ function App() {
         </div>
       </section>
 
-      {/* ✅ Course Categories */}
+      {/* Course Categories */}
       <section id="courses" className="py-16 bg-white dark:bg-gray-950">
         <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
           Courses by Category
@@ -92,7 +100,7 @@ function App() {
         <CourseCategoryTabs />
       </section>
 
-      {/* ✅ Features Section */}
+      {/* Features Section */}
       <section className="bg-gray-100 dark:bg-gray-900 py-16 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
@@ -107,7 +115,7 @@ function App() {
         </div>
       </section>
 
-      {/* ✅ CTA Section */}
+      {/* Registration CTA */}
       <div id="register">
         <RegistrationCTA />
       </div>
@@ -131,13 +139,18 @@ function App() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-
-            {/* ✅ New route for Cybercode Cloud */}
             <Route path="/cloud" element={<CybercodeCloud />} />
-
+            <Route path="/legal" element={<LegalIndex />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfUse />} />
+            <Route path="/refund" element={<RefundPolicy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+
+        {/* ✅ Cookie Banner placed globally */}
+        <CookieBanner />
+
         <Footer />
       </div>
     </Router>
