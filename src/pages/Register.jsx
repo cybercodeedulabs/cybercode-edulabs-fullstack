@@ -1,10 +1,10 @@
 // src/pages/Register.jsx
-import { useState } from "react";
 import { motion } from "framer-motion";
 import GoogleLoginButton from "../components/GoogleLoginButton";
+import { useUser } from "../contexts/UserContext";
 
 export default function Register() {
-  const [user, setUser] = useState(null);
+  const { user } = useUser();
 
   return (
     <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-24 px-6">
@@ -19,7 +19,7 @@ export default function Register() {
           Register with Cybercode EduLabs
         </motion.h1>
 
-        {/* Animated divider */}
+        {/* Divider */}
         <motion.div
           className="w-24 h-1 bg-indigo-500 mx-auto rounded-full"
           initial={{ scaleX: 0 }}
@@ -34,11 +34,10 @@ export default function Register() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
-          Sign up using your Google account to access courses, your personalized
-          dashboard, and exclusive project opportunities.
+          Sign up using your Google account to access your dashboard and exclusive project opportunities.
         </motion.p>
 
-        {/* Google Login */}
+        {/* Google Sign-In */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -49,11 +48,11 @@ export default function Register() {
               ✅ Welcome, {user.displayName}!
             </p>
           ) : (
-            <GoogleLoginButton onLogin={setUser} />
+            <GoogleLoginButton />
           )}
         </motion.div>
 
-        {/* Footer hint */}
+        {/* Footer */}
         {!user && (
           <motion.p
             className="text-sm text-gray-500 dark:text-gray-400 mt-4"
@@ -74,8 +73,7 @@ export default function Register() {
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
             >
               Privacy Policy
-            </a>
-            .
+            </a>.
           </motion.p>
         )}
       </div>

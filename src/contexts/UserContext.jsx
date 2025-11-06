@@ -9,6 +9,14 @@ export const UserProvider = ({ children }) => {
   // Courses the user is enrolled in
   const [enrolledCourses, setEnrolledCourses] = useState([]);
 
+  // Load user from localStorage if available
+useEffect(() => {
+  const storedUser = localStorage.getItem("cybercodeUser");
+  if (storedUser) {
+    setUser(JSON.parse(storedUser));
+  }
+}, []);
+
   // Load enrolled courses from localStorage if available
   useEffect(() => {
     const storedCourses = localStorage.getItem("enrolledCourses");
@@ -35,6 +43,7 @@ export const UserProvider = ({ children }) => {
         user,
         setUser,
         enrolledCourses,
+        storedUser,
         enrollInCourse,
       }}
     >

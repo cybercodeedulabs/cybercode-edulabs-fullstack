@@ -33,6 +33,8 @@ import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Payment from "./pages/Payment";
 
+// ✅ Import User Context Provider
+import { UserProvider } from "./contexts/UserContext";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -128,42 +130,44 @@ function App() {
   );
 
   return (
-    <Router>
-      <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
-        <VoiceWelcome />
-        <Header darkMode={darkMode} setDarkMode={setDarkMode} />
-        <main className="flex-grow">
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/courses/:courseSlug" element={<CourseDetail />} />
-            <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonDetail />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/cloud" element={<CybercodeCloud />} />
-            <Route path="/legal" element={<LegalIndex />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfUse />} />
-            <Route path="/refund" element={<RefundPolicy />} />
-            <Route path="/cookie" element={<CookiePolicy />} />
-<Route path="/faq" element={<FAQ />} />
-<Route path="/support" element={<Support />} />
-<Route path="/payment" element={<Payment />} />
+    // ✅ Wrap everything inside UserProvider
+    <UserProvider>
+      <Router>
+        <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
+          <VoiceWelcome />
+          <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+          <main className="flex-grow">
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:courseSlug" element={<CourseDetail />} />
+              <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonDetail />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/cloud" element={<CybercodeCloud />} />
+              <Route path="/legal" element={<LegalIndex />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/cookie" element={<CookiePolicy />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/payment" element={<Payment />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+          {/* ✅ Cookie Banner placed globally */}
+          <CookieBanner />
 
-        {/* ✅ Cookie Banner placed globally */}
-        <CookieBanner />
-
-        <Footer />
-      </div>
-    </Router>
+          <Footer />
+        </div>
+      </Router>
+    </UserProvider>
   );
 }
 

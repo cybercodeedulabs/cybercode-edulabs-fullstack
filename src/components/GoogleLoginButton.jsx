@@ -13,11 +13,20 @@ export default function GoogleLoginButton() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      console.log("User logged in:", user);
+
+      console.log("✅ Google Login Successful:", user);
+
+      // Save to localStorage for persistence
+      localStorage.setItem("cybercodeUser", JSON.stringify(user));
+
+      // Update context
       setUser(user);
+
+      // Redirect to dashboard
       navigate("/dashboard");
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Google Login Failed:", error);
+      alert("Google Sign-In failed. Please try again.");
     }
   };
 
