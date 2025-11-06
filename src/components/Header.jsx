@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "/images/logo.png";
 import { useState, useEffect } from "react";
 import { Menu, X, LogOut } from "lucide-react";
-import { useUser } from "../contexts/UserContext";
+import { useUser } from "./contexts/UserContext";
 
 function Header({ darkMode, setDarkMode }) {
   const [taglineIndex, setTaglineIndex] = useState(0);

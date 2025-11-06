@@ -6,11 +6,20 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [user, setUser] = useState(() => {
+    // ✅ Load user instantly from localStorage (before Firebase initializes)
+    const storedUser = localStorage.getItem("cybercodeUser");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  const [enrolledCourses, setEnrolledCourses] = useState(() => {
+    const storedCourses = localStorage.getItem("enrolledCourses");
+    return storedCourses ? JSON.parse(storedCourses) : [];
+  });
+
   const [loading, setLoading] = useState(true);
 
-  // ✅ Auth state listener (handles refresh + redirect)
+  // ✅ Listen for Firebase Auth changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -32,21 +41,7 @@ export const UserProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Restore user immediately on reload (before Firebase reinitializes)
-  useEffect(() => {
-    const storedUser = localStorage.getItem("cybercodeUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setLoading(false);
-    }
-  }, []);
-
-  // ✅ Course persistence
-  useEffect(() => {
-    const storedCourses = localStorage.getItem("enrolledCourses");
-    if (storedCourses) setEnrolledCourses(JSON.parse(storedCourses));
-  }, []);
-
+  // ✅ Persist enrolled courses
   useEffect(() => {
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
   }, [enrolledCourses]);
