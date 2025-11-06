@@ -1,4 +1,3 @@
-// src/components/ui/CourseCategoryTabs.jsx
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,13 +59,17 @@ export default function CourseCategoryTabs() {
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
   const tabRefs = useRef([]);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const activeTab = tabRefs.current[categories.indexOf(activeCategory)];
-    if (activeTab) {
+    const container = containerRef.current;
+    if (activeTab && container) {
+      const { offsetWidth, offsetLeft } = activeTab;
+      const scrollLeft = container.scrollLeft;
       setUnderlineStyle({
-        width: activeTab.offsetWidth,
-        left: activeTab.offsetLeft,
+        width: offsetWidth,
+        left: offsetLeft - scrollLeft,
       });
     }
   }, [activeCategory, categories]);
@@ -76,26 +79,29 @@ export default function CourseCategoryTabs() {
       className="max-w-7xl mx-auto px-4 py-16"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
     >
       {/* Tabs */}
-      <div className="relative flex flex-nowrap justify-center items-center gap-3 mb-10 border-b border-gray-200 dark:border-gray-700 pb-2 overflow-x-auto">
+      <div
+        ref={containerRef}
+        className="relative flex flex-nowrap justify-center items-center gap-3 mb-10 border-b border-gray-200 dark:border-gray-700 pb-2 overflow-x-auto no-scrollbar"
+      >
         {categories.map((category, idx) => (
           <button
             key={category}
             ref={(el) => (tabRefs.current[idx] = el)}
             onClick={() => setActiveCategory(category)}
-            className={`px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md ${
+            className={`px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md whitespace-nowrap ${
               activeCategory === category
-                ? 'text-indigo-600 dark:text-indigo-400'
-                : 'text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400'
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
             }`}
           >
             {category}
           </button>
         ))}
 
-        {/* Correctly aligned animated underline */}
+        {/* Fixed underline alignment */}
         <motion.span
           className="absolute bottom-[-2px] h-[3px] bg-indigo-600 dark:bg-indigo-400 rounded-full"
           animate={{ width: underlineStyle.width, x: underlineStyle.left }}
@@ -103,7 +109,7 @@ export default function CourseCategoryTabs() {
         />
       </div>
 
-      {/* Animated Course Cards Grid */}
+      {/* Animated Course Cards */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeCategory}
@@ -114,12 +120,7 @@ export default function CourseCategoryTabs() {
           transition={{ duration: 0.5 }}
         >
           {courseCategories[activeCategory].map((course) => (
-            <CourseCard
-              key={course.slug}
-              title={course.title}
-              slug={course.slug}
-              description={course.description}
-            />
+            <CourseCard key={course.slug} {...course} />
           ))}
         </motion.div>
       </AnimatePresence>
