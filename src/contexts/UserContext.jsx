@@ -1,61 +1,65 @@
 // src/contexts/UserContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
+import { auth } from "../firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on app start
+  // ✅ Auth state listener (handles refresh + redirect)
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem("cybercodeUser");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const userData = {
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photo: firebaseUser.photoURL,
+          uid: firebaseUser.uid,
+        };
+        setUser(userData);
+        localStorage.setItem("cybercodeUser", JSON.stringify(userData));
+      } else {
+        setUser(null);
+        localStorage.removeItem("cybercodeUser");
       }
-    } catch (error) {
-      console.error("Error loading user from localStorage:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // ✅ Restore user immediately on reload (before Firebase reinitializes)
+  useEffect(() => {
+    const storedUser = localStorage.getItem("cybercodeUser");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setLoading(false);
     }
   }, []);
 
-  // Load enrolled courses from localStorage
+  // ✅ Course persistence
   useEffect(() => {
-    try {
-      const savedCourses = localStorage.getItem("enrolledCourses");
-      if (savedCourses) {
-        setEnrolledCourses(JSON.parse(savedCourses));
-      }
-    } catch (error) {
-      console.error("Error loading enrolled courses:", error);
-    }
+    const storedCourses = localStorage.getItem("enrolledCourses");
+    if (storedCourses) setEnrolledCourses(JSON.parse(storedCourses));
   }, []);
 
-  // Persist user changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem("cybercodeUser", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("cybercodeUser");
-    }
-  }, [user]);
-
-  // Persist enrolled courses
   useEffect(() => {
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
   }, [enrolledCourses]);
 
-  // Function to enroll in a course
   const enrollInCourse = (courseSlug) => {
     if (!enrolledCourses.includes(courseSlug)) {
-      const updatedCourses = [...enrolledCourses, courseSlug];
-      setEnrolledCourses(updatedCourses);
-      localStorage.setItem("enrolledCourses", JSON.stringify(updatedCourses));
+      setEnrolledCourses((prev) => [...prev, courseSlug]);
     }
   };
 
-  // Logout handler
-  const logout = () => {
+  // ✅ Global logout
+  const logout = async () => {
+    await signOut(auth);
     setUser(null);
     localStorage.removeItem("cybercodeUser");
   };
@@ -65,9 +69,10 @@ export const UserProvider = ({ children }) => {
       value={{
         user,
         setUser,
+        logout,
         enrolledCourses,
         enrollInCourse,
-        logout,
+        loading,
       }}
     >
       {children}
@@ -75,5 +80,4 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-// Custom hook for using the context
 export const useUser = () => useContext(UserContext);
