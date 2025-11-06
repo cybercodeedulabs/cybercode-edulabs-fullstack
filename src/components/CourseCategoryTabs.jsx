@@ -76,30 +76,30 @@ export default function CourseCategoryTabs() {
       className="max-w-7xl mx-auto px-4 py-16"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       {/* Tabs */}
-      <div className="relative flex flex-wrap justify-center gap-3 mb-10">
+      <div className="relative flex flex-nowrap justify-center items-center gap-3 mb-10 border-b border-gray-200 dark:border-gray-700 pb-2 overflow-x-auto">
         {categories.map((category, idx) => (
           <button
             key={category}
             ref={(el) => (tabRefs.current[idx] = el)}
             onClick={() => setActiveCategory(category)}
-            className={`px-4 py-2 text-sm font-medium transition-colors duration-300 ${
+            className={`px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md ${
               activeCategory === category
-                ? "text-indigo-600 dark:text-indigo-400"
-                : "text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400'
             }`}
           >
             {category}
           </button>
         ))}
 
-        {/* Animated underline */}
+        {/* Correctly aligned animated underline */}
         <motion.span
-          className="absolute bottom-0 h-1 bg-indigo-600 dark:bg-indigo-400 rounded-full"
+          className="absolute bottom-[-2px] h-[3px] bg-indigo-600 dark:bg-indigo-400 rounded-full"
           animate={{ width: underlineStyle.width, x: underlineStyle.left }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.35 }}
         />
       </div>
 
