@@ -1,17 +1,26 @@
-// src/pages/CourseDetail.jsx
+import { useState } from "react"; // ✅ Add useState for toast
 import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
-import { useUser } from "../contexts/UserContext"; // ✅ FIXED IMPORT
+import { useUser } from "../contexts/UserContext";
 
 export default function CourseDetail() {
   const { courseSlug } = useParams();
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
 
-  // ✅ FIXED HOOK USAGE
-  const { enrolledCourses, enrollInCourse } = useUser();
-  const isEnrolled = enrolledCourses.includes(courseSlug);
+  const { user, enrolledCourses, enrollInCourse } = useUser();
+  const isEnrolled = user && enrolledCourses.includes(courseSlug);
+
+  // ✅ Toast state
+  const [showToast, setShowToast] = useState(false);
+
+  // ✅ Handle enrollment with toast
+  const handleEnroll = () => {
+    enrollInCourse(courseSlug);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000); // hide after 3s
+  };
 
   if (!course) {
     return (
@@ -28,7 +37,14 @@ export default function CourseDetail() {
   }
 
   return (
-    <div className="text-left">
+    <div className="text-left relative">
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in">
+          🎉 Successfully enrolled in "{course.title}"!
+        </div>
+      )}
+
       {/* Banner Section */}
       <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white py-20 px-4 shadow-md rounded-xl mx-auto max-w-6xl mb-12">
         <div className="max-w-3xl mx-auto text-center">
@@ -46,9 +62,7 @@ export default function CourseDetail() {
         </h2>
 
         {lessons.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">
-            No lessons available yet.
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">No lessons available yet.</p>
         ) : (
           <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             {lessons.map((lesson, index) => (
@@ -68,9 +82,16 @@ export default function CourseDetail() {
 
         {/* Call to Action */}
         <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          {!isEnrolled ? (
+          {!user ? (
+            <Link
+              to="/register"
+              className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+            >
+              🔒 Sign in to Enroll
+            </Link>
+          ) : !isEnrolled ? (
             <button
-              onClick={() => enrollInCourse(courseSlug)}
+              onClick={handleEnroll}
               className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200"
             >
               ✅ Enroll in this Course
