@@ -64,10 +64,11 @@ export default function Dashboard() {
         transition={{ delay: 0.2 }}
       >
         <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">
-          Welcome, {user.displayName}
+          Welcome, {user.name || "User"}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Manage your learning progress, access your real-time projects, and unlock exclusive certifications.
+          Manage your learning progress, access your real-time projects, and
+          unlock exclusive certifications.
         </p>
       </motion.div>
 
@@ -79,7 +80,7 @@ export default function Dashboard() {
         transition={{ delay: 0.3 }}
       >
         <img
-          src={user.photoURL}
+          src={user.photo || "/images/default-avatar.png"} // fallback if photo is missing
           alt="User Avatar"
           className="w-24 h-24 rounded-full shadow-lg border-4 border-indigo-500 dark:border-indigo-400"
         />
@@ -100,7 +101,8 @@ export default function Dashboard() {
           {
             title: "📁 My Projects",
             items: projects,
-            emptyText: "Your project progress will appear here once you start learning.",
+            emptyText:
+              "Your project progress will appear here once you start learning.",
             linkPrefix: "/projects/",
           },
         ].map((section, index) => (
@@ -126,7 +128,9 @@ export default function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-600 dark:text-gray-400">{section.emptyText}</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                {section.emptyText}
+              </p>
             )}
           </motion.div>
         ))}
