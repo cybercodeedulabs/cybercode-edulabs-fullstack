@@ -1,31 +1,46 @@
+// src/contexts/UserContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  // User info
   const [user, setUser] = useState(null);
-
-  // Courses the user is enrolled in
   const [enrolledCourses, setEnrolledCourses] = useState([]);
 
-  // Load user from localStorage if available
-useEffect(() => {
-  const storedUser = localStorage.getItem("cybercodeUser");
-  if (storedUser) {
-    setUser(JSON.parse(storedUser));
-  }
-}, []);
-
-  // Load enrolled courses from localStorage if available
+  // Load user from localStorage on app start
   useEffect(() => {
-    const storedCourses = localStorage.getItem("enrolledCourses");
-    if (storedCourses) {
-      setEnrolledCourses(JSON.parse(storedCourses));
+    try {
+      const savedUser = localStorage.getItem("cybercodeUser");
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.error("Error loading user from localStorage:", error);
     }
   }, []);
 
-  // Save enrolled courses to localStorage whenever it changes
+  // Load enrolled courses from localStorage
+  useEffect(() => {
+    try {
+      const savedCourses = localStorage.getItem("enrolledCourses");
+      if (savedCourses) {
+        setEnrolledCourses(JSON.parse(savedCourses));
+      }
+    } catch (error) {
+      console.error("Error loading enrolled courses:", error);
+    }
+  }, []);
+
+  // Persist user changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("cybercodeUser", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("cybercodeUser");
+    }
+  }, [user]);
+
+  // Persist enrolled courses
   useEffect(() => {
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
   }, [enrolledCourses]);
@@ -33,8 +48,16 @@ useEffect(() => {
   // Function to enroll in a course
   const enrollInCourse = (courseSlug) => {
     if (!enrolledCourses.includes(courseSlug)) {
-      setEnrolledCourses([...enrolledCourses, courseSlug]);
+      const updatedCourses = [...enrolledCourses, courseSlug];
+      setEnrolledCourses(updatedCourses);
+      localStorage.setItem("enrolledCourses", JSON.stringify(updatedCourses));
     }
+  };
+
+  // Logout handler
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("cybercodeUser");
   };
 
   return (
@@ -43,8 +66,8 @@ useEffect(() => {
         user,
         setUser,
         enrolledCourses,
-        storedUser,
         enrollInCourse,
+        logout,
       }}
     >
       {children}
@@ -52,5 +75,5 @@ useEffect(() => {
   );
 };
 
-// Custom hook for easy access
+// Custom hook for using the context
 export const useUser = () => useContext(UserContext);
