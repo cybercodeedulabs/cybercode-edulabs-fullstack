@@ -2,12 +2,12 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import lessonsData from "../data/lessonsData";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // ✅ Load user instantly from localStorage (before Firebase initializes)
     const storedUser = localStorage.getItem("cybercodeUser");
     return storedUser ? JSON.parse(storedUser) : null;
   });
@@ -17,9 +17,14 @@ export const UserProvider = ({ children }) => {
     return storedCourses ? JSON.parse(storedCourses) : [];
   });
 
+  const [courseProgress, setCourseProgress] = useState(() => {
+    const storedProgress = localStorage.getItem("courseProgress");
+    return storedProgress ? JSON.parse(storedProgress) : {};
+  });
+
   const [loading, setLoading] = useState(true);
 
-  // ✅ Listen for Firebase Auth changes
+  // Firebase auth listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -37,14 +42,18 @@ export const UserProvider = ({ children }) => {
       }
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // ✅ Persist enrolled courses
+  // Persist enrolled courses
   useEffect(() => {
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
   }, [enrolledCourses]);
+
+  // Persist course progress
+  useEffect(() => {
+    localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
+  }, [courseProgress]);
 
   const enrollInCourse = (courseSlug) => {
     if (!enrolledCourses.includes(courseSlug)) {
@@ -52,7 +61,23 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // ✅ Global logout
+  // Sequential lesson completion
+  const completeLesson = (courseSlug, lessonSlug) => {
+    const lessons = lessonsData[courseSlug] || [];
+    const courseData = courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+    const nextLesson = lessons[courseData.completedLessons.length];
+
+    if (nextLesson?.slug !== lessonSlug) return; // Only allow next lesson
+
+    setCourseProgress({
+      ...courseProgress,
+      [courseSlug]: {
+        completedLessons: [...courseData.completedLessons, lessonSlug],
+        currentLessonIndex: courseData.currentLessonIndex + 1,
+      },
+    });
+  };
+
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -68,6 +93,8 @@ export const UserProvider = ({ children }) => {
         enrolledCourses,
         enrollInCourse,
         loading,
+        courseProgress,
+        completeLesson,
       }}
     >
       {children}

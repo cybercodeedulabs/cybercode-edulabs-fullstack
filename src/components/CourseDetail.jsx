@@ -1,4 +1,5 @@
-import { useState } from "react"; // ✅ Add useState for toast
+// src/pages/CourseDetail.jsx
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
@@ -8,18 +9,16 @@ export default function CourseDetail() {
   const { courseSlug } = useParams();
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
-
-  const { user, enrolledCourses, enrollInCourse } = useUser();
+  const { user, enrolledCourses, enrollInCourse, courseProgress } = useUser();
   const isEnrolled = user && enrolledCourses.includes(courseSlug);
+  const progressData = courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
-  // ✅ Toast state
   const [showToast, setShowToast] = useState(false);
 
-  // ✅ Handle enrollment with toast
   const handleEnroll = () => {
     enrollInCourse(courseSlug);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000); // hide after 3s
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   if (!course) {
@@ -45,12 +44,10 @@ export default function CourseDetail() {
         </div>
       )}
 
-      {/* Banner Section */}
+      {/* Banner */}
       <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white py-20 px-4 shadow-md rounded-xl mx-auto max-w-6xl mb-12">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
-            {course.title}
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">{course.title}</h1>
           <p className="text-lg md:text-xl text-indigo-100">{course.description}</p>
         </div>
       </div>
@@ -65,18 +62,29 @@ export default function CourseDetail() {
           <p className="text-gray-600 dark:text-gray-400">No lessons available yet.</p>
         ) : (
           <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
-            {lessons.map((lesson, index) => (
-              <li key={lesson.slug}>
-                <Link
-                  to={`/courses/${courseSlug}/lessons/${lesson.slug}`}
-                  className="block px-6 py-4 hover:bg-indigo-50 dark:hover:bg-gray-800 transition-colors duration-200"
-                >
-                  <span className="text-lg font-medium text-indigo-800 dark:text-indigo-200">
-                    {index + 1}. {lesson.title}
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {lessons.map((lesson, index) => {
+              const completed = progressData.completedLessons.includes(lesson.slug);
+              const isNext = index === progressData.currentLessonIndex;
+
+              return (
+                <li key={lesson.slug}>
+                  <Link
+                    to={`/courses/${courseSlug}/lessons/${lesson.slug}`}
+                    className={`block px-6 py-4 transition-colors duration-200 rounded ${
+                      completed
+                        ? "bg-green-50 dark:bg-green-900"
+                        : isNext
+                        ? "bg-yellow-50 dark:bg-yellow-900"
+                        : "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                    }`}
+                  >
+                    <span className="text-lg font-medium text-indigo-800 dark:text-indigo-200">
+                      {index + 1}. {lesson.title} {completed ? "✅" : isNext ? "🟡" : "🔒"}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
 
