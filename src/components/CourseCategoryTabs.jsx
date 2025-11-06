@@ -52,14 +52,17 @@ export default function CourseCategoryTabs() {
   const categories = Object.keys(courseCategories);
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
+  const tabsContainerRef = useRef(null);
   const tabRefs = useRef([]);
 
   useEffect(() => {
     const activeTab = tabRefs.current[categories.indexOf(activeCategory)];
-    if (activeTab) {
+    if (activeTab && tabsContainerRef.current) {
+      const containerRect = tabsContainerRef.current.getBoundingClientRect();
+      const tabRect = activeTab.getBoundingClientRect();
       setUnderlineStyle({
-        width: activeTab.offsetWidth,
-        left: activeTab.offsetLeft,
+        width: tabRect.width,
+        left: tabRect.left - containerRect.left,
       });
     }
   }, [activeCategory, categories]);
@@ -67,13 +70,17 @@ export default function CourseCategoryTabs() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
       {/* Tabs */}
-      <div className="relative flex flex-wrap justify-center gap-3 mb-10">
+      <div ref={tabsContainerRef} className="relative inline-flex flex-wrap justify-center gap-3 mb-10 border-b border-gray-200 dark:border-gray-700">
         {categories.map((category, idx) => (
           <button
             key={category}
             ref={(el) => (tabRefs.current[idx] = el)}
             onClick={() => setActiveCategory(category)}
-            className="px-4 py-2 text-sm font-medium transition-colors duration-300 text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
+            className={`relative px-4 py-2 text-sm font-medium transition-colors duration-300 ${
+              activeCategory === category
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
+            }`}
           >
             {category}
           </button>
@@ -81,10 +88,10 @@ export default function CourseCategoryTabs() {
 
         {/* Animated underline */}
         <span
-          className="absolute bottom-0 h-1 bg-indigo-600 dark:bg-indigo-400 rounded-full transition-all duration-500 ease-in-out"
+          className="absolute bottom-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full transition-all duration-300 ease-in-out"
           style={{
-            width: underlineStyle.width,
-            transform: `translateX(${underlineStyle.left}px)`,
+            width: `${underlineStyle.width}px`,
+            left: `${underlineStyle.left}px`,
           }}
         />
       </div>
