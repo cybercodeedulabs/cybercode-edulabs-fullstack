@@ -2,14 +2,15 @@
 import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
-import useUserData from "../hooks/useUserData";
+import { useUser } from "../contexts/UserContext"; // ✅ FIXED IMPORT
 
 export default function CourseDetail() {
   const { courseSlug } = useParams();
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
 
-  const { enrolledCourses, enrollInCourse } = useUserData();
+  // ✅ FIXED HOOK USAGE
+  const { enrolledCourses, enrollInCourse } = useUser();
   const isEnrolled = enrolledCourses.includes(courseSlug);
 
   if (!course) {
