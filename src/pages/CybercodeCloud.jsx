@@ -3,21 +3,12 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Select, SelectItem } from "../components/ui/select";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { useUser } from "../contexts/UserContext";
-
-const api = {
-  createInstance: "/api/cloud/instances",
-  listInstances: "/api/cloud/instances",
-  getUsage: "/api/cloud/usage",
-};
+import { useNavigate, useLocation } from "react-router-dom";
 
 // =============================
 // LANDING SECTION
 // =============================
-function CloudLanding({ onLaunch, onSelectPlan }) {
+function CloudLanding() {
   const navigate = useNavigate();
 
   return (
@@ -43,7 +34,10 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
-            <Button onClick={onLaunch} className="px-6 py-3 text-sm">
+            <Button
+              onClick={() => navigate("/cloud/login")}
+              className="px-6 py-3 text-sm"
+            >
               🚀 Launch Console
             </Button>
             <Button
@@ -61,7 +55,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           whileHover={{ scale: 1.03 }}
           transition={{ type: "spring", stiffness: 200 }}
           className="lg:w-1/2 bg-white/80 dark:bg-gray-900/60 backdrop-blur-md p-8 rounded-2xl shadow-2xl cursor-pointer hover:shadow-sky-200/40 dark:hover:shadow-sky-800/40 transition"
-          onClick={onLaunch}
+          onClick={() => navigate("/cloud/login")}
         >
           <h4 className="text-lg font-semibold text-sky-700 dark:text-sky-300 text-center">
             One-click Labs
@@ -104,7 +98,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
             <motion.div
               key={tier.name}
               whileHover={{ scale: 1.03 }}
-              onClick={() => onSelectPlan(tier.plan)}
+              onClick={() => navigate("/cloud/deploy", { state: { plan: tier.plan } })}
               className="cursor-pointer"
             >
               <Card className="relative border border-slate-100 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-lg hover:-translate-y-1 transition-transform duration-200">
@@ -129,175 +123,14 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
 }
 
 // =============================
-// CONSOLE SECTION
-// =============================
-function CloudConsole({ onCreate }) {
-  const [instances, setInstances] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchInstances();
-  }, []);
-
-  async function fetchInstances() {
-    setLoading(true);
-    try {
-      const res = await fetch(api.listInstances);
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setInstances(data.instances || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <section className="max-w-7xl mx-auto px-6 py-16">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-sky-300">
-          My C3 Console
-        </h2>
-        <Button onClick={onCreate} className="hover:shadow-md transition">
-          + New Workspace
-        </Button>
-      </div>
-
-      {loading ? (
-        <p className="text-gray-500 dark:text-gray-400 animate-pulse">
-          Loading instances…
-        </p>
-      ) : instances.length === 0 ? (
-        <Card className="p-6 text-center text-gray-500 dark:text-gray-400 shadow-inner">
-          No active instances. Create one to get started.
-        </Card>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
-          {instances.map((ins) => (
-            <motion.div key={ins.id} whileHover={{ scale: 1.02 }}>
-              <Card className="hover:shadow-xl transition">
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                        {ins.name || ins.id}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {ins.plan || "Student"} • {ins.status}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button asChild size="sm" className="hover:scale-105">
-                        <Link to={ins.url} target="_blank" rel="noreferrer">
-                          Open
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="hover:scale-105"
-                      >
-                        Logs
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-// =============================
-// DEPLOY SECTION
-// =============================
-function CloudDeploy({ onSuccess, preselectedPlan }) {
-  const [gitUrl, setGitUrl] = useState("");
-  const [plan, setPlan] = useState(preselectedPlan || "student");
-  const [creating, setCreating] = useState(false);
-
-  async function handleCreate(e) {
-    e.preventDefault();
-    setCreating(true);
-    try {
-      const res = await fetch(api.createInstance, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gitUrl, plan }),
-      });
-      if (!res.ok) throw new Error("Create failed");
-      const data = await res.json();
-      onSuccess && onSuccess(data.instance);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create workspace. Check console.");
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  return (
-    <section className="max-w-3xl mx-auto px-6 py-16">
-      <Card className="shadow-2xl bg-white/90 dark:bg-gray-900/70 backdrop-blur-sm hover:shadow-sky-200/40 dark:hover:shadow-sky-800/40 transition">
-        <CardContent>
-          <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-sky-300">
-            Create a Cloud Workspace
-          </h3>
-          <form onSubmit={handleCreate} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Git Repository (optional)
-              </label>
-              <Input
-                value={gitUrl}
-                onChange={(e) => setGitUrl(e.target.value)}
-                placeholder="https://github.com/your/repo"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Plan</label>
-              <Select value={plan} onChange={(e) => setPlan(e.target.value)}>
-                <SelectItem value="student" label="Student (free)" />
-                <SelectItem value="edu" label="Edu+" />
-                <SelectItem value="startup" label="Startup" />
-              </Select>
-            </div>
-
-            <div className="flex gap-3">
-              <Button type="submit" disabled={creating}>
-                {creating ? "Creating…" : "Create Workspace"}
-              </Button>
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setGitUrl("")}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </section>
-  );
-}
-
-// =============================
-// USAGE SECTION
+// USAGE SECTION (overview only)
 // =============================
 function CloudUsage() {
   const [usage, setUsage] = useState(null);
 
   useEffect(() => {
-    fetch(api.getUsage)
-      .then((r) => r.json())
-      .then((d) => setUsage(d))
-      .catch(console.error);
+    // static placeholder (mockCloudAPI handles real data)
+    setUsage({ cpuUsed: 3, cpuQuota: 8, storageUsed: 20, storageQuota: 100 });
   }, []);
 
   return (
@@ -334,9 +167,9 @@ function CloudUsage() {
 }
 
 // =============================
-// TOP NAV
+// TOP NAV (public only)
 // =============================
-function C3TopNav({ onNav }) {
+function C3TopNav() {
   const navigate = useNavigate();
 
   return (
@@ -346,7 +179,11 @@ function C3TopNav({ onNav }) {
         <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-2">
-              <img src="/images/logo.png" alt="C3 logo" className="h-6 w-6 rounded" />
+              <img
+                src="/images/logo.png"
+                alt="C3 logo"
+                className="h-6 w-6 rounded"
+              />
               <strong className="ml-1">C3 Cloud</strong>
             </span>
             <span className="hidden sm:inline">India</span>
@@ -354,13 +191,22 @@ function C3TopNav({ onNav }) {
           </div>
 
           <div className="flex items-center gap-6">
-            <button className="hover:underline" onClick={() => navigate("/contact")}>
+            <button
+              className="hover:underline"
+              onClick={() => navigate("/contact")}
+            >
               Contact us
             </button>
-            <button className="hover:underline" onClick={() => navigate("/support")}>
+            <button
+              className="hover:underline"
+              onClick={() => navigate("/support")}
+            >
               Support
             </button>
-            <Button onClick={() => navigate("/cloud/login")} className="px-3 py-1 text-sm">
+            <Button
+              onClick={() => navigate("/cloud/login")}
+              className="px-3 py-1 text-sm"
+            >
               Sign in
             </Button>
           </div>
@@ -372,9 +218,15 @@ function C3TopNav({ onNav }) {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img src="/images/logo.png" alt="C3 logo" className="h-10 w-10 rounded" />
+              <img
+                src="/images/logo.png"
+                alt="C3 logo"
+                className="h-10 w-10 rounded"
+              />
               <div>
-                <div className="text-lg font-semibold text-slate-900">C3 Cloud</div>
+                <div className="text-lg font-semibold text-slate-900">
+                  C3 Cloud
+                </div>
                 <div className="text-xs text-gray-500">Console</div>
               </div>
             </div>
@@ -384,7 +236,7 @@ function C3TopNav({ onNav }) {
                 {["overview", "features", "mobile", "faq"].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => onNav(tab)}
+                    onClick={() => navigate(`/cloud/${tab}`)}
                     className="pb-2 border-b-4 border-transparent hover:border-slate-900 text-sm transition-all"
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -403,56 +255,24 @@ function C3TopNav({ onNav }) {
 // MAIN EXPORT
 // =============================
 export default function CybercodeCloudModule() {
-  const [view, setView] = useState("landing");
-  const [lastCreated, setLastCreated] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState("student");
-  const navigate = useNavigate();
   const location = useLocation();
+  const [current, setCurrent] = useState("landing");
 
   useEffect(() => {
-    // Sync route with view
-    if (location.pathname === "/cloud/console") setView("console");
-    else if (location.pathname === "/cloud/deploy") setView("deploy");
-    else setView("landing");
+    if (location.pathname.includes("/cloud")) setCurrent("landing");
   }, [location.pathname]);
-
-  const handleLaunch = () => navigate("/cloud/console");
-  const handleCreateClick = () => navigate("/cloud/deploy");
-  const handleSelectPlan = (plan) => {
-    setSelectedPlan(plan);
-    navigate("/cloud/deploy");
-  };
-  const onCreated = (instance) => {
-    setLastCreated(instance);
-    navigate("/cloud/console");
-  };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-950">
-      <C3TopNav
-        onNav={(tab) => {
-          if (tab === "overview") navigate("/cloud");
-          if (tab === "features") navigate("/cloud/features");
-          if (tab === "mobile") navigate("/cloud/mobile");
-          if (tab === "faq") navigate("/cloud/faq");
-        }}
-      />
-
+      <C3TopNav />
       <motion.div
-        key={view}
+        key={current}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {view === "landing" && (
-          <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
-        )}
-        {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
-        {view === "deploy" && (
-          <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
-        )}
+        <CloudLanding />
       </motion.div>
-
       <CloudUsage />
     </div>
   );
