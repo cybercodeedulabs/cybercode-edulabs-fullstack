@@ -7,7 +7,6 @@ import { Input } from "../components/ui/input";
 import { Select, SelectItem } from "../components/ui/select";
 import CloudWaitlist from "../components/CloudWaitlist";
 
-
 const api = {
   createInstance: "/api/cloud/instances",
   listInstances: "/api/cloud/instances",
@@ -35,7 +34,8 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </h1>
           <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
             India’s first education-focused cloud workspace for students, startups, and
-            innovators. Launch isolated dev environments, deploy projects, and collaborate securely — all hosted in India and billed in INR.
+            innovators. Launch isolated dev environments, deploy projects, and collaborate
+            securely — all hosted in India and billed in INR.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
@@ -117,6 +117,21 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
               </Card>
             </motion.div>
           ))}
+        </div>
+
+        {/* ✅ Waitlist Section */}
+        <div className="mt-20">
+          <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 text-center mb-6">
+            Join the Cybercode Cloud Beta 🚀
+          </h2>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+            Be among the first to experience India’s indigenous education cloud.
+            Developers, students, and startups are invited to join the beta waitlist for
+            early access and exclusive benefits.
+          </p>
+          <div className="max-w-2xl mx-auto">
+            <CloudWaitlist />
+          </div>
         </div>
       </div>
     </section>
@@ -371,19 +386,25 @@ export default function CybercodeCloudModule() {
       </header>
 
       <motion.div
-  key={view}
-  initial={{ opacity: 0, y: 10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4 }}
->
-  {view === "landing" && (
-    <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
-  )}
-  {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
-  {view === "deploy" && (
-    <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
-  )}
-</motion.div>
+        key={view}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {view === "landing" && (
+          <CloudLanding
+            onLaunch={handleLaunch}
+            onSelectPlan={handleSelectPlan}
+          />
+        )}
+        {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
+        {view === "deploy" && (
+          <CloudDeploy
+            onSuccess={onCreated}
+            preselectedPlan={selectedPlan}
+          />
+        )}
+      </motion.div>
       <CloudUsage />
     </div>
   );
