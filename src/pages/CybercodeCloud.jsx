@@ -5,7 +5,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectItem } from "../components/ui/select";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
 const api = {
@@ -18,6 +18,8 @@ const api = {
 // LANDING SECTION
 // =============================
 function CloudLanding({ onLaunch, onSelectPlan }) {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden">
       {/* gradient background */}
@@ -46,7 +48,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => window.open("/pricing", "_self")}
+              onClick={() => navigate("/cloud/pricing")}
               className="px-6 py-3 text-sm"
             >
               💰 Explore Pricing
@@ -187,9 +189,9 @@ function CloudConsole({ onCreate }) {
                     </div>
                     <div className="flex gap-2">
                       <Button asChild size="sm" className="hover:scale-105">
-                        <a href={ins.url} target="_blank" rel="noreferrer">
+                        <Link to={ins.url} target="_blank" rel="noreferrer">
                           Open
-                        </a>
+                        </Link>
                       </Button>
                       <Button
                         variant="secondary"
@@ -358,7 +360,7 @@ function C3TopNav({ onNav }) {
             <button className="hover:underline" onClick={() => navigate("/support")}>
               Support
             </button>
-            <Button onClick={() => navigate("/c3/login")} className="px-3 py-1 text-sm">
+            <Button onClick={() => navigate("/cloud/login")} className="px-3 py-1 text-sm">
               Sign in
             </Button>
           </div>
@@ -379,7 +381,7 @@ function C3TopNav({ onNav }) {
 
             <div className="hidden md:flex items-center gap-4">
               <nav className="flex gap-6 items-center">
-                {["overview", "features", "mobile", "faqs"].map((tab) => (
+                {["overview", "features", "mobile", "faq"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => onNav(tab)}
@@ -409,30 +411,30 @@ export default function CybercodeCloudModule() {
 
   useEffect(() => {
     // Sync route with view
-    if (location.pathname === "/c3/console") setView("console");
-    else if (location.pathname === "/c3/deploy") setView("deploy");
+    if (location.pathname === "/cloud/console") setView("console");
+    else if (location.pathname === "/cloud/deploy") setView("deploy");
     else setView("landing");
   }, [location.pathname]);
 
-  const handleLaunch = () => navigate("/c3/console");
-  const handleCreateClick = () => navigate("/c3/deploy");
+  const handleLaunch = () => navigate("/cloud/console");
+  const handleCreateClick = () => navigate("/cloud/deploy");
   const handleSelectPlan = (plan) => {
     setSelectedPlan(plan);
-    navigate("/c3/deploy");
+    navigate("/cloud/deploy");
   };
   const onCreated = (instance) => {
     setLastCreated(instance);
-    navigate("/c3/console");
+    navigate("/cloud/console");
   };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-950">
       <C3TopNav
         onNav={(tab) => {
-          if (tab === "overview") navigate("/c3");
-          if (tab === "features") navigate("/features");
-          if (tab === "mobile") navigate("/mobile");
-          if (tab === "faqs") navigate("/faqs");
+          if (tab === "overview") navigate("/cloud");
+          if (tab === "features") navigate("/cloud/features");
+          if (tab === "mobile") navigate("/cloud/mobile");
+          if (tab === "faq") navigate("/cloud/faq");
         }}
       />
 
