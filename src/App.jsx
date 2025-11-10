@@ -35,6 +35,8 @@ import Payment from "./pages/Payment";
 
 // ✅ Import global user context hook
 import { useUser } from "./contexts/UserContext";
+import AdminWaitlist from "./pages/AdminWaitlist";
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -171,6 +173,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/cloud" element={<CybercodeCloud />} />
+            <Route path="/admin/waitlist" element={<AdminWaitlist />} />
             <Route path="/legal" element={<LegalIndex />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
