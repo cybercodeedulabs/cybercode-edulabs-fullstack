@@ -1,15 +1,20 @@
 // src/contexts/UserContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import lessonsData from "../data/lessonsData";
+import { doc, getDoc } from "firebase/firestore";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("cybercodeUser");
-    return storedUser ? JSON.parse(storedUser) : null;
+    const stored = localStorage.getItem("cybercodeUser");
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("cybercodeUserRole");
+    return stored ? stored : null;
   });
 
   const [enrolledCourses, setEnrolledCourses] = useState(() => {
@@ -17,43 +22,63 @@ export const UserProvider = ({ children }) => {
     return storedCourses ? JSON.parse(storedCourses) : [];
   });
 
-  const [courseProgress, setCourseProgress] = useState(() => {
-    const storedProgress = localStorage.getItem("courseProgress");
-    return storedProgress ? JSON.parse(storedProgress) : {};
-  });
-
   const [loading, setLoading] = useState(true);
 
-  // Firebase auth listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userData = {
-          name: firebaseUser.displayName,
-          email: firebaseUser.email,
-          photo: firebaseUser.photoURL,
           uid: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+          email: firebaseUser.email,
+          photo: firebaseUser.photoURL || "/images/default-avatar.png",
         };
+
         setUser(userData);
         localStorage.setItem("cybercodeUser", JSON.stringify(userData));
+
+        try {
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const snap = await getDoc(userDocRef);
+          if (snap.exists()) {
+            const d = snap.data();
+            if (d?.role) {
+              setRole(d.role);
+              localStorage.setItem("cybercodeUserRole", d.role);
+            } else {
+              setRole(null);
+              localStorage.removeItem("cybercodeUserRole");
+            }
+
+            if (d?.photo) {
+              setUser((prev) => {
+                const next = { ...prev, photo: d.photo };
+                localStorage.setItem("cybercodeUser", JSON.stringify(next));
+                return next;
+              });
+            }
+          } else {
+            setRole(null);
+            localStorage.removeItem("cybercodeUserRole");
+          }
+        } catch (err) {
+          console.error("Failed to read user role:", err);
+        }
       } else {
         setUser(null);
+        setRole(null);
         localStorage.removeItem("cybercodeUser");
+        localStorage.removeItem("cybercodeUserRole");
       }
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // Persist enrolled courses
   useEffect(() => {
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
   }, [enrolledCourses]);
-
-  // Persist course progress
-  useEffect(() => {
-    localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
-  }, [courseProgress]);
 
   const enrollInCourse = (courseSlug) => {
     if (!enrolledCourses.includes(courseSlug)) {
@@ -61,40 +86,41 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // Sequential lesson completion
-  const completeLesson = (courseSlug, lessonSlug) => {
-    const lessons = lessonsData[courseSlug] || [];
-    const courseData = courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-    const nextLesson = lessons[courseData.completedLessons.length];
-
-    if (nextLesson?.slug !== lessonSlug) return; // Only allow next lesson
-
-    setCourseProgress({
-      ...courseProgress,
-      [courseSlug]: {
-        completedLessons: [...courseData.completedLessons, lessonSlug],
-        currentLessonIndex: courseData.currentLessonIndex + 1,
-      },
-    });
-  };
-
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("SignOut warning (non-critical):", e);
+    }
+
+    // Clear both normal and IAM-related keys safely
+    const keysToRemove = [
+      "cybercodeUser",
+      "cybercodeUserRole",
+      "enrolledCourses",
+      "iamUser",
+      "iamSession",
+    ];
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+
     setUser(null);
-    localStorage.removeItem("cybercodeUser");
+    setRole(null);
   };
+
+  const isConsoleUser = () => !!role;
 
   return (
     <UserContext.Provider
       value={{
         user,
         setUser,
+        role,
+        setRole,
+        isConsoleUser,
         logout,
         enrolledCourses,
         enrollInCourse,
         loading,
-        courseProgress,
-        completeLesson,
       }}
     >
       {children}

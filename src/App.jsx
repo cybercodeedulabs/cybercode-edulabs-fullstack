@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -24,6 +24,7 @@ import Contact from "./pages/Contact";
 
 // ✅ Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
+import CloudDashboard from "./pages/CloudDashboard"; // newly added page
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -33,8 +34,13 @@ import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Payment from "./pages/Payment";
 
-// ✅ Import global user context hook
+// ✅ Global contexts
 import { useUser } from "./contexts/UserContext";
+import { useIAM } from "./contexts/IAMContext";
+
+// ✅ IAM Auth Pages
+import SignInIAM from "./pages/SignInIAM";
+import RegisterIAM from "./pages/RegisterIAM";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -45,7 +51,7 @@ function App() {
 
   // ✅ Home Page Component
   const HomePage = () => {
-    const { user, logout } = useUser(); // ✅ Access global user context
+    const { user, logout } = useUser();
 
     return (
       <>
@@ -152,6 +158,16 @@ function App() {
     );
   };
 
+  // ✅ Protected IAM route for Cloud Dashboard
+  function ProtectedIAMRoute({ children }) {
+    const { iamUser, loading } = useIAM();
+
+    if (loading) return null; // simple load handling
+    if (!iamUser) return <Navigate to="/cloud/login" replace />;
+
+    return children;
+  }
+
   return (
     <Router>
       <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
@@ -161,6 +177,7 @@ function App() {
         <main className="flex-grow">
           <ScrollToTop />
           <Routes>
+            {/* Main site routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseSlug" element={<CourseDetail />} />
@@ -170,7 +187,23 @@ function App() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+
+            {/* Cloud & IAM routes */}
             <Route path="/cloud" element={<CybercodeCloud />} />
+            <Route path="/cloud/login" element={<SignInIAM />} />
+            <Route path="/cloud/register" element={<RegisterIAM />} />
+
+            {/* ✅ Protected IAM Dashboard */}
+            <Route
+              path="/cloud/dashboard"
+              element={
+                <ProtectedIAMRoute>
+                  <CloudDashboard />
+                </ProtectedIAMRoute>
+              }
+            />
+
+            {/* Legal and support */}
             <Route path="/legal" element={<LegalIndex />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
@@ -183,7 +216,7 @@ function App() {
           </Routes>
         </main>
 
-        {/* Global Cookie Banner */}
+        {/* Global footer + cookie banner */}
         <CookieBanner />
         <Footer />
       </div>

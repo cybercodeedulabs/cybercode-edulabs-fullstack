@@ -5,6 +5,8 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectItem } from "../components/ui/select";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useUser } from "../contexts/UserContext";
 
 const api = {
   createInstance: "/api/cloud/instances",
@@ -18,22 +20,24 @@ const api = {
 function CloudLanding({ onLaunch, onSelectPlan }) {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800"></div>
+      {/* gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-100 via-sky-200/60 to-white opacity-95"></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center gap-12"
+        className="relative z-10 max-w-7xl mx-auto px-6 py-24 flex flex-col lg:flex-row items-center gap-12"
       >
-        {/* Left Content */}
+        {/* Left */}
         <div className="flex-1 text-center lg:text-left">
-          <h1 className="text-4xl lg:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
-            Cybercode Cloud
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+            C3 Cloud
           </h1>
           <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
-            India’s first education-focused cloud workspace for students, startups, and
-            innovators. Launch isolated dev environments, deploy projects, and collaborate securely — all hosted in India and billed in INR.
+            C3 Cloud — Cybercode EduLabs’ managed education cloud. Launch secure
+            dev workspaces, host student labs, and run projects in isolated,
+            cost-effective environments built for learning and experimentation.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-4">
@@ -53,19 +57,20 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
         {/* Right Illustration */}
         <motion.div
           whileHover={{ scale: 1.03 }}
-          className="lg:w-1/2 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-8 rounded-2xl shadow-xl"
+          transition={{ type: "spring", stiffness: 200 }}
+          className="lg:w-1/2 bg-white/80 dark:bg-gray-900/60 backdrop-blur-md p-8 rounded-2xl shadow-2xl cursor-pointer hover:shadow-sky-200/40 dark:hover:shadow-sky-800/40 transition"
           onClick={onLaunch}
         >
-          <h4 className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 text-center">
+          <h4 className="text-lg font-semibold text-sky-700 dark:text-sky-300 text-center">
             One-click Labs
           </h4>
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
-            Open IDEs, deploy containers, and host projects instantly on subdomains.
+            Open IDEs, deploy containers, and host projects with a single click.
           </p>
           <div className="mt-6 flex justify-center">
             <img
               src="/images/cloud-startup.png"
-              alt="Cybercode Cloud Illustration"
+              alt="C3 Cloud Illustration"
               className="w-72 h-auto object-contain drop-shadow-lg"
               loading="lazy"
             />
@@ -74,8 +79,8 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </motion.div>
 
       {/* Tier Cards */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16 -mt-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
               name: "Student Tier",
@@ -100,10 +105,10 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
               onClick={() => onSelectPlan(tier.plan)}
               className="cursor-pointer"
             >
-              <Card className="relative border border-indigo-100 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-lg transition">
+              <Card className="relative border border-slate-100 dark:border-gray-700 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-lg hover:-translate-y-1 transition-transform duration-200">
                 <CardContent className="p-5">
                   {tier.badge && (
-                    <span className="absolute top-3 right-4 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                    <span className="absolute top-3 right-4 text-xs font-semibold text-sky-700 dark:text-sky-300">
                       {tier.badge}
                     </span>
                   )}
@@ -149,23 +154,27 @@ function CloudConsole({ onCreate }) {
   return (
     <section className="max-w-7xl mx-auto px-6 py-16">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-          My Cloud Console
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-sky-300">
+          My C3 Console
         </h2>
-        <Button onClick={onCreate}>+ New Workspace</Button>
+        <Button onClick={onCreate} className="hover:shadow-md transition">
+          + New Workspace
+        </Button>
       </div>
 
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading instances…</p>
+        <p className="text-gray-500 dark:text-gray-400 animate-pulse">
+          Loading instances…
+        </p>
       ) : instances.length === 0 ? (
-        <Card className="p-6 text-center text-gray-500 dark:text-gray-400">
+        <Card className="p-6 text-center text-gray-500 dark:text-gray-400 shadow-inner">
           No active instances. Create one to get started.
         </Card>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
           {instances.map((ins) => (
             <motion.div key={ins.id} whileHover={{ scale: 1.02 }}>
-              <Card>
+              <Card className="hover:shadow-xl transition">
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start">
                     <div>
@@ -177,12 +186,16 @@ function CloudConsole({ onCreate }) {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button asChild size="sm">
+                      <Button asChild size="sm" className="hover:scale-105">
                         <a href={ins.url} target="_blank" rel="noreferrer">
                           Open
                         </a>
                       </Button>
-                      <Button variant="secondary" size="sm">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="hover:scale-105"
+                      >
                         Logs
                       </Button>
                     </div>
@@ -227,9 +240,9 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
 
   return (
     <section className="max-w-3xl mx-auto px-6 py-16">
-      <Card className="shadow-lg bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
+      <Card className="shadow-2xl bg-white/90 dark:bg-gray-900/70 backdrop-blur-sm hover:shadow-sky-200/40 dark:hover:shadow-sky-800/40 transition">
         <CardContent>
-          <h3 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+          <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-sky-300">
             Create a Cloud Workspace
           </h3>
           <form onSubmit={handleCreate} className="space-y-5">
@@ -287,14 +300,16 @@ function CloudUsage() {
 
   return (
     <section className="max-w-5xl mx-auto px-6 pb-20">
-      <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">
+      <h3 className="text-2xl font-bold text-slate-900 dark:text-sky-300 mb-6">
         Usage & Quota
       </h3>
       {!usage ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading usage data…</p>
+        <p className="text-gray-500 dark:text-gray-400 animate-pulse">
+          Loading usage data…
+        </p>
       ) : (
         <div className="grid sm:grid-cols-2 gap-6">
-          <Card className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
+          <Card className="bg-white/90 dark:bg-gray-900/70 backdrop-blur-sm shadow-lg">
             <CardContent>
               <p className="text-sm text-gray-500">CPU (vCPU)</p>
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -302,7 +317,7 @@ function CloudUsage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm">
+          <Card className="bg-white/90 dark:bg-gray-900/70 backdrop-blur-sm shadow-lg">
             <CardContent>
               <p className="text-sm text-gray-500">Storage (GB)</p>
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -317,71 +332,125 @@ function CloudUsage() {
 }
 
 // =============================
+// TOP NAV
+// =============================
+function C3TopNav({ onNav }) {
+  const navigate = useNavigate();
+
+  return (
+    <header className="relative z-50">
+      {/* Top dark strip */}
+      <div className="bg-slate-900 text-slate-100 text-sm shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-2">
+              <img src="/images/logo.png" alt="C3 logo" className="h-6 w-6 rounded" />
+              <strong className="ml-1">C3 Cloud</strong>
+            </span>
+            <span className="hidden sm:inline">India</span>
+            <span className="hidden md:inline">• Education • Secure Labs</span>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button className="hover:underline" onClick={() => navigate("/contact")}>
+              Contact us
+            </button>
+            <button className="hover:underline" onClick={() => navigate("/support")}>
+              Support
+            </button>
+            <Button onClick={() => navigate("/c3/login")} className="px-3 py-1 text-sm">
+              Sign in
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* White nav container with tabs */}
+      <div className="bg-white/95 backdrop-blur-sm shadow-md rounded-b-2xl -mt-4">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img src="/images/logo.png" alt="C3 logo" className="h-10 w-10 rounded" />
+              <div>
+                <div className="text-lg font-semibold text-slate-900">C3 Cloud</div>
+                <div className="text-xs text-gray-500">Console</div>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-4">
+              <nav className="flex gap-6 items-center">
+                {["overview", "features", "mobile", "faqs"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => onNav(tab)}
+                    className="pb-2 border-b-4 border-transparent hover:border-slate-900 text-sm transition-all"
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// =============================
 // MAIN EXPORT
 // =============================
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [lastCreated, setLastCreated] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState("student");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleLaunch = () => setView("console");
-  const handleCreateClick = () => setView("deploy");
-  const onCreated = (instance) => {
-    setLastCreated(instance);
-    setView("console");
-  };
+  useEffect(() => {
+    // Sync route with view
+    if (location.pathname === "/c3/console") setView("console");
+    else if (location.pathname === "/c3/deploy") setView("deploy");
+    else setView("landing");
+  }, [location.pathname]);
+
+  const handleLaunch = () => navigate("/c3/console");
+  const handleCreateClick = () => navigate("/c3/deploy");
   const handleSelectPlan = (plan) => {
     setSelectedPlan(plan);
-    setView("deploy");
+    navigate("/c3/deploy");
+  };
+  const onCreated = (instance) => {
+    setLastCreated(instance);
+    navigate("/c3/console");
   };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-950">
-      <header className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/images/logo.png"
-              alt="Cybercode EduLabs Logo"
-              className="w-10 h-10 rounded"
-            />
-            <div>
-              <h4 className="font-bold text-gray-800 dark:text-gray-100">
-                Cybercode Cloud
-              </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                India • Education • Secure Cloud Labs
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setView("landing")}>
-              Overview
-            </Button>
-            <Button variant="secondary" onClick={() => setView("console")}>
-              Console
-            </Button>
-            <Button variant="secondary" onClick={() => setView("deploy")}>
-              Deploy
-            </Button>
-          </div>
-        </div>
-      </header>
+      <C3TopNav
+        onNav={(tab) => {
+          if (tab === "overview") navigate("/c3");
+          if (tab === "features") navigate("/features");
+          if (tab === "mobile") navigate("/mobile");
+          if (tab === "faqs") navigate("/faqs");
+        }}
+      />
 
       <motion.div
-  key={view}
-  initial={{ opacity: 0, y: 10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4 }}
->
-  {view === "landing" && (
-    <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
-  )}
-  {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
-  {view === "deploy" && (
-    <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
-  )}
-</motion.div>
+        key={view}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {view === "landing" && (
+          <CloudLanding onLaunch={handleLaunch} onSelectPlan={handleSelectPlan} />
+        )}
+        {view === "console" && <CloudConsole onCreate={handleCreateClick} />}
+        {view === "deploy" && (
+          <CloudDeploy onSuccess={onCreated} preselectedPlan={selectedPlan} />
+        )}
+      </motion.div>
+
       <CloudUsage />
     </div>
   );
