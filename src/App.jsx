@@ -39,6 +39,8 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Payment from "./pages/Payment";
+import CloudDeploy from "./pages/CloudDeploy";
+
 
 // ✅ IAM Auth Pages
 import SignInIAM from "./pages/SignInIAM";
