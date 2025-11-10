@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { mockAPI } from "../api/mockCloudAPI";
 
 export default function CloudDeploy() {
+    console.log("✅ CloudDeploy component loaded");
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
@@ -115,4 +116,3 @@ export default function CloudDeploy() {
     </div>
   );
 }
-console.log("✅ CloudDeploy component loaded");
