@@ -24,7 +24,7 @@ import Contact from "./pages/Contact";
 
 // ✅ Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
-import CloudDashboard from "./pages/CloudDashboard"; // newly added page
+import CloudDashboard from "./pages/CloudDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -34,13 +34,63 @@ import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Payment from "./pages/Payment";
 
+// ✅ IAM Auth Pages
+import SignInIAM from "./pages/SignInIAM";
+import RegisterIAM from "./pages/RegisterIAM";
+
 // ✅ Global contexts
 import { useUser } from "./contexts/UserContext";
 import { useIAM } from "./contexts/IAMContext";
 
-// ✅ IAM Auth Pages
-import SignInIAM from "./pages/SignInIAM";
-import RegisterIAM from "./pages/RegisterIAM";
+// ✅ Temporary Cloud Feature pages (placeholders)
+function CloudFeatures() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">C3 Cloud Features</h1>
+      <p>Explore the features of the C3 Cloud platform — scalable labs, sandboxed IDEs, and more.</p>
+    </div>
+  );
+}
+function CloudMobile() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">C3 Cloud Mobile</h1>
+      <p>Manage your C3 Cloud environments and monitor workloads directly from your phone.</p>
+    </div>
+  );
+}
+function CloudFaqs() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">C3 Cloud FAQs</h1>
+      <p>Find answers to common questions about using Cybercode’s C3 Cloud platform.</p>
+    </div>
+  );
+}
+function CloudPricing() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">C3 Cloud Pricing</h1>
+      <p>Compare pricing tiers for student, education, and startup users of C3 Cloud.</p>
+    </div>
+  );
+}
+function CloudContact() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">Contact C3 Cloud</h1>
+      <p>Reach out to our C3 Cloud team for enterprise or academic onboarding.</p>
+    </div>
+  );
+}
+function CloudSupport() {
+  return (
+    <div className="cloud-console p-12 text-center">
+      <h1 className="text-4xl font-bold mb-4 text-cyan-400">C3 Cloud Support</h1>
+      <p>Need help? Submit a ticket or check your IAM console support center.</p>
+    </div>
+  );
+}
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -55,7 +105,6 @@ function App() {
 
     return (
       <>
-        {/* Hero Section */}
         <section className="relative bg-gray-900 text-white overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -127,7 +176,6 @@ function App() {
           </div>
         </section>
 
-        {/* Course Categories */}
         <section id="courses" className="py-16 bg-white dark:bg-gray-950">
           <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
             Courses by Category
@@ -135,7 +183,6 @@ function App() {
           <CourseCategoryTabs />
         </section>
 
-        {/* Features Section */}
         <section className="bg-gray-100 dark:bg-gray-900 py-16 px-4">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
@@ -150,7 +197,6 @@ function App() {
           </div>
         </section>
 
-        {/* Registration CTA */}
         <div id="register">
           <RegistrationCTA />
         </div>
@@ -158,11 +204,10 @@ function App() {
     );
   };
 
-  // ✅ Protected IAM route for Cloud Dashboard
   function ProtectedIAMRoute({ children }) {
     const { iamUser, loading } = useIAM();
 
-    if (loading) return null; // simple load handling
+    if (loading) return null;
     if (!iamUser) return <Navigate to="/cloud/login" replace />;
 
     return children;
@@ -177,7 +222,7 @@ function App() {
         <main className="flex-grow">
           <ScrollToTop />
           <Routes>
-            {/* Main site routes */}
+            {/* Main site */}
             <Route path="/" element={<HomePage />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseSlug" element={<CourseDetail />} />
@@ -188,12 +233,10 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
 
-            {/* Cloud & IAM routes */}
+            {/* Cloud + IAM */}
             <Route path="/cloud" element={<CybercodeCloud />} />
             <Route path="/cloud/login" element={<SignInIAM />} />
             <Route path="/cloud/register" element={<RegisterIAM />} />
-
-            {/* ✅ Protected IAM Dashboard */}
             <Route
               path="/cloud/dashboard"
               element={
@@ -203,7 +246,15 @@ function App() {
               }
             />
 
-            {/* Legal and support */}
+            {/* C3 Cloud subpages */}
+            <Route path="/cloud/features" element={<CloudFeatures />} />
+            <Route path="/cloud/mobile" element={<CloudMobile />} />
+            <Route path="/cloud/faqs" element={<CloudFaqs />} />
+            <Route path="/cloud/pricing" element={<CloudPricing />} />
+            <Route path="/cloud/contact" element={<CloudContact />} />
+            <Route path="/cloud/support" element={<CloudSupport />} />
+
+            {/* Legal */}
             <Route path="/legal" element={<LegalIndex />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
@@ -216,7 +267,6 @@ function App() {
           </Routes>
         </main>
 
-        {/* Global footer + cookie banner */}
         <CookieBanner />
         <Footer />
       </div>
