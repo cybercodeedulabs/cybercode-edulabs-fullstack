@@ -115,3 +115,4 @@ export default function CloudDeploy() {
     </div>
   );
 }
+console.log("✅ CloudDeploy component loaded");
