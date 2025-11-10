@@ -2,8 +2,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import CourseCategoryTabs from "../components/CourseCategoryTabs";
+import { getCourses } from "../api/content";  // ✅ Added import
 
 export default function Courses() {
+  const courses = getCourses();  // ✅ Now using abstraction layer
+
   return (
     <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-16 px-6">
       <div className="max-w-7xl mx-auto">
@@ -34,6 +37,7 @@ export default function Courses() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
         >
+          {/* Existing Course Tabs (unchanged) */}
           <CourseCategoryTabs />
         </motion.div>
       </div>
