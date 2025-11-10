@@ -23,14 +23,13 @@ export default function AdminWaitlist() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [authorized, setAuthorized] = useState(false);
+  const [diagnostic, setDiagnostic] = useState(null);
 
-  // ✅ Allowed admin emails from .env file
   const ALLOWED_ADMINS = (import.meta.env.VITE_ADMIN_EMAILS || "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
-  // Track auth state
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((u) => setUser(u));
     return () => unsub();
@@ -58,41 +57,73 @@ export default function AdminWaitlist() {
   async function loadRows() {
     setLoading(true);
     setError(null);
+    setDiagnostic(null);
+
     try {
       const q = query(collection(db, "cloud_waitlist"), orderBy("timestamp", "desc"));
       const snap = await getDocs(q);
+
+      if (snap.empty) {
+        setRows([]);
+        setDiagnostic({
+          type: "info",
+          title: "No Data",
+          message:
+            "No waitlist entries found yet. Once users submit the form, data will appear here.",
+        });
+        return;
+      }
+
       const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setRows(data);
     } catch (err) {
-      console.error(err);
-      setError("Failed to load waitlist data.");
+      console.error("Firestore read error:", err);
+
+      let diag = {
+        type: "error",
+        title: "Unknown Error",
+        message: "Something went wrong while loading data.",
+      };
+
+      if (err.code === "permission-denied") {
+        diag = {
+          type: "warning",
+          title: "Access Denied",
+          message:
+            "Your Firestore rules are blocking read access.\n\n➡ Fix: In Firestore → Rules, ensure your admin email is listed in the `allow read:` block for `cloud_waitlist`.",
+        };
+      } else if (err.message?.includes("Failed to fetch")) {
+        diag = {
+          type: "warning",
+          title: "Network Error",
+          message:
+            "Unable to connect to Firestore.\n\n➡ Check your internet connection or Firebase project configuration.",
+        };
+      }
+
+      setDiagnostic(diag);
+      setError(diag.title);
     } finally {
       setLoading(false);
     }
   }
 
-  // 🔐 Authorization check
   useEffect(() => {
     if (!user) return;
-
     const email = user.email?.toLowerCase() || "";
     if (ALLOWED_ADMINS.length && !ALLOWED_ADMINS.includes(email)) {
       setAuthorized(false);
       setError("Access denied — this account is not authorized.");
       return;
     }
-
     setAuthorized(true);
     loadRows();
   }, [user]);
 
-  // 🧾 Export waitlist as CSV
   function exportCSV() {
     if (!rows.length) return;
-
     const headers = ["id", "name", "email", "organization", "interest", "timestamp"];
     let csv = headers.join(",") + "\n";
-
     rows.forEach((r) => {
       const line = headers
         .map((h) => {
@@ -106,7 +137,6 @@ export default function AdminWaitlist() {
         .join(",");
       csv += line + "\n";
     });
-
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -119,12 +149,10 @@ export default function AdminWaitlist() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-950 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
             Admin — Cloud Waitlist
           </h1>
-
           <div className="flex items-center gap-2">
             {user ? (
               <>
@@ -164,7 +192,29 @@ export default function AdminWaitlist() {
           </Card>
         )}
 
-        {/* Waitlist data */}
+        {/* Diagnostic panel */}
+        {diagnostic && (
+          <Card
+            className={`p-5 mb-6 border-l-4 ${
+              diagnostic.type === "warning"
+                ? "border-yellow-500 bg-yellow-50 dark:bg-gray-800"
+                : diagnostic.type === "error"
+                ? "border-red-500 bg-red-50 dark:bg-gray-800"
+                : "border-blue-500 bg-blue-50 dark:bg-gray-800"
+            }`}
+          >
+            <CardContent>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">
+                {diagnostic.title}
+              </h3>
+              <pre className="text-sm whitespace-pre-wrap text-gray-600 dark:text-gray-300">
+                {diagnostic.message}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Data table */}
         {user && authorized && (
           <>
             <div className="flex gap-2 mb-4">
@@ -179,12 +229,6 @@ export default function AdminWaitlist() {
                 Export CSV
               </Button>
             </div>
-
-            {error && (
-              <div className="text-red-500 mb-4 text-sm font-medium">
-                {error}
-              </div>
-            )}
 
             <div className="overflow-x-auto rounded shadow-sm">
               <table className="min-w-full table-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
