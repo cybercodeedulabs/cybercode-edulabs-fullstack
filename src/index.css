@@ -16,12 +16,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  /* C3 Cloud Theme Variables */
-  --console-bg-start: #0f172a; /* Deep Navy */
-  --console-bg-end: #1e293b; /* Slate Blue */
-  --console-accent: #38bdf8; /* Cyan Glow */
-  --console-text: #e2e8f0; /* Light Text */
 }
 
 /* =========================================
@@ -116,30 +110,39 @@ button:focus-visible {
 .prose {
   @apply max-w-none leading-relaxed text-gray-800 dark:text-gray-200;
 }
+
 .prose strong {
   @apply text-indigo-700 dark:text-indigo-300 font-semibold;
 }
+
 .prose em {
   @apply text-gray-700 dark:text-gray-300 italic;
 }
+
 .prose h3 {
   @apply text-xl font-bold text-indigo-700 dark:text-indigo-300 mt-6 mb-2;
 }
+
 .prose ul {
   @apply list-disc pl-6 space-y-1;
 }
+
 .prose ol {
   @apply list-decimal pl-6 space-y-1;
 }
+
 .prose li {
   @apply text-gray-700 dark:text-gray-300;
 }
+
 .prose code {
   @apply bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono text-indigo-600 dark:text-indigo-300;
 }
+
 .prose pre {
   @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm leading-relaxed shadow-md;
 }
+
 .prose a {
   @apply text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 dark:hover:text-indigo-200;
 }
@@ -150,9 +153,11 @@ button:focus-visible {
 .prose img {
   @apply rounded-xl shadow-md my-6;
 }
+
 .prose blockquote {
   @apply border-l-4 border-indigo-500 pl-4 italic text-gray-700 dark:text-gray-300;
 }
+
 .prose hr {
   @apply border-t border-gray-300 dark:border-gray-700 my-6;
 }
@@ -168,12 +173,15 @@ button:focus-visible {
     transform: translateX(-100%);
   }
 }
+
 .animate-marquee {
   display: inline-block;
   padding-left: 100%;
   animation: marquee 20s linear infinite;
   white-space: nowrap;
 }
+
+/* ⏸️ Pause on Hover */
 .animate-marquee:hover {
   animation-play-state: paused;
 }
@@ -187,88 +195,7 @@ button:focus-visible {
     opacity: 1;
   }
 }
+
 .animate-slide-in {
   animation: slide-in 0.4s ease-out forwards;
-}
-
-/* =========================================
-   🌥️ C3 Cloud Console Theme
-   ========================================= */
-.cloud-console {
-  background: linear-gradient(135deg, var(--console-bg-start), var(--console-bg-end));
-  color: var(--console-text);
-  min-height: 100vh;
-  font-family: "JetBrains Mono", monospace;
-  letter-spacing: 0.2px;
-}
-
-.cloud-console .panel {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.cloud-console h1,
-.cloud-console h2,
-.cloud-console h3 {
-  color: var(--console-accent);
-}
-
-/* Scrollbar Style */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-thumb {
-  background-color: rgba(100, 116, 139, 0.5);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(100, 116, 139, 0.7);
-}
-
-/* =========================================
-   🌒 IAM Page Background
-   ========================================= */
-.iam-bg {
-  background: linear-gradient(135deg, #0f172a 0%, #111827 40%, #0b1220 100%);
-}
-/* =========================================
-   🌈 Final Console Polish (Step 7)
-   ========================================= */
-.console-fade {
-  animation: fadeInConsole 0.8s ease-in-out forwards;
-  opacity: 0;
-}
-@keyframes fadeInConsole {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.panel-hover-glow {
-  transition: all 0.3s ease-in-out;
-}
-.panel-hover-glow:hover {
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25),
-    0 0 40px rgba(56, 189, 248, 0.15);
-  transform: translateY(-2px);
-}
-
-/* smooth transition for header transparency */
-.glassy-header {
-  backdrop-filter: blur(12px);
-  background: rgba(15, 23, 42, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease-in-out;
-}
-.glassy-header:hover {
-  background: rgba(15, 23, 42, 0.8);
 }

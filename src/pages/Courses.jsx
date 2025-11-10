@@ -2,7 +2,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import CourseCategoryTabs from "../components/CourseCategoryTabs";
-import CourseDetail from "../components/CourseDetail"; // added import
 
 export default function Courses() {
   return (
@@ -36,16 +35,6 @@ export default function Courses() {
           transition={{ delay: 0.3, duration: 0.6 }}
         >
           <CourseCategoryTabs />
-        </motion.div>
-
-        {/* Static CourseDetail below tabs */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-12"
-        >
-          <CourseDetail courseId="aws" />
         </motion.div>
       </div>
     </section>
