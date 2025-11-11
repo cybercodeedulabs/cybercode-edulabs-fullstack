@@ -1,5 +1,5 @@
 // src/data/courses/cybersecurityEssentials.js
-import FirewallSimulator from "../components/simulations/FirewallSimulator";
+import FirewallSimulator from "../../components/simulations/FirewallSimulator";
 
 const cybersecurityEssentials = [
   {
