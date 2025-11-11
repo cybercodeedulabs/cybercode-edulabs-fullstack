@@ -1346,5 +1346,247 @@ Use \`go build\` to create a binary before pushing to your cloud host.`
     },
   ],
 },
+ // 🆕 Advanced professional-level modules start here
+  {
+    slug: "error-handling-advanced",
+    title: "Advanced Error Handling (Panic, Recover, Custom Errors)",
+    content: [
+      {
+        type: "text",
+        value: `Go’s error model is designed around explicit handling, but it also provides mechanisms for advanced recovery and resilience. Let’s explore panic, recover, and custom error types.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `package main
+
+import "fmt"
+
+func riskyOperation() {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("Recovered from panic:", r)
+        }
+    }()
+    panic("Something went wrong!")
+}
+
+func main() {
+    fmt.Println("Starting...")
+    riskyOperation()
+    fmt.Println("Program continues after recovery.")
+}`,
+        runnable: true,
+      },
+      {
+        type: "text",
+        value: `### Custom Error Types
+Custom error structs make debugging easier and provide better error context.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `type NotFoundError struct {
+    Resource string
+}
+
+func (e *NotFoundError) Error() string {
+    return fmt.Sprintf("%s not found", e.Resource)
+}
+
+func main() {
+    err := &NotFoundError{Resource: "User"}
+    fmt.Println(err)
+}`,
+        runnable: true,
+      },
+      {
+        type: "text",
+        value: `✅ **Exercise:** Simulate a panic when a file is missing, recover gracefully, and log a custom message.`,
+      },
+    ],
+  },
+  {
+    slug: "sync-and-concurrency-tools",
+    title: "Synchronization with WaitGroups & Mutex",
+    content: [
+      {
+        type: "text",
+        value: `When multiple goroutines run concurrently, synchronization becomes critical. Go provides the \`sync\` package to coordinate concurrent operations safely.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+func worker(id int, wg *sync.WaitGroup) {
+    defer wg.Done()
+    fmt.Printf("Worker %d starting\\n", id)
+    fmt.Printf("Worker %d done\\n", id)
+}
+
+func main() {
+    var wg sync.WaitGroup
+    for i := 1; i <= 3; i++ {
+        wg.Add(1)
+        go worker(i, &wg)
+    }
+    wg.Wait()
+    fmt.Println("All workers completed.")
+}`,
+        runnable: true,
+      },
+      {
+        type: "text",
+        value: `Use Mutexes to protect shared data and avoid race conditions.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `var count int
+var mu sync.Mutex
+
+func increment() {
+    mu.Lock()
+    count++
+    mu.Unlock()
+}`,
+        runnable: false,
+      },
+    ],
+  },
+  {
+    slug: "rest-api-with-go",
+    title: "Building REST APIs in Go",
+    content: [
+      {
+        type: "text",
+        value: `Go’s \`net/http\` package allows you to build REST APIs with ease. Let’s create a simple JSON-based API.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `package main
+
+import (
+    "encoding/json"
+    "net/http"
+)
+
+type Course struct {
+    ID    int    \`json:"id"\`
+    Title string \`json:"title"\`
+}
+
+func getCourses(w http.ResponseWriter, r *http.Request) {
+    courses := []Course{{1, "Golang Basics"}, {2, "Microservices"}}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(courses)
+}
+
+func main() {
+    http.HandleFunc("/courses", getCourses)
+    http.ListenAndServe(":8080", nil)
+}`,
+        runnable: true,
+      },
+      {
+        type: "text",
+        value: `✅ **Exercise:** Add POST route to accept new course data and store it in memory.`,
+      },
+    ],
+  },
+  {
+    slug: "using-gorm-with-go",
+    title: "Database ORM Integration using GORM",
+    content: [
+      {
+        type: "text",
+        value: `GORM is the most popular ORM for Go, simplifying SQL operations.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `import (
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+)
+
+type Student struct {
+    ID   uint
+    Name string
+    Age  int
+}
+
+func main() {
+    db, _ := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+    db.AutoMigrate(&Student{})
+
+    db.Create(&Student{Name: "Asha", Age: 21})
+}`,
+        runnable: false,
+      },
+      {
+        type: "text",
+        value: `✅ **Exercise:** Create a REST API to list all students stored using GORM.`,
+      },
+    ],
+  },
+  {
+    slug: "benchmarking-and-performance-testing",
+    title: "Benchmarking in Go",
+    content: [
+      {
+        type: "text",
+        value: `Go supports performance benchmarking using the \`testing\` package. Benchmarks help identify performance bottlenecks.`,
+      },
+      {
+        type: "code",
+        language: "go",
+        value: `func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(2, 3)
+    }
+}`,
+        runnable: false,
+      },
+      {
+        type: "text",
+        value: `✅ Run with: \`go test -bench .\` to measure performance.`,
+      },
+    ],
+  },
+  {
+    slug: "final-project-golang-microservice",
+    title: "Capstone Project: Building a Go Microservice",
+    content: [
+      {
+        type: "text",
+        value: `🧠 **Project Overview:**
+Build a complete RESTful microservice in Go using the following stack:
+- REST API (net/http)
+- GORM for database persistence
+- Gorilla Mux for routing
+- JSON for request/response handling
+- Dockerfile for containerization`,
+      },
+      {
+        type: "text",
+        value: `🚀 **Deliverables:**
+- CRUD endpoints for users
+- Dockerized service deployment
+- Unit tests for routes and handlers`,
+      },
+      {
+        type: "text",
+        value: `This project combines all major concepts: Go fundamentals, concurrency, error handling, web APIs, and database interaction.`,
+      },
+    ],
+  },
 ];
 export default golangLessons;
