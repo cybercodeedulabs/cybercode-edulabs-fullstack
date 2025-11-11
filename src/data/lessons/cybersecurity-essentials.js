@@ -1,60 +1,105 @@
 // src/data/courses/cybersecurityEssentials.js
+import FirewallSimulator from "../components/simulations/FirewallSimulator";
 
 const cybersecurityEssentials = [
-   {
+  {
     slug: "cybersecurity-intro",
     title: "Cybersecurity Essentials — Overview & Ethics",
     content: [
       {
         type: "text",
         value: `
-Welcome to *Cybersecurity Essentials*! Before touching a single tool or command, every cybersecurity professional must understand the **mindset** behind ethical hacking and digital defense.
+Cybersecurity is not just about firewalls or antiviruses — it’s about **trust, resilience, and responsibility**.  
+Before you touch a single tool or command, you must adopt the **mindset** of an ethical defender.
 
-Cybersecurity is not just about protecting machines — it’s about safeguarding people, businesses, and national interests. One careless click or misconfigured system can expose millions of records.
-        `
+This lesson introduces the values that differentiate a **professional cybersecurity expert** from a **malicious attacker**.  
+Whether you’re training to become a **SOC Analyst**, **Penetration Tester**, or **Security Engineer**, ethics is your foundation.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/ethics-overview-diagram.png",
+        alt: "Cybersecurity Ethics Overview Diagram"
       },
       {
         type: "text",
         value: `
-### Why This Matters in the Real World
-- Every company — from banks to hospitals — faces constant attacks from around the globe.  
-- Professionals are trusted with **sensitive data** and **critical infrastructure**, so ethical awareness and legal boundaries are non-negotiable.  
-- Mistakes in ethics can lead to **criminal charges**, even if the intent was educational.
-        `
-      },
-      {
-        type: "text",
-        value: `
-### How It’s Used in Practice
-Ethical hackers, auditors, and SOC analysts work under **rules of engagement** that define exactly what they can test.  
-For example:
-- A bank may authorize a penetration test on its *staging* servers, not production.  
-- A security researcher must report a bug responsibly — never exploit it publicly.
+### 🌐 The Real-World Importance
+Every organization, from hospitals to banks, is under constant attack.  
+Cybersecurity professionals protect:
+- **Confidentiality** (prevent data leaks)
+- **Integrity** (prevent tampering)
+- **Availability** (prevent downtime)
 
-These professional boundaries separate a **licensed ethical hacker** from a **criminal attacker**.
-        `
+💡 One careless click or misconfigured server can expose millions of records — this is why **ethical responsibility** is not optional.
+      `
       },
       {
         type: "text",
         value: `
-### Visualization Idea
-An *Interactive “Ethics Decision Tree”*:  
-Learner clicks through real-life scenarios like:
-- “You found an exposed database on the internet.”
-- “You received leaked credentials of your employer.”
-and the system visually shows the correct legal/ethical path — green for allowed, red for forbidden.
-        `
+### 🧭 Ethics in Action
+Cybersecurity professionals operate under **Rules of Engagement (RoE)** that clearly define what is allowed.  
+Example:
+- A penetration tester may only test *approved systems* during a defined window.
+- Discovering a bug? You report it **responsibly**, not exploit it.
+
+This professional discipline builds your reputation and ensures you stay within legal boundaries.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/ethical-decision-tree.png",
+        alt: "Interactive Ethical Decision Tree for Cybersecurity"
       },
       {
         type: "text",
         value: `
-### Exercise
-Write a one-page *Rules of Engagement (RoE)* for a fictional web app pentest.  
+### 🧠 Visualization Idea (Interactive Simulation)
+Create a mini “Ethical Decision Tree” inside the website —  
+when learners face scenarios such as:
+- “You find a company database exposed online”
+- “Your friend asks you to test a website without permission”
+
+They choose an action, and the system highlights:
+- ✅ Green (Ethical & Legal)
+- ❌ Red (Unethical or Illegal)
+
+This simulation reinforces decision-making under real-world pressure.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧩 Career Focus
+Ethics training is mandatory for certifications like:
+- **CEH (Certified Ethical Hacker)**
+- **CompTIA Security+**
+- **OSCP**
+- **Cybersecurity Analyst (CySA+)**
+
+A single unethical decision can end your career — even with technical brilliance.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧾 Exercise — Write Your Own Rules of Engagement (RoE)
+Create a one-page RoE document for a **fictional web app pentest**.  
 Include:
-- Scope (what’s allowed)  
-- Timing (when testing happens)  
-- Emergency contacts (in case of accidental disruption)
-        `
+1. **Scope** – which servers or endpoints are allowed  
+2. **Tools** – what types of scans or actions are authorized  
+3. **Timing** – when the test is allowed  
+4. **Emergency contacts** – who to notify in case of issues  
+5. **Termination clause** – what stops the test immediately
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧱 Bonus Mini Project
+Create a visual “Ethical Pledge” for Cybercode EduLabs learners.  
+Each student digitally signs this before starting lab access — reinforcing accountability and professional integrity.
+      `
       }
     ]
   },
@@ -66,50 +111,95 @@ Include:
       {
         type: "text",
         value: `
-Cybersecurity is like modern warfare — defenders must understand who the enemies are, what motivates them, and how they operate.
+The cyber world operates like a battlefield — with attackers, defenders, intelligence, and countermeasures constantly evolving.
 
-### Why This Matters in the Real World
-If you don’t know your enemy, you can’t defend effectively.  
-- Security Operations Centers (SOCs) track threat groups daily.  
-- CISOs use threat intelligence to prioritize defenses.  
-- Penetration testers use this knowledge to simulate realistic attack behavior.
-
-Without context, even a strong firewall can miss what’s coming next.
-        `
+Understanding *who* the attackers are, *why* they attack, and *how* they operate is fundamental to becoming a strong cybersecurity professional.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/global-threat-map.png",
+        alt: "Global Threat Map showing real-time attacks worldwide"
       },
       {
         type: "text",
         value: `
-### How It’s Used in Practice
-Security teams classify attackers as:
-- **Script Kiddies:** beginners using ready-made tools (low risk but noisy).  
-- **Cybercriminals:** organized groups motivated by profit (ransomware, data theft).  
-- **Nation-State Actors:** highly funded attackers targeting governments.  
-- **Insiders:** employees who intentionally or accidentally cause breaches.
+### ⚔️ The Modern Cyber Battlefield
+Attackers vary in motivation, funding, and tactics:
+- **Script Kiddies** — Beginners using ready-made tools without full understanding.
+- **Cybercriminals** — Organized groups focused on profit (ransomware, data theft).
+- **Hacktivists** — Ideology-driven attackers (social or political causes).
+- **Nation-State Actors** — Highly skilled teams funded by governments.
+- **Insiders** — Employees who cause harm, intentionally or accidentally.
 
-Defenders map attacks using the **MITRE ATT&CK framework** to identify where in the attack lifecycle they’re being targeted.
-        `
+Each type has distinct patterns that defenders must recognize.
+      `
       },
       {
         type: "text",
         value: `
-### Visualization Idea
-A *Threat Map Dashboard* showing animated global attacks in real time — similar to Kaspersky/Norwegian threat visualizers.  
-Users click on attack paths to see the **MITRE stage** (e.g., Initial Access → Privilege Escalation → Data Exfiltration).
-        `
+### 🧠 How It’s Used in the Real World
+Security Operations Centers (SOCs) and Threat Intelligence Teams:
+- Track **Indicators of Compromise (IoCs)** like IPs, hashes, or domains.
+- Use **MITRE ATT&CK Framework** to map each tactic and technique.
+- Feed insights into SIEM (e.g., Splunk, ELK) for automated detection.
+
+This transforms data into actionable defense.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/mitre-attack-lifecycle.png",
+        alt: "MITRE ATT&CK Framework Lifecycle Diagram"
       },
       {
         type: "text",
         value: `
-### Exercise
-Choose a simple web service (like a to-do app).  
-Draw its attack surface diagram:
-- Web server  
-- Database  
-- APIs  
-- Third-party plugins  
-Mark high-risk areas (like user input fields or admin panels).
-        `
+### 🔍 Visualization Idea (Interactive Dashboard)
+Imagine a *Cyber Threat Map* in the lesson UI:
+- Animated lines show ongoing simulated attacks from different regions.
+- Hovering reveals details like “Ransomware Campaign – Origin: Russia – Target: Finance.”
+- Clicking highlights the MITRE ATT&CK phase: *Initial Access → Lateral Movement → Data Exfiltration*.
+
+This gamified visualization helps learners connect **attacker behavior** with **defensive strategy**.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧩 Career Relevance
+Understanding threat actors and frameworks is essential for:
+- **SOC Analyst** → Detecting real-world intrusions
+- **Threat Intelligence Specialist** → Tracking APT groups
+- **Penetration Tester** → Emulating realistic attacker patterns
+- **Incident Responder** → Containing attacks efficiently
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧾 Exercise — Attack Surface Mapping
+Pick a simple app like a *To-Do Web Service* and identify its attack surface:
+1. Web server  
+2. API endpoints  
+3. Database  
+4. Authentication module  
+5. Third-party integrations  
+
+Then mark which components might attract each type of attacker (e.g., insiders → database, cybercriminals → APIs).
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🚀 Mini Project
+Design a small “Threat Intelligence Report” — summarize one real-world breach (e.g., SolarWinds, Equifax) and map its phases to MITRE ATT&CK tactics.
+
+Deliverables:
+- Timeline of the attack  
+- MITRE mapping  
+- Defense recommendations
+      `
       }
     ]
   },
@@ -121,432 +211,393 @@ Mark high-risk areas (like user input fields or admin panels).
       {
         type: "text",
         value: `
-Networking is the foundation of every cyberattack and defense strategy.  
-Understanding how data travels helps you spot when something goes wrong.
-        `
+Networking is the foundation of cybersecurity. Every cyberattack, data breach, or defense operation relies on understanding **how packets travel** and **how systems communicate**.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/network-topology-basics.png",
+        alt: "Network topology diagram showing clients, firewall, servers, and internet gateways"
       },
       {
         type: "text",
         value: `
-### Why This Matters in the Real World
-- Attackers exploit open ports and misconfigured network services.  
-- Defenders monitor network flows to detect abnormal traffic.  
-- Almost every incident investigation starts with packet analysis.
+### 🌐 Why It Matters
+- Attackers exploit open ports, weak firewalls, and misconfigured routing.  
+- Defenders analyze logs, packets, and flows to trace attacks.  
+- Understanding TCP/IP and OSI layers lets you dissect incidents confidently.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### ⚙️ How It’s Used Professionally
+- **SOC Analysts** monitor network traffic for suspicious spikes.  
+- **Penetration Testers** map ports/services to identify weak points.  
+- **Network Engineers** design segmentation to limit attack spread.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧠 Core Concepts
+| Concept | Description | Tool Example |
+|----------|--------------|---------------|
+| IP Addressing | Identifies devices on a network | ifconfig, ip addr |
+| Ports & Protocols | Define communication endpoints | nmap, netstat |
+| Firewalls | Filter allowed/blocked traffic | iptables, AWS SG |
+| DNS | Resolves names to IPs | dig, nslookup |
+| VPN | Encrypts traffic tunnels | OpenVPN |
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/tcp-handshake-diagram.png",
+        alt: "Animated TCP 3-way handshake diagram showing SYN, SYN-ACK, ACK"
+      },
+      {
+        type: "text",
+        value: `
+### 📘 Visualization Idea
+Interactive **Packet Flow Simulator** — the learner clicks “Start Handshake” and watches:
+1️⃣ SYN → 2️⃣ SYN-ACK → 3️⃣ ACK  
+Then TLS negotiation lights up green (encrypted) or red (plain text).
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧪 Safe Lab Exercise
+- Run two Docker containers (client/server).  
+- Capture packets with Wireshark or tcpdump.  
+- Identify handshake, protocol, and ports.  
+Record: *Who initiated connection? Which port was used?*
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🚀 Mini Project
+Design a **network segmentation plan** for a startup:  
+- Public subnet for web app  
+- Private subnet for DB  
+- Jump host for admins  
+Document how segmentation reduces attack surface.
+      `
+      }
+    ]
+  },
 
-Without networking fundamentals, you can’t analyze an intrusion or secure communication.
-        `
+  {
+    slug: "network-traffic-analysis",
+    title: "Network Traffic Analysis & Packet Inspection",
+    content: [
+      {
+        type: "text",
+        value: `
+Once you know networking theory, the next skill is reading **live network packets** — the digital footprints of every connection.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/packet-analysis-dashboard.png",
+        alt: "Network packet analysis dashboard showing protocol breakdown and alerts"
       },
       {
         type: "text",
         value: `
-### How It’s Used in Practice
-- Security analysts use tools like Wireshark to inspect traffic patterns.  
-- Network engineers segment traffic to prevent attackers from moving laterally.  
-- Penetration testers identify which ports and protocols reveal sensitive data.
-
-Knowing TCP handshakes, DNS queries, and HTTPS flows lets you read a network trace like a story of what happened.
-        `
+### 🔍 Why Analysts Care
+- Attackers hide C2 (command-and-control) traffic inside normal protocols.  
+- Malware detection often starts by inspecting outbound packets.  
+- SOC teams identify breaches by correlating anomalies with network logs.
+      `
       },
       {
         type: "text",
         value: `
-### Visualization Idea
-A *Packet Flow Animator* showing step-by-step handshake:
-1. Client sends SYN  
-2. Server responds SYN-ACK  
-3. Client confirms with ACK  
-Then the TLS negotiation begins — color-coded to show encrypted vs plain segments.
-        `
+### 🧠 Core Concepts
+- **PCAP Files** – Raw packet captures  
+- **Protocol Dissection** – Viewing HTTP, DNS, SSL fields  
+- **Indicators of Compromise (IoCs)** – Suspicious IPs/domains  
+- **TLS Fingerprinting** – Detecting fake certificates  
+- **Filtering Rules** – “Show all traffic to 10.0.0.5 over port 443”
+      `
       },
       {
         type: "text",
         value: `
-### Exercise
-Use a local virtual lab with two containers (client + server).  
-Capture the handshake in Wireshark and annotate each step:
-- What port is used?  
-- Is encryption applied?  
-- Can you identify the protocol in use?
-        `
+### 🧪 Practical Task
+Open a sample PCAP (safe) and:
+1. Count HTTP vs HTTPS requests  
+2. Identify DNS queries  
+3. Spot any unusual large outbound traffic
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 💡 Visualization Idea
+A dynamic **Packet Timeline View** — packets animate across the screen with labels like “SYN”, “GET /index.html”, “TLS Handshake”. Hover to view headers and payload size.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🧾 Exercise
+Create your own filter in Wireshark to display only TCP port 80 traffic.  
+Then modify it to show only failed handshakes.  
+Document how this helps detect scanning or DoS activity.
+      `
+      },
+      {
+        type: "text",
+        value: `
+### 🚀 Mini Project
+Simulate a DDoS detection scenario using a safe synthetic dataset.  
+Generate normal vs attack traffic, analyze spikes, and produce a small **SOC-style alert summary** explaining your findings.
+      `
       }
     ]
   },
 
   {
     slug: "linux-basics-for-cybersec",
-    title: "Linux Essentials for Security",
+    title: "Linux Essentials for Security & System Hardening",
     content: [
       {
         type: "text",
-        value:
-`Linux is the platform of choice for many security tools. This lesson focuses on safe use: file permissions, basic process understanding, logs, and secure shell (SSH) concepts.`
+        value: `Linux is the operating system that powers most servers, cloud systems and security tooling. This lesson focuses on safe administration, file permissions, logs, basic hardening and the command-line skills every defender and tester must have.`
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/linux-file-permission-matrix.png",
+        alt: "Linux file permission matrix (rwx for user/group/other)"
       },
       {
         type: "text",
-        value:
-`Topics:
-- Filesystem permissions & ownership (rwx, u/g/o)
-- Common directories (/var/log, /etc)
-- System logs and where to find them
-- Non-privileged vs privileged operations — sudo, least-privilege principle`
+        value: `### Learning Objectives
+- Understand Linux filesystem structure and permission model (u/g/o, rwx).  
+- Use essential commands for process, network and log inspection.  
+- Apply basic hardening: remove unused services, secure SSH, limit user privileges.  
+- Practice safe, reproducible labs using VMs or containers (no production systems).`
       },
       {
         type: "text",
-        value:
-`Lab (safe): Use a disposable VM or container. Practice viewing logs, changing file permissions, and creating a small user with limited privileges. Focus on hardening steps.`
+        value: `### Quick Commands (must-know)
+- List files & permissions: \`ls -l\`  
+- Change permissions/owner: \`chmod 640 file\`, \`chown user:group file\`  
+- Check processes: \`ps aux\`, \`top\`  
+- Network sockets: \`ss -ltnp\` or \`netstat -tulnp\`  
+- Read logs: \`sudo tail -n 200 /var/log/auth.log\` or \`journalctl -u ssh.service\``
+      },
+      {
+        type: "code",
+        language: "bash",
+        value: `# Create a limited user and test permissions
+sudo adduser student1
+sudo usermod -aG developers student1
+sudo touch /srv/app/config.txt
+sudo chown root:developers /srv/app/config.txt
+sudo chmod 640 /srv/app/config.txt
+# As 'student1' verify you cannot write to the file
+su - student1
+echo "test" >> /srv/app/config.txt  # should be denied`,
+        runnable: false
       },
       {
         type: "text",
-        value:
-`Visualization idea (lesson UI):  
-File Permission Matrix — interactive grid showing owner/group/other and effects of toggling bits; apply to sample files and see "allowed"/"denied" outcomes visually.`
+        value: `### System Hardening Checklist (practical)
+- Disable unnecessary services (systemctl disable --now <service>)  
+- Ensure SSH uses key-based auth, disable root login, and configure strong KDF/algorithms.  
+- Regularly review sudoers and group membership.  
+- Configure a basic host-based firewall (ufw/iptables) with least-privilege rules.`
       },
       {
         type: "text",
-        value:
-`Exercise: Create a user, add it to a group with limited rights, and write a short report showing commands used and why this reduces risk.`
+        value: `### Log Investigation & Forensics (starter)
+- Common logs: /var/log/auth.log, /var/log/syslog, /var/log/messages  
+- Look for: repeated failed logins, suspicious sudo usage, new service start times.  
+- Use \`grep\` or \`awk\` to filter logs for suspicious patterns.`
+      },
+      {
+        type: "text",
+        value: `### Visualization / Interactive UI Ideas
+- **Permission Matrix**: toggle rwx bits visually and show access results for specific users.  
+- **Process Tree**: interactive map of parent → child processes highlighting unknown binaries.`
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/linux-log-analysis-flow.png",
+        alt: "Linux log analysis flow: system -> log files -> SIEM"
+      },
+      {
+        type: "text",
+        value: `### Safe Lab Exercise
+Set up a disposable VM or Docker container:
+1. Add a user 'student1' and add them to a non-privileged group.  
+2. Create /srv/app/config.txt owned by root:developers with 640 perms. Verify student cannot write.  
+3. Simulate failed logins and then search /var/log/auth.log for related entries.  
+Document commands used and explain how each step improves security.`
+      },
+      {
+        type: "text",
+        value: `### Mini Project – Hardening Script
+Create a bash script that checks:
+- SSH root login disabled (\`/etc/ssh/sshd_config\`)  
+- Password policy (check /etc/login.defs or /etc/pam.d)  
+- Running services list vs an approved list and print differences  
+Output a simple report that can be reviewed by an instructor.`
+      },
+      {
+        type: "text",
+        value: `### Career Notes
+Skills here are directly applicable for:
+- SOC Engineer (log triage, host hardening)  
+- Incident Responder (forensic basics)  
+- Cloud Security Engineer (secure AMIs and images)  
+Include these in your portfolio: screenshot of hardened config, sample log analysis snippet, and the hardening script.`
       }
     ]
   },
 
   {
-    slug: "cryptography-basics",
-    title: "Cryptography & Secure Communications (High Level)",
+    slug: "firewalls-ids-ips",
+    title: "Firewalls, IDS & IPS — Defensive Shields of the Network",
     content: [
       {
         type: "text",
-        value:
-`A conceptual introduction to symmetric vs asymmetric crypto, hashing, certificates, TLS, and common mistakes (weak algorithms, poor key management).`
+        value: `
+Every secure network is protected by layers — **Firewalls**, **Intrusion Detection Systems (IDS)**, and **Intrusion Prevention Systems (IPS)**.  
+These are your **first line of defense** against external and internal threats.
+      `
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/defense-in-depth.png",
+        alt: "Defense in Depth layered security architecture"
+      },
+      {
+        type: "image",
+        value: "/lessonimages/cybersecurity/firewall-layers-diagram.png",
+        alt: "Firewall and IDS layered defense architecture diagram"
       },
       {
         type: "text",
-        value:
-`Topics:
-- Hash functions (purpose, one-way)
-- Symmetric keys (AES) vs Asymmetric keys (RSA, ECC)
-- Certificates (what a CA does) and certificate validation
-- Common implementation pitfalls (hard-coded keys, weak randomness)`
+        value: `
+### 🎯 Learning Objectives
+- Understand the role of firewalls, IDS, and IPS in network defense.  
+- Learn how packet filtering and rule matching work.  
+- Differentiate between detection and prevention systems.  
+- Simulate how packets are allowed or blocked based on configured rules.
+      `
       },
       {
         type: "text",
-        value:
-`Lab (safe): Generate a self-signed cert in a controlled environment and examine its fields. Learn how TLS cert expiry or mismatched names cause client failures.`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Certificate Inspector — upload or paste a certificate (PEM), and show parsed fields graphically (issuer, subject, validity periods, key size). Add warnings for weak algorithms or short lifetimes.`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Explain in one paragraph why storing passwords with a modern slow hash (e.g., bcrypt) is better than plain text or MD5.`
-      }
-    ]
-  },
+        value: `
+### 🧱 1. Firewalls — Gatekeepers of Traffic
+A **firewall** inspects network packets and decides whether to allow or deny them based on rules.
 
-  {
-    slug: "web-app-security-owasp",
-    title: "Web Application Security — OWASP Top 10 (Deep Dive)",
-    content: [
-      {
-        type: "text",
-        value:
-`Deep conceptual coverage of common web vulnerabilities (in OWASP Top 10 terms). Focus: how vulnerabilities arise, how to detect them, and how to mitigate — NOT how to exploit them.`
-      },
-      {
-        type: "text",
-        value:
-`Module sections (each becomes a sub-lesson):
-- Injection (why input validation & parameterized queries prevent it)
-- Broken Auth (session management, multi-factor)
-- Sensitive Data Exposure (encryption at rest/in transit)
-- Broken Access Control (least privilege, enforce server-side checks)
-...and other OWASP items.`
-      },
-      {
-        type: "text",
-        value:
-`Safe Lab: Use an intentionally vulnerable app (in a contained lab you control) to **detect** vulnerabilities and then **fix** them. For example: find a page that echoes input and patch it by using proper escaping or parameterized queries.`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Interactive Vulnerability Map per page: show a site map of the demo app and overlay vulnerability heatmap (high/medium/low). Clicking a node shows the vulnerability type, trace (how input flows through code), and recommended fix.`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: For a mocked login API, list all checks you would perform to ensure it's not susceptible to common auth weaknesses (rate limiting, lockouts, password policy, secure cookies).`
-      }
-    ]
-  },
+**Types:**
+- **Packet Filtering Firewall:** Basic checks (IP, port, protocol).  
+- **Stateful Firewall:** Tracks session states (connection initiation and termination).  
+- **Application Firewall / WAF:** Filters HTTP requests at Layer 7 for attacks like SQLi, XSS.
 
-  {
-    slug: "scanning-and-enumeration-concepts",
-    title: "Scanning & Enumeration — Concepts and Detection",
-    content: [
+**Example Rule:**
+\`ALLOW tcp FROM 192.168.1.0/24 TO ANY PORT 22\`
+      `
+      },
       {
-        type: "text",
-        value:
-`High-level coverage of network and web asset discovery: what scanning is, why it is used, and how defenders detect/mitigate it. Emphasis on defensive detection and safe lab usage.`
+        type: "code",
+        language: "bash",
+        value: `# Basic UFW firewall commands (Ubuntu)
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+sudo ufw status verbose`,
+        runnable: false
       },
       {
         type: "text",
-        value:
-`Topics:
-- Difference between passive and active discovery
-- Port & service discovery (concepts, not commands)
-- Fingerprinting and banner analysis (how defenders can use it to identify software versions)
-- Rate control to avoid DoS during scans`
-      },
-      {
-        type: "text",
-        value:
-`Safe Lab: Run discovery tools only inside an isolated test environment. Capture the telemetry and create detection rules that would flag that scanning activity (e.g., many SYNs to sequential ports).`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Live Topology Discovery Demo — a simulated network map that fills in hosts/services as the learner "performs" discovery. The learner clicks “Start Discovery” and the UI reveals discovered nodes gradually, with a side panel showing which detection rules fired.`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Design a simple IDS rule (pseudocode) that triggers when a single source IP probes more than 50 unique ports in 60 seconds. Explain false positives and tuning.`
-      }
-    ]
-  },
+        value: `
+### 🕵️ 2. Intrusion Detection & Prevention Systems
+IDS and IPS go beyond simple filtering — they analyze **patterns**, **signatures**, and **behavior**.
 
-  {
-    slug: "vulnerability-assessment-vs-pentest",
-    title: "Vulnerability Assessment vs Penetration Testing — Methodology",
-    content: [
-      {
-        type: "text",
-        value:
-`Clarify the difference: vulnerability assessment (broad scanning/reporting) vs penetration testing (targeted, proof-of-concept exploitation with business impact analysis).`
-      },
-      {
-        type: "text",
-        value:
-`Methodology steps for a professional pentest (high-level):
-1. Scoping & Rules of Engagement  
-2. Reconnaissance & Enumeration  
-3. Vulnerability Identification & Validation  
-4. Exploitation (limited & controlled, only with permission)  
-5. Post-exploitation analysis (impact & cleanup)  
-6. Reporting & Remediation verification`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Pentest Workflow Canvas — interactive pipeline with clickable phases. Each phase expands into sub-checklists, typical tools (conceptual), and artifacts to collect (evidence, screenshots, logs).`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Write a 1-page test plan for a mock internal pentest — define scope, timeframe, deliverables, and safe termination criteria.`
-      }
-    ]
-  },
+| Feature | IDS | IPS |
+|----------|-----|-----|
+| Action | Detects only | Detects + Blocks |
+| Placement | Out-of-band | Inline |
+| Tools | Snort, Suricata, Zeek | Snort (IPS mode), Suricata |
+| Focus | Alerting | Active defense |
 
-  {
-    slug: "exploitation-concepts-safely",
-    title: "Exploitation Concepts — Responsible Approach (High Level)",
-    content: [
+An IDS monitors traffic and raises alerts; an IPS can drop malicious packets before they reach the host.
+      `
+      },
       {
-        type: "text",
-        value:
-`High-level explanation of what exploitation means (privilege escalation, code execution concepts) — without providing exploit steps or code. Focus on risk analysis, detection, and mitigation.`
+        type: "image",
+        value: "/lessonimages/cybersecurity/ids-packet-flow.png",
+        alt: "Packet flow through IDS and IPS detection pipeline"
       },
       {
         type: "text",
-        value:
-`Topics:
-- Principle of least privilege and why escalation is possible when it’s violated
-- Buffer overflow & injection *concepts* (how improper input handling enables attacks)
-- Importance of patch management and secure configuration`
-      },
-      {
-        type: "text",
-        value:
-`Safe Lab: Simulate a privilege escalation scenario in a closed lab using intentionally vulnerable VM images that come with guided steps and remediation tasks — the platform must force learners to document the fix after validation.`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Attack-Impact Flowchart — show how a low-severity vulnerability could chain into a high-impact outcome (e.g., weak credentials -> access -> sensitive data exposure). Provide “mitigation nodes” users can toggle to see how the chain breaks.`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: For a hypothetical web server with outdated modules, list three non-exploit remediation steps that reduce exploitability.`
-      }
-    ]
-  },
+        value: `
+### 💻 3. Simulation — Firewall Rule Visualizer (UI Idea)
+Learner can toggle rules like:
+- Allow Port 22 → ✅ SSH connects
+- Deny Port 80 → ❌ HTTP blocked
+- Allow 443 → ✅ HTTPS works
 
-  {
-    slug: "post-exploitation-and-forensics",
-    title: "Post-Exploitation, Logging & Forensics (Defender Focus)",
-    content: [
-      {
-        type: "text",
-        value:
-`After an incident, defenders must investigate and learn. This lesson covers logging best practices, evidence preservation, and high-level forensic thinking.`
+Each action updates a **live diagram** showing packet traversal through firewall → IDS → host.  
+This visual reinforcement builds intuition on how layered defense functions.
+      `
       },
       {
         type: "text",
-        value:
-`Topics:
-- Centralized logging (syslog, ELK, cloud logging) and why structured logs help detection
-- Preserving evidence: snapshots, immutable copies
-- Timeline reconstruction from logs and PCAPs`
+        value: `
+### 🧪 Safe Lab Exercise
+1. Run two Docker containers — client and web server.  
+2. Enable UFW on the server; only allow ports 22 and 443.  
+3. From client, try \`curl\` on 80 and 443 — note responses.  
+4. Observe blocked connections in \`/var/log/ufw.log\`.  
+5. (Optional) Install Snort in IDS mode and capture alerts.  
+Record which packets were dropped vs allowed.
+      `
       },
       {
         type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Log Timeline Rebuilder — present sample logs and allow learners to filter by IP, user, or event. Then show a reconstructed timeline of attacker actions with clickable artifacts (log entries, mock pcap snippets).`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Given a mocked set of logs, identify the top 3 suspicious events and propose immediate containment steps.`
-      }
-    ]
-  },
+        value: `
+### 🚀 Mini Project — “Build Your Own Mini-Firewall”
+Create a Python script that:
+- Reads a simple ruleset (JSON: port, protocol, action).  
+- Accepts simulated packets as input.  
+- Outputs “ALLOW” or “BLOCK” with rule match reason.
 
-  {
-    slug: "reporting-remediation-and-communication",
-    title: "Reporting, Remediation & Communication",
-    content: [
-      {
-        type: "text",
-        value:
-`A professional pentest is only as valuable as its report and remediation follow-through. This lesson teaches how to write clear, actionable reports and work with engineering teams to fix issues.`
+Optional: visualize results in browser using your simulation interface.
+      `
       },
       {
         type: "text",
-        value:
-`Report sections:
-- Executive summary (business impact)
-- Technical details (vulnerability, evidence, risk rating)
-- Reproduction steps (high-level, safe)
-- Remediation guidance
-- Retest verification instructions`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Interactive Report Builder — templates to drag & drop vulnerability cards into a report. Each card auto-populates severity, suggested remediation, and a “fix confirmed” checkbox that triggers re-test tasks.`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Convert a single vulnerability discovery into a one-page executive summary and a one-page technical remediation for engineers.`
-      }
-    ]
-  },
+        value: `
+### 🎓 Career Notes
+Knowledge of firewall and IDS operations is critical for:
+- **SOC Analyst** — interpreting alerts and tuning signatures.  
+- **Network Security Engineer** — designing rule sets and segmenting networks.  
+- **Red Teamers** — understanding bypass methods (for ethical testing).  
 
-  {
-    slug: "defensive-security-and-detection",
-    title: "Defensive Security — Detection & Monitoring",
-    content: [
-      {
-        type: "text",
-        value:
-`Understand how to design detection: what to log, how to alert, and how to triage incidents. This lesson bridges pentesting knowledge into defensive operations.`
+Mastering these tools helps you think like both **defender and attacker**.
+      `
       },
       {
         type: "text",
-        value:
-`Topics:
-- Key telemetry sources (network flows, endpoint logs, application logs)
-- Use of SIEM and creating detection rules
-- Incident response basics and runbooks`
+        value: `
+### 💻 Interactive Simulation — Firewall Rule Visualizer
+Below is a live simulation. Toggle Allow/Deny for each port and send packets to see what happens!
+      `
       },
       {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-SIEM Rule Simulator — let learners craft a simple rule (pseudocode) and then play a stream of synthetic events to see when the rule fires and how many alerts it generates (teaches tuning).`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Draft a short incident response playbook for "suspicious login from new country" that includes isolation, evidence collection, and communication steps.`
-      }
-    ]
-  },
-
-  {
-    slug: "labs-and-platform-setup",
-    title: "Labs & Safe Environment Setup",
-    content: [
-      {
-        type: "text",
-        value:
-`How to build safe, repeatable labs for hands-on learning. Emphasize containerized vulnerable apps, snapshotable VMs, and network segmentation.`
-      },
-      {
-        type: "text",
-        value:
-`Recommended setup:
-- Use Docker Compose to run intentionally vulnerable web apps in isolated networks.
-- Use snapshot-capable VMs (VirtualBox / cloud with snapshots) for full-system exercises.
-- Integrate ephemeral learnerspace: spin up per-learner labs and destroy after the session.
-- Collect telemetry: forward logs/pcaps to the platform for visualization and grading.`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Per-Lab Topology Visualizer — when a lab starts, show the temporary network map, container names, IPs, and exposed services. Provide buttons to "Open Browser to Target" or "Open Terminal (sandboxed)".`
-      },
-      {
-        type: "text",
-        value:
-`Exercise: Create a Docker Compose file (conceptually) that runs a small two-container lab: a vulnerable web app and a logging collector. Describe the network isolation you will apply.`
-      }
-    ]
-  },
-
-  {
-    slug: "capstone-simulated-pentest",
-    title: "Capstone — Simulated (Guided & Ethical) Penetration Test",
-    content: [
-      {
-        type: "text",
-        value:
-`Capstone: run a fully guided simulated pentest against an intentionally vulnerable environment you control. This is a *guided* exercise: hints, safe boundaries, and remediation steps are built in.`
-      },
-      {
-        type: "text",
-        value:
-`Capstone flow (steps the student follows):
-1. Read scope & rules of engagement.
-2. Map target and enumerate assets.
-3. Produce a prioritized vulnerability list (no public exploitation).
-4. Validate via non-destructive proofs (logs, screenshots) and propose remediation.
-5. Produce a final report (executive + technical).`
-      },
-      {
-        type: "text",
-        value:
-`Visualization idea (lesson UI):  
-Capstone Dashboard — combines an interactive topology, a “taskboard” of objectives, evidence uploader, and an auto-generated report draft. The platform can grade tasks and give feedback.`
-      },
-      {
-        type: "text",
-        value:
-`Final Exercise: Complete the guided pentest. Submit your report and remediation plan. Include screenshots or log extracts as evidence.`
+        type: "component",
+        value: FirewallSimulator
       }
     ]
   }
