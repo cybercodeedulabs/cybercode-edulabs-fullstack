@@ -1,5 +1,4 @@
-// src/components/AIAssistant.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, X, MessageSquare } from "lucide-react";
 import courseData from "../data/courseData";
@@ -7,12 +6,23 @@ import courseData from "../data/courseData";
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { from: "bot", text: "👋 Hi! I'm Cybercode AI Advisor. Ask me about our training courses!" },
+    {
+      from: "bot",
+      text: "👋 Hi! I'm Cybercode AI Advisor. Ask me about our training courses!",
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
-  // ✅ Format your course data for context
+  // ✅ Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  // ✅ Generate course context for AI
   const getCourseContext = () => {
     return courseData
       .map(
@@ -22,6 +32,7 @@ const AIAssistant = () => {
       .join("\n");
   };
 
+  // ✅ Send message handler
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -31,12 +42,10 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      // ✅ Send to your Netlify function (not OpenAI directly)
+      // Send to Netlify serverless backend (OpenRouter powered)
       const response = await fetch("/.netlify/functions/ask-ai", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: input,
           messages: messages.map((m) => ({
@@ -54,18 +63,24 @@ const AIAssistant = () => {
         data.error ||
         "Sorry, I couldn't find info about that course.";
 
-      // ✅ Auto-convert URLs into clickable links
+      // ✅ Convert URLs to clickable links
       const formatted = aiText.replace(
         /(https?:\/\/[^\s]+)/g,
         '<a href="$1" target="_blank" class="text-blue-600 underline">$1</a>'
       );
 
-      setMessages((prev) => [...prev, { from: "bot", text: formatted, html: true }]);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: formatted, html: true },
+      ]);
     } catch (err) {
       console.error("AI Error:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: "⚠️ Unable to connect to Cybercode AI service." },
+        {
+          from: "bot",
+          text: "⚠️ Unable to connect to Cybercode AI service.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -91,11 +106,20 @@ const AIAssistant = () => {
             exit={{ opacity: 0, y: 50 }}
             className="fixed bottom-20 right-6 w-80 bg-white border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
           >
+            {/* Header */}
             <div className="bg-blue-600 text-white p-3 font-semibold">
               Cybercode AI Advisor
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 text-sm">
+            {/* Scrollable Messages */}
+            <div
+              className="flex-1 overflow-y-auto p-3 space-y-2 text-sm"
+              style={{
+                maxHeight: "400px",
+                overflowY: "auto",
+                scrollbarWidth: "thin",
+              }}
+            >
               {messages.map((msg, i) => (
                 <div
                   key={i}
@@ -109,9 +133,14 @@ const AIAssistant = () => {
                   }
                 ></div>
               ))}
-              {loading && <div className="text-gray-400 text-xs">Thinking...</div>}
+
+              {loading && (
+                <div className="text-gray-400 text-xs">Thinking...</div>
+              )}
+              <div ref={chatEndRef}></div>
             </div>
 
+            {/* Input Field */}
             <div className="flex items-center p-2 border-t">
               <input
                 className="flex-1 border rounded-lg px-2 py-1 text-sm"
