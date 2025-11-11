@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
+// ✅ New import for AI Assistant
+import AIAssistant from "./components/AIAssistant";
+
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
 import CookieBanner from "./components/CookieBanner";
@@ -36,7 +39,6 @@ import Payment from "./pages/Payment";
 // ✅ Import global user context hook
 import { useUser } from "./contexts/UserContext";
 import AdminWaitlist from "./pages/AdminWaitlist";
-
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -189,6 +191,9 @@ function App() {
         {/* Global Cookie Banner */}
         <CookieBanner />
         <Footer />
+
+        {/* ✅ Global AI Assistant (appears on all pages) */}
+        <AIAssistant />
       </div>
     </Router>
   );
