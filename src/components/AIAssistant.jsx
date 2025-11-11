@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, X, MessageSquare } from "lucide-react";
-import courseData from "../data/courseData"; // ✅ Import your existing JS file
+import courseData from "../data/courseData";
 
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,14 +12,14 @@ const AIAssistant = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Generate contextual knowledge from your courseData.js
+  // ✅ Format your course data for context
   const getCourseContext = () => {
     return courseData
       .map(
-        (course) =>
-          `Course: ${course.title}\nCategory: ${course.category || "N/A"}\nDescription: ${course.description || "No description"}`
+        (c) =>
+          `• ${c.title} (${c.category}) — ${c.description}. Link: https://cybercodeedulabs.netlify.app/courses/${c.slug}`
       )
-      .join("\n\n");
+      .join("\n");
   };
 
   const handleSend = async () => {
@@ -31,6 +31,8 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
+      const courseContext = getCourseContext();
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -39,12 +41,18 @@ const AIAssistant = () => {
         },
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
+          temperature: 0.7,
           messages: [
             {
               role: "system",
-              content: `You are a course advisor for Cybercode EduLabs. Use this course data to answer clearly:
-              ${getCourseContext()}
-              Only talk about Cybercode EduLabs courses. Be concise and friendly.`,
+              content: `You are an expert course advisor for Cybercode EduLabs.
+              You must ONLY talk about Cybercode EduLabs courses listed below.
+              If users ask "what courses are available", list all titles clearly.
+              If they ask "best course for developers", recommend one related to Programming & Development.
+              When relevant, include clickable course links.
+              
+              Here is the course catalog:
+              ${courseContext}`,
             },
             ...messages.map((m) => ({
               role: m.from === "user" ? "user" : "assistant",
@@ -56,14 +64,22 @@ const AIAssistant = () => {
       });
 
       const data = await response.json();
-      const aiReply =
+      const aiText =
         data.choices?.[0]?.message?.content ||
-        "Sorry, I couldn’t find info about that.";
-      setMessages((prev) => [...prev, { from: "bot", text: aiReply }]);
+        "Sorry, I couldn't find info about that course.";
+
+      // ✅ Auto-convert URLs into clickable links
+      const formatted = aiText.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" class="text-blue-600 underline">$1</a>'
+      );
+
+      setMessages((prev) => [...prev, { from: "bot", text: formatted, html: true }]);
     } catch (err) {
+      console.error("AI Error:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: "⚠️ Error: Unable to connect to AI service." },
+        { from: "bot", text: "⚠️ Unable to connect to the AI service." },
       ]);
     } finally {
       setLoading(false);
@@ -102,9 +118,10 @@ const AIAssistant = () => {
                       ? "bg-blue-100 text-right ml-10"
                       : "bg-gray-100 mr-10"
                   }`}
-                >
-                  {msg.text}
-                </div>
+                  dangerouslySetInnerHTML={
+                    msg.html ? { __html: msg.text } : { __html: msg.text }
+                  }
+                ></div>
               ))}
               {loading && <div className="text-gray-400 text-xs">Thinking...</div>}
             </div>
