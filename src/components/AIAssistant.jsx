@@ -31,41 +31,27 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      const courseContext = getCourseContext();
-
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      // ✅ Send to your Netlify function (not OpenAI directly)
+      const response = await fetch("/.netlify/functions/ask-ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          temperature: 0.7,
-          messages: [
-            {
-              role: "system",
-              content: `You are an expert course advisor for Cybercode EduLabs.
-              You must ONLY talk about Cybercode EduLabs courses listed below.
-              If users ask "what courses are available", list all titles clearly.
-              If they ask "best course for developers", recommend one related to Programming & Development.
-              When relevant, include clickable course links.
-              
-              Here is the course catalog:
-              ${courseContext}`,
-            },
-            ...messages.map((m) => ({
-              role: m.from === "user" ? "user" : "assistant",
-              content: m.text,
-            })),
-            { role: "user", content: input },
-          ],
+          prompt: input,
+          messages: messages.map((m) => ({
+            role: m.from === "user" ? "user" : "assistant",
+            content: m.text,
+          })),
+          courseContext: getCourseContext(),
         }),
       });
 
       const data = await response.json();
+
       const aiText =
         data.choices?.[0]?.message?.content ||
+        data.error ||
         "Sorry, I couldn't find info about that course.";
 
       // ✅ Auto-convert URLs into clickable links
@@ -79,7 +65,7 @@ const AIAssistant = () => {
       console.error("AI Error:", err);
       setMessages((prev) => [
         ...prev,
-        { from: "bot", text: "⚠️ Unable to connect to the AI service." },
+        { from: "bot", text: "⚠️ Unable to connect to Cybercode AI service." },
       ]);
     } finally {
       setLoading(false);
