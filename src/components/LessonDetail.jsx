@@ -16,6 +16,7 @@ export default function LessonDetail() {
   const [darkMode, setDarkMode] = useState(false);
   const [codeInputs, setCodeInputs] = useState({});
   const [outputs, setOutputs] = useState({});
+  const [running, setRunning] = useState({}); // ✅ Added state
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
@@ -46,15 +47,128 @@ export default function LessonDetail() {
     );
   }
 
+  // ✅ handleRunCode – full browser-based runner
+  const handleRunCode = async (idx, language, defaultCode) => {
+    const code = codeInputs[idx] ?? defaultCode ?? "";
+
+    setRunning((s) => ({ ...s, [idx]: true }));
+    setOutputs((prev) => ({ ...prev, [idx]: "" }));
+
+    // helper to load Pyodide
+    async function loadPyodideIfNeeded() {
+      if (window.pyodide) return window.pyodide;
+      if (!window.loadPyodide) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js";
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("Failed to load Pyodide"));
+          document.head.appendChild(s);
+        });
+      }
+      window.pyodide = await window.loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/",
+      });
+      return window.pyodide;
+    }
+
+    try {
+      // 1️⃣ JavaScript
+      if (language === "javascript" || language === "js") {
+        try {
+          // eslint-disable-next-line no-eval
+          const res = eval(code);
+          setOutputs((prev) => ({ ...prev, [idx]: String(res ?? "✅ Code executed successfully.") }));
+        } catch (err) {
+          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+        } finally {
+          setRunning((s) => ({ ...s, [idx]: false }));
+        }
+        return;
+      }
+
+      // 2️⃣ Python
+      if (language === "python") {
+        setOutputs((prev) => ({ ...prev, [idx]: "⏳ Loading Python runtime..." }));
+        try {
+          const pyodide = await loadPyodideIfNeeded();
+          setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Python..." }));
+          const captured = [];
+          pyodide.setStdout({ batched: (s) => captured.push(s) });
+          pyodide.setStderr({ batched: (s) => captured.push(s) });
+          const result = await pyodide.runPythonAsync(code);
+          let outText = captured.join("") || String(result || "✅ Python executed.");
+          setOutputs((prev) => ({ ...prev, [idx]: outText }));
+        } catch (err) {
+          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+        } finally {
+          setRunning((s) => ({ ...s, [idx]: false }));
+        }
+        return;
+      }
+
+      // 3️⃣ Go
+      if (language === "go" || language === "golang") {
+        setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Go code..." }));
+        try {
+          const payload = new URLSearchParams();
+          payload.append("version", "2");
+          payload.append("body", code);
+          const resp = await fetch("https://go.dev/_/play/compile", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: payload.toString(),
+          });
+          if (!resp.ok) throw new Error("Go API not reachable (CORS)");
+          const data = await resp.json();
+          if (data.Errors) setOutputs((prev) => ({ ...prev, [idx]: data.Errors }));
+          else {
+            const output = (data.Events || []).map((e) => e.Message || "").join("");
+            setOutputs((prev) => ({ ...prev, [idx]: output || "✅ Go executed successfully." }));
+          }
+        } catch (err) {
+          // fallback to opening Go Playground
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = "https://go.dev/play/";
+          form.target = "_blank";
+          const textarea = document.createElement("textarea");
+          textarea.name = "body";
+          textarea.value = code;
+          form.appendChild(textarea);
+          document.body.appendChild(form);
+          form.submit();
+          document.body.removeChild(form);
+          setOutputs((prev) => ({ ...prev, [idx]: "Opened in Go Playground (fallback)." }));
+        } finally {
+          setRunning((s) => ({ ...s, [idx]: false }));
+        }
+        return;
+      }
+
+      // 4️⃣ C/C++/Java – OneCompiler fallback
+      if (["c", "cpp", "java"].includes(language)) {
+        window.open("https://onecompiler.com", "_blank");
+        setOutputs((prev) => ({ ...prev, [idx]: `Opened ${language.toUpperCase()} editor (OneCompiler).` }));
+        setRunning((s) => ({ ...s, [idx]: false }));
+        return;
+      }
+
+      setOutputs((prev) => ({ ...prev, [idx]: `⚠️ In-browser execution not supported for ${language}.` }));
+    } catch (outerErr) {
+      setOutputs((prev) => ({ ...prev, [idx]: `❌ Unexpected error: ${outerErr.message}` }));
+    } finally {
+      setRunning((s) => ({ ...s, [idx]: false }));
+    }
+  };
+
   // Scroll spy for TOC
   useEffect(() => {
     const handleScroll = () => {
       sectionRefs.current.forEach((ref, idx) => {
         if (ref) {
           const rect = ref.getBoundingClientRect();
-          if (rect.top <= 100 && rect.bottom >= 100) {
-            setActiveSection(idx);
-          }
+          if (rect.top <= 100 && rect.bottom >= 100) setActiveSection(idx);
         }
       });
     };
@@ -63,70 +177,21 @@ export default function LessonDetail() {
   }, []);
 
   const scrollToSection = (idx) => sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   const goPrev = () => lessonIndex > 0 && navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
   const goNext = () => lessonIndex < lessons.length - 1 && navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex + 1].slug}`);
-
-  const handleRunCode = (idx, language) => {
-    const code = codeInputs[idx] || "";
-
-    if (language === "javascript") {
-      try {
-        const result = eval(code);
-        setOutputs((prev) => ({ ...prev, [idx]: String(result) || "✅ Code executed successfully (no output)" }));
-      } catch (err) {
-        setOutputs((prev) => ({ ...prev, [idx]: String(err) }));
-      }
-      return;
-    }
-
-    if (language === "go" || language === "golang") {
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://go.dev/play/";
-      form.target = "_blank";
-      const textarea = document.createElement("textarea");
-      textarea.name = "body";
-      textarea.value = code;
-      form.appendChild(textarea);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-      setOutputs((prev) => ({ ...prev, [idx]: "Opened in Go Playground with code preloaded." }));
-      return;
-    }
-
-    if (language === "python") {
-      window.open("https://replit.com/new/python3", "_blank");
-      setOutputs((prev) => ({ ...prev, [idx]: "Opened in Replit Python runner (code cannot be prefilled)." }));
-      return;
-    }
-
-    if (["c", "cpp", "java"].includes(language)) {
-      window.open("https://onecompiler.com", "_blank");
-      setOutputs((prev) => ({ ...prev, [idx]: `Opened ${language.toUpperCase()} editor in OneCompiler.` }));
-      return;
-    }
-
-    setOutputs((prev) => ({ ...prev, [idx]: `Execution for ${language} is not supported in this environment.` }));
-  };
-
   const handleCopy = (value, idx) => {
     navigator.clipboard.writeText(value);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   };
-
   const handleComplete = () => {
-    if (user && isNextLesson && enrolledCourses.includes(courseSlug)) {
-      completeLesson(courseSlug, lessonSlug);
-    }
+    if (user && isNextLesson && enrolledCourses.includes(courseSlug)) completeLesson(courseSlug, lessonSlug);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-16 font-sans lg:flex lg:gap-8">
       <div className="flex-1 space-y-12">
-        {/* Lesson Banner */}
+        {/* Banner */}
         <div className="mb-12 bg-gradient-to-r from-indigo-200 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800 p-6 rounded-2xl shadow-inner flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">{lesson.title}</h1>
           <span className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300 font-medium">
@@ -164,7 +229,12 @@ export default function LessonDetail() {
                   )}
                 </div>
                 <div className="relative">
-                  <SyntaxHighlighter language={block.language} style={darkMode ? oneDark : oneLight} className="!p-4 !text-sm" showLineNumbers>
+                  <SyntaxHighlighter
+                    language={block.language}
+                    style={darkMode ? oneDark : oneLight}
+                    className="!p-4 !text-sm"
+                    showLineNumbers
+                  >
                     {block.value}
                   </SyntaxHighlighter>
                   <button
@@ -188,15 +258,27 @@ export default function LessonDetail() {
                       onChange={(e) => setCodeInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
                       rows={6}
                       className="w-full p-3 text-sm font-mono bg-white dark:bg-gray-900 text-black dark:text-white border border-gray-300 dark:border-gray-600 rounded-md"
-                      placeholder="Write your code here..."
                     />
                     <button
-                      onClick={() => handleRunCode(idx, block.language)}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium"
+                      onClick={() => handleRunCode(idx, block.language, block.value)}
+                      disabled={!!running[idx]}
+                      className={`px-4 py-2 rounded-md font-medium ${
+                        running[idx]
+                          ? "bg-indigo-400 cursor-wait text-white"
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      }`}
                     >
-                      {block.language === "go" ? "Open in Go Playground" : block.language === "python" ? "Open in Python Runner" : "Run Code"}
+                      {running[idx]
+                        ? "Running..."
+                        : block.language === "go"
+                        ? "Open in Go Playground"
+                        : block.language === "python"
+                        ? "Run Python Code"
+                        : "Run Code"}
                     </button>
-                    <pre className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono">{outputs[idx] || ""}</pre>
+                    <pre className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono">
+                      {outputs[idx] || ""}
+                    </pre>
                   </div>
                 )}
               </div>
@@ -204,7 +286,6 @@ export default function LessonDetail() {
           </div>
         ))}
 
-        {/* Complete Lesson Button */}
         {user && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
@@ -217,7 +298,7 @@ export default function LessonDetail() {
           </button>
         )}
 
-        {/* Navigation Buttons */}
+        {/* Navigation */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
           <button
             onClick={goPrev}
@@ -246,7 +327,7 @@ export default function LessonDetail() {
         </div>
       </div>
 
-      {/* Sticky TOC */}
+      {/* Sidebar TOC */}
       <div className="hidden lg:block w-64 sticky top-28 h-max border-l border-gray-200 dark:border-gray-700 pl-6">
         <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Lesson Contents</h4>
         <ul className="space-y-2 text-sm">
