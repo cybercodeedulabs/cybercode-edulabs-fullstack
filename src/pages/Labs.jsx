@@ -5,6 +5,13 @@ import { useUser } from "../contexts/UserContext";
 export default function Labs() {
   const { user, enrolledCourses } = useUser();
   const navigate = useNavigate();
+    useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    } else if (enrolledCourses.length === 0) {
+      navigate("/courses"); // redirect non-enrolled users to browse courses
+    }
+  }, [user, enrolledCourses, navigate]);
 
   const hasAccess = enrolledCourses && enrolledCourses.length > 0;
 

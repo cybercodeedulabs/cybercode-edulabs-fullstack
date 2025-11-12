@@ -13,8 +13,8 @@ export const UserProvider = ({ children }) => {
   });
 
   const [enrolledCourses, setEnrolledCourses] = useState(() => {
-    const storedCourses = localStorage.getItem("enrolledCourses");
-    return storedCourses ? JSON.parse(storedCourses) : [];
+    const stored = localStorage.getItem("enrolledCourses");
+    return stored ? JSON.parse(stored) : [];
   });
 
   const [courseProgress, setCourseProgress] = useState(() => {
@@ -45,43 +45,52 @@ export const UserProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Persist enrolled courses
+  // Persist all data to localStorage
   useEffect(() => {
+    if (user) localStorage.setItem("cybercodeUser", JSON.stringify(user));
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
-  }, [enrolledCourses]);
-
-  // Persist course progress
-  useEffect(() => {
     localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
-  }, [courseProgress]);
+  }, [user, enrolledCourses, courseProgress]);
 
+  // ✅ Enroll in a specific course
   const enrollInCourse = (courseSlug) => {
-    if (!enrolledCourses.includes(courseSlug)) {
-      setEnrolledCourses((prev) => [...prev, courseSlug]);
-    }
+    if (!user) return; // must be logged in
+    setEnrolledCourses((prev) => {
+      const updated = prev.includes(courseSlug) ? prev : [...prev, courseSlug];
+      localStorage.setItem("enrolledCourses", JSON.stringify(updated));
+      return updated;
+    });
   };
 
-  // Sequential lesson completion
+  // ✅ Sequential lesson completion
   const completeLesson = (courseSlug, lessonSlug) => {
     const lessons = lessonsData[courseSlug] || [];
-    const courseData = courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+    const courseData = courseProgress[courseSlug] || {
+      completedLessons: [],
+      currentLessonIndex: 0,
+    };
     const nextLesson = lessons[courseData.completedLessons.length];
+    if (nextLesson?.slug !== lessonSlug) return;
 
-    if (nextLesson?.slug !== lessonSlug) return; // Only allow next lesson
-
-    setCourseProgress({
+    const updatedProgress = {
       ...courseProgress,
       [courseSlug]: {
         completedLessons: [...courseData.completedLessons, lessonSlug],
         currentLessonIndex: courseData.currentLessonIndex + 1,
       },
-    });
+    };
+    setCourseProgress(updatedProgress);
+    localStorage.setItem("courseProgress", JSON.stringify(updatedProgress));
   };
 
+  // ✅ Logout cleanup
   const logout = async () => {
     await signOut(auth);
     setUser(null);
+    setEnrolledCourses([]);
     localStorage.removeItem("cybercodeUser");
+    localStorage.removeItem("enrolledCourses");
+    localStorage.removeItem("courseProgress");
   };
 
   return (

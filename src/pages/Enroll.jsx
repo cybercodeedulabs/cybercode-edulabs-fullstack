@@ -1,12 +1,14 @@
+// src/pages/Enroll.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
 export default function Enroll() {
-  const { user, enrolledCourses } = useUser();
+  const { courseSlug } = useParams(); // 🔥 ensure route is defined as /enroll/:courseSlug
+  const { user, enrolledCourses, enrollInCourse } = useUser();
   const navigate = useNavigate();
 
-  const isAlreadyEnrolled = enrolledCourses && enrolledCourses.length > 0;
+  const isAlreadyEnrolled = enrolledCourses.includes(courseSlug);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center justify-center text-center px-6">
@@ -39,16 +41,20 @@ export default function Enroll() {
           ) : (
             <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg max-w-xl">
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                Choose your course and unlock advanced projects, live mentorship, and certification exams.
+                Unlock advanced projects, live mentorship, and certification for this course.
               </p>
               <button
-                onClick={() => alert("Payment gateway or enrollment form to be added here.")}
+                onClick={() => {
+                  enrollInCourse(courseSlug);
+                  alert(`🎉 Enrolled successfully in ${courseSlug} course!`);
+                  navigate(`/courses/${courseSlug}`);
+                }}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all"
               >
                 🔓 Enroll Now
               </button>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                *Enrollment unlocks labs, projects, and certification for all premium courses.
+                *Enrollment unlocks labs, projects, and certification for this course.
               </p>
             </div>
           )}
