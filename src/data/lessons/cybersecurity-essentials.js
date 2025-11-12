@@ -8,6 +8,8 @@ import FirewallSimulator from "../../components/simulations/FirewallSimulator";
 import PhishingEmailSimulator from "../../components/simulations/PhishingEmailSimulator";
 import VulnerabilityScannerSimulator from "../../components/simulations/VulnerabilityScannerSimulator";
 import SIEMLogAnalyzerSimulator from "../../components/simulations/SIEMLogAnalyzerSimulator";
+import ForensicsSimulator from "../../components/simulations/ForensicsSimulator";
+
 
 
 
@@ -919,6 +921,81 @@ Mastery of SIEM and IR workflows is required for:
 - **Incident Responder**  
 - **Threat Hunter**  
 - **Blue Team Engineer**
+      `
+    }
+  ]
+},
+{
+  slug: "digital-forensics-evidence-handling",
+  title: "Digital Forensics & Evidence Handling",
+  content: [
+    {
+      type: "text",
+      value: `
+Digital forensics is the science of collecting, preserving, and analyzing digital evidence.  
+This lesson teaches how to treat evidence properly, verify integrity, and build a defensible timeline.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/forensics-process.png",
+      alt: "Digital forensics process: Identification → Preservation → Collection → Examination → Analysis → Reporting"
+    },
+    {
+      type: "text",
+      value: `
+### 🔎 Key Concepts
+- **Chain of Custody** — who handled evidence and when  
+- **Hashing** — proving evidence integrity (SHA-256, MD5 historically)  
+- **Mounting read-only images** — avoid modifying original media  
+- **File carving** — recover deleted files from raw bytes  
+- **Timeline analysis** — reconstruct events chronologically
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/chain-of-custody.png",
+      alt: "Chain of custody example with timestamps, handlers, and storage"
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — Forensics Lab
+Practice ingesting a sample, compute SHA-256, build a timeline, and try a simple carving exercise.
+      `
+    },
+    {
+      type: "component",
+      value: ForensicsSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+1. Create a forensic image of a test VM disk (use dd or OSFClone).  
+2. Compute SHA-256 of the original image and the copy — confirm they match.  
+3. Use \`strings\` and hex viewers to find deleted file fragments and attempt carving.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project
+Produce a short forensic report for a simulated incident:
+- Evidence description  
+- SHA-256 hash values  
+- Timeline of events  
+- Findings and recommended next steps
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+Skills here feed directly into:
+- **Forensic Analyst** — evidence collection and analysis  
+- **Incident Responder** — preserving and triaging compromised systems  
+- **eDiscovery Specialist** — legal admissibility of digital evidence
       `
     }
   ]
