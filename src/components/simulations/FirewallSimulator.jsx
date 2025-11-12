@@ -1,16 +1,14 @@
 // src/components/simulations/FirewallSimulator.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
- * FirewallSimulator.jsx (Enhanced + Live Packet Console)
+ * FirewallSimulator.jsx (Full Lab Version)
  * -------------------------------------------------------
- * Visual + Interactive simulation for teaching Firewalls, IDS & IPS.
  * Includes:
- * - Multi-packet trail animation for ALLOW
- * - Burst-stop animation for BLOCKED
- * - IDS alert triggering
- * - Real-time packet log console (timestamped)
+ * - Realistic firewall packet animation
+ * - IDS alert logic
+ * - Live log console with export + clear options
  */
 
 const FirewallSimulator = () => {
@@ -22,7 +20,7 @@ const FirewallSimulator = () => {
   const [packetAnimating, setPacketAnimating] = useState(false);
   const [alert, setAlert] = useState("");
   const [packetTrail, setPacketTrail] = useState([]);
-  const [logs, setLogs] = useState([]); // 🧠 new log state
+  const [logs, setLogs] = useState([]);
 
   const toggleRule = (port) => {
     setRules({
@@ -34,7 +32,26 @@ const FirewallSimulator = () => {
   const addLog = (message, type = "info") => {
     const timestamp = new Date().toLocaleTimeString();
     const logEntry = { time: timestamp, message, type };
-    setLogs((prev) => [...prev.slice(-7), logEntry]); // keep last 7 logs
+    setLogs((prev) => [...prev.slice(-7), logEntry]);
+  };
+
+  const exportToCSV = () => {
+    if (logs.length === 0) return;
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      ["Time,Message,Type", ...logs.map((l) => `${l.time},"${l.message}",${l.type}`)].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "firewall_simulation_logs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const clearLogs = () => {
+    setLogs([]);
+    addLog("🧹 Logs cleared.", "info");
   };
 
   const handleSendPacket = () => {
@@ -52,7 +69,6 @@ const FirewallSimulator = () => {
       newCount[selectedPort] = (newCount[selectedPort] || 0) + 1;
       setBlockedCount(newCount);
 
-      // IDS Alert trigger
       if (newCount[selectedPort] >= 3) {
         const alertMsg = `⚠️ IDS Alert: Multiple blocked attempts on port ${selectedPort}`;
         setAlert(alertMsg);
@@ -70,7 +86,6 @@ const FirewallSimulator = () => {
       setPacketTrail([]);
     }
 
-    // Reset after animation
     setTimeout(() => {
       setPacketAnimating(false);
       setPacketTrail([]);
@@ -80,7 +95,7 @@ const FirewallSimulator = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-2xl border border-gray-200">
       <h2 className="text-xl font-semibold mb-4 text-center text-blue-700">
-        🔒 Firewall Rule Visualizer (with Live Packet Log)
+        🔒 Firewall Rule Visualizer — Full Lab Mode
       </h2>
 
       {/* Rule Table */}
@@ -137,7 +152,6 @@ const FirewallSimulator = () => {
 
       {/* Animation Track */}
       <div className="relative flex items-center justify-between w-full mt-6 mb-4 px-6">
-        {/* Client */}
         <div className="flex flex-col items-center">
           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
             💻
@@ -145,7 +159,6 @@ const FirewallSimulator = () => {
           <span className="text-xs mt-1">Client</span>
         </div>
 
-        {/* Track */}
         <div className="relative flex-1 h-1 mx-4 bg-gray-300 rounded-full overflow-hidden">
           {/* Main Packet */}
           <AnimatePresence>
@@ -167,7 +180,7 @@ const FirewallSimulator = () => {
             )}
           </AnimatePresence>
 
-          {/* Trail Dots for ALLOW */}
+          {/* Trail Dots */}
           {packetTrail.map((i) => (
             <motion.div
               key={i}
@@ -193,7 +206,6 @@ const FirewallSimulator = () => {
           )}
         </div>
 
-        {/* Server */}
         <div className="flex flex-col items-center">
           <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
             🖥️
@@ -202,7 +214,7 @@ const FirewallSimulator = () => {
         </div>
       </div>
 
-      {/* Result Display */}
+      {/* Result */}
       <div
         className={`text-center font-semibold ${
           result.includes("ALLOWED")
@@ -215,16 +227,32 @@ const FirewallSimulator = () => {
         {result || "No packets sent yet."}
       </div>
 
-      {/* IDS Alert */}
       {alert && (
         <div className="mt-4 text-yellow-600 bg-yellow-50 border border-yellow-200 p-3 rounded-md text-sm text-center">
           {alert}
         </div>
       )}
 
-      {/* 🧠 Live Packet Log Console */}
-      <div className="mt-6 bg-gray-900 text-gray-100 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm shadow-inner border border-gray-700">
-        <h3 className="text-green-400 font-semibold mb-2">🖥️ Live Packet Log</h3>
+      {/* Live Packet Log Console */}
+      <div className="mt-6 bg-gray-900 text-gray-100 rounded-lg p-4 h-52 overflow-y-auto font-mono text-sm shadow-inner border border-gray-700">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-green-400 font-semibold">🖥️ Live Packet Log</h3>
+          <div className="space-x-2">
+            <button
+              onClick={clearLogs}
+              className="px-2 py-1 bg-gray-700 text-gray-200 text-xs rounded hover:bg-gray-600"
+            >
+              Clear
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+
         {logs.length === 0 && (
           <div className="text-gray-500 italic">No activity yet...</div>
         )}
