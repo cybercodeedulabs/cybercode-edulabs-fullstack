@@ -6,6 +6,8 @@ import PacketTimelineSimulator from "../../components/simulations/PacketTimeline
 import LinuxPermissionSimulator from "../../components/simulations/LinuxPermissionSimulator";
 import FirewallSimulator from "../../components/simulations/FirewallSimulator";
 import PhishingEmailSimulator from "../../components/simulations/PhishingEmailSimulator";
+import VulnerabilityScannerSimulator from "../../components/simulations/VulnerabilityScannerSimulator";
+
 
 
 const cybersecurityEssentials = [
@@ -747,6 +749,85 @@ Mastering endpoint protection is essential for:
 - **SOC Analyst** — analyzing alerts from antivirus and EDR tools  
 - **Incident Responder** — isolating infected machines  
 - **Security Awareness Trainer** — educating users on phishing defense  
+      `
+    }
+  ]
+},
+{
+  slug: "vulnerability-management",
+  title: "Vulnerability Management & Patch Lifecycle",
+  content: [
+    {
+      type: "text",
+      value: `
+Every system has weaknesses — **vulnerabilities** — that attackers exploit.  
+Vulnerability management ensures those weaknesses are **identified, prioritized, and patched** before exploitation.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/vulnerability-lifecycle.png",
+      alt: "Vulnerability management lifecycle diagram"
+    },
+    {
+      type: "text",
+      value: `
+### 🧱 The Lifecycle
+1. **Discovery** – Identify assets and scan for known vulnerabilities  
+2. **Assessment** – Analyze severity using CVSS (Common Vulnerability Scoring System)  
+3. **Prioritization** – Fix high-risk systems first  
+4. **Remediation** – Apply patches, updates, or mitigations  
+5. **Verification** – Re-scan to ensure the issue is resolved
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/cvss-score-chart.png",
+      alt: "CVSS scoring chart showing critical, high, medium, low"
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — Vulnerability Scanner
+Run the following simulation to perform a scan across virtual hosts and analyze detected CVEs.
+      `
+    },
+    {
+      type: "component",
+      value: VulnerabilityScannerSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+- Use **Nmap** or **OpenVAS** in a safe lab VM.  
+- Scan a local Docker network (avoid public IPs).  
+- Identify open ports, outdated services, and related CVEs.  
+Document your scan summary and prioritize which vulnerabilities to fix first.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project
+Create a **Patch Management Tracker** in Excel or JSON format.  
+Track:
+- System name  
+- Software version  
+- Last patched date  
+- CVE reference  
+- Status (Pending / Fixed / Verified)
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+Knowledge of vulnerability scanning and patch management is key for:
+- **SOC Analyst** – detecting vulnerable systems  
+- **Vulnerability Manager** – overseeing patch compliance  
+- **Penetration Tester** – validating real-world exploitability  
+- **Security Engineer** – automating remediation workflows
       `
     }
   ]
