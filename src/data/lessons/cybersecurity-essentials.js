@@ -559,10 +559,13 @@ This visual reinforcement builds intuition on how layered defense functions.
 Below is a live simulation. Toggle Allow/Deny for each port and send packets to see what happens!
       `
     },
+
+    // ✅ Simulation Component Integration
     {
       type: "component",
       value: FirewallSimulator
     },
+
     {
       type: "text",
       value: `
@@ -601,6 +604,7 @@ Mastering these tools helps you think like both **defender and attacker**.
     }
   ]
 },
+
 
 ];
 

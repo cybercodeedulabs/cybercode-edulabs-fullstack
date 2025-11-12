@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,7 +16,7 @@ export default function LessonDetail() {
   const [darkMode, setDarkMode] = useState(false);
   const [codeInputs, setCodeInputs] = useState({});
   const [outputs, setOutputs] = useState({});
-  const [running, setRunning] = useState({}); // ✅ Added state
+  const [running, setRunning] = useState({});
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
@@ -47,14 +47,12 @@ export default function LessonDetail() {
     );
   }
 
-  // ✅ handleRunCode – full browser-based runner
+  // Code runner (unchanged)
   const handleRunCode = async (idx, language, defaultCode) => {
     const code = codeInputs[idx] ?? defaultCode ?? "";
-
     setRunning((s) => ({ ...s, [idx]: true }));
     setOutputs((prev) => ({ ...prev, [idx]: "" }));
 
-    // helper to load Pyodide
     async function loadPyodideIfNeeded() {
       if (window.pyodide) return window.pyodide;
       if (!window.loadPyodide) {
@@ -73,7 +71,6 @@ export default function LessonDetail() {
     }
 
     try {
-      // 1️⃣ JavaScript
       if (language === "javascript" || language === "js") {
         try {
           // eslint-disable-next-line no-eval
@@ -87,7 +84,6 @@ export default function LessonDetail() {
         return;
       }
 
-      // 2️⃣ Python
       if (language === "python") {
         setOutputs((prev) => ({ ...prev, [idx]: "⏳ Loading Python runtime..." }));
         try {
@@ -107,7 +103,6 @@ export default function LessonDetail() {
         return;
       }
 
-      // 3️⃣ Go
       if (language === "go" || language === "golang") {
         setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Go code..." }));
         try {
@@ -127,7 +122,6 @@ export default function LessonDetail() {
             setOutputs((prev) => ({ ...prev, [idx]: output || "✅ Go executed successfully." }));
           }
         } catch (err) {
-          // fallback to opening Go Playground
           const form = document.createElement("form");
           form.method = "POST";
           form.action = "https://go.dev/play/";
@@ -146,7 +140,6 @@ export default function LessonDetail() {
         return;
       }
 
-      // 4️⃣ C/C++/Java – OneCompiler fallback
       if (["c", "cpp", "java"].includes(language)) {
         window.open("https://onecompiler.com", "_blank");
         setOutputs((prev) => ({ ...prev, [idx]: `Opened ${language.toUpperCase()} editor (OneCompiler).` }));
@@ -188,10 +181,20 @@ export default function LessonDetail() {
     if (user && isNextLesson && enrolledCourses.includes(courseSlug)) completeLesson(courseSlug, lessonSlug);
   };
 
+  // 🧩 Loading shimmer for simulations
+  const SimulationLoader = () => (
+    <div className="animate-pulse bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800 shadow-md">
+      <div className="h-5 bg-indigo-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+      <div className="h-3 bg-indigo-100 dark:bg-gray-700 rounded w-2/3 mb-3"></div>
+      <div className="h-3 bg-indigo-100 dark:bg-gray-700 rounded w-1/2 mb-3"></div>
+      <div className="h-48 bg-indigo-50 dark:bg-gray-800 rounded-lg"></div>
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-16 font-sans lg:flex lg:gap-8">
       <div className="flex-1 space-y-12">
-        {/* Banner */}
+        {/* Header */}
         <div className="mb-12 bg-gradient-to-r from-indigo-200 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800 p-6 rounded-2xl shadow-inner flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">{lesson.title}</h1>
           <span className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300 font-medium">
@@ -283,9 +286,19 @@ export default function LessonDetail() {
                 )}
               </div>
             )}
+
+            {/* 🧩 Simulation / Component with Loader */}
+            {block.type === "component" && (
+              <div className="my-10">
+                <Suspense fallback={<SimulationLoader />}>
+                  <block.value />
+                </Suspense>
+              </div>
+            )}
           </div>
         ))}
 
+        {/* Completion Button */}
         {user && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
@@ -298,7 +311,7 @@ export default function LessonDetail() {
           </button>
         )}
 
-        {/* Navigation */}
+        {/* Navigation Buttons */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
           <button
             onClick={goPrev}
