@@ -39,7 +39,10 @@ export default function LessonDetail() {
         <h2 className="text-3xl font-bold">Lesson not found</h2>
         <p className="mt-4">
           The lesson you're looking for doesn't exist.{" "}
-          <Link to={`/courses/${courseSlug}`} className="text-indigo-600 underline hover:text-indigo-500 transition">
+          <Link
+            to={`/courses/${courseSlug}`}
+            className="text-indigo-600 underline hover:text-indigo-500 transition"
+          >
             Go back to course
           </Link>
         </p>
@@ -47,7 +50,7 @@ export default function LessonDetail() {
     );
   }
 
-  // Code runner (unchanged)
+  // 🔹 Code Runner Logic (same as before)
   const handleRunCode = async (idx, language, defaultCode) => {
     const code = codeInputs[idx] ?? defaultCode ?? "";
     setRunning((s) => ({ ...s, [idx]: true }));
@@ -75,7 +78,10 @@ export default function LessonDetail() {
         try {
           // eslint-disable-next-line no-eval
           const res = eval(code);
-          setOutputs((prev) => ({ ...prev, [idx]: String(res ?? "✅ Code executed successfully.") }));
+          setOutputs((prev) => ({
+            ...prev,
+            [idx]: String(res ?? "✅ Code executed successfully."),
+          }));
         } catch (err) {
           setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
         } finally {
@@ -119,7 +125,10 @@ export default function LessonDetail() {
           if (data.Errors) setOutputs((prev) => ({ ...prev, [idx]: data.Errors }));
           else {
             const output = (data.Events || []).map((e) => e.Message || "").join("");
-            setOutputs((prev) => ({ ...prev, [idx]: output || "✅ Go executed successfully." }));
+            setOutputs((prev) => ({
+              ...prev,
+              [idx]: output || "✅ Go executed successfully.",
+            }));
           }
         } catch (err) {
           const form = document.createElement("form");
@@ -133,7 +142,10 @@ export default function LessonDetail() {
           document.body.appendChild(form);
           form.submit();
           document.body.removeChild(form);
-          setOutputs((prev) => ({ ...prev, [idx]: "Opened in Go Playground (fallback)." }));
+          setOutputs((prev) => ({
+            ...prev,
+            [idx]: "Opened in Go Playground (fallback).",
+          }));
         } finally {
           setRunning((s) => ({ ...s, [idx]: false }));
         }
@@ -142,12 +154,18 @@ export default function LessonDetail() {
 
       if (["c", "cpp", "java"].includes(language)) {
         window.open("https://onecompiler.com", "_blank");
-        setOutputs((prev) => ({ ...prev, [idx]: `Opened ${language.toUpperCase()} editor (OneCompiler).` }));
+        setOutputs((prev) => ({
+          ...prev,
+          [idx]: `Opened ${language.toUpperCase()} editor (OneCompiler).`,
+        }));
         setRunning((s) => ({ ...s, [idx]: false }));
         return;
       }
 
-      setOutputs((prev) => ({ ...prev, [idx]: `⚠️ In-browser execution not supported for ${language}.` }));
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: `⚠️ In-browser execution not supported for ${language}.`,
+      }));
     } catch (outerErr) {
       setOutputs((prev) => ({ ...prev, [idx]: `❌ Unexpected error: ${outerErr.message}` }));
     } finally {
@@ -155,7 +173,7 @@ export default function LessonDetail() {
     }
   };
 
-  // Scroll spy
+  // Scroll Spy
   useEffect(() => {
     const handleScroll = () => {
       sectionRefs.current.forEach((ref, idx) => {
@@ -169,16 +187,22 @@ export default function LessonDetail() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (idx) => sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
-  const goPrev = () => lessonIndex > 0 && navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
-  const goNext = () => lessonIndex < lessons.length - 1 && navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex + 1].slug}`);
+  const scrollToSection = (idx) =>
+    sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const goPrev = () =>
+    lessonIndex > 0 &&
+    navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
+  const goNext = () =>
+    lessonIndex < lessons.length - 1 &&
+    navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex + 1].slug}`);
   const handleCopy = (value, idx) => {
     navigator.clipboard.writeText(value);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   };
   const handleComplete = () => {
-    if (user && isNextLesson && enrolledCourses.includes(courseSlug)) completeLesson(courseSlug, lessonSlug);
+    if (user && isNextLesson && enrolledCourses.includes(courseSlug))
+      completeLesson(courseSlug, lessonSlug);
   };
 
   const SimulationLoader = () => (
@@ -195,15 +219,18 @@ export default function LessonDetail() {
       <div className="flex-1 space-y-12">
         {/* Header */}
         <div className="mb-12 bg-gradient-to-r from-indigo-200 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800 p-6 rounded-2xl shadow-inner flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">{lesson.title}</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-800 dark:text-indigo-200 tracking-tight">
+            {lesson.title}
+          </h1>
           <span className="text-sm sm:text-base text-indigo-700 dark:text-indigo-300 font-medium">
             Lesson {lessonIndex + 1} of {lessons.length}
           </span>
         </div>
 
-        {/* Lesson Content */}
+        {/* 🧩 Lesson Content */}
         {lesson.content.map((block, idx) => (
           <div key={idx} ref={(el) => (sectionRefs.current[idx] = el)} id={`section-${idx}`}>
+            {/* Text */}
             {block.type === "text" && (
               <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-justify space-y-4">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
@@ -212,12 +239,18 @@ export default function LessonDetail() {
               </div>
             )}
 
+            {/* Image */}
             {block.type === "image" && (
               <div className="flex justify-center my-6 transition-transform duration-300 hover:scale-105">
-                <img src={block.value} alt={block.alt || "Lesson Image"} className="rounded-xl shadow-lg max-w-full h-auto" />
+                <img
+                  src={block.value}
+                  alt={block.alt || "Lesson Image"}
+                  className="rounded-xl shadow-lg max-w-full h-auto"
+                />
               </div>
             )}
 
+            {/* Code */}
             {block.type === "code" && (
               <div className="rounded-xl border dark:border-gray-700 shadow-md bg-white dark:bg-gray-900 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
@@ -230,6 +263,7 @@ export default function LessonDetail() {
                     </span>
                   )}
                 </div>
+
                 <div className="relative">
                   <SyntaxHighlighter
                     language={block.language}
@@ -253,6 +287,7 @@ export default function LessonDetail() {
                   )}
                 </div>
 
+                {/* Runnable Code */}
                 {block.runnable && (
                   <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 space-y-4">
                     <textarea
@@ -286,7 +321,7 @@ export default function LessonDetail() {
               </div>
             )}
 
-            {/* 🧩 Simulation / Component */}
+            {/* Component / Simulation */}
             {block.type === "component" && (
               <div className="my-10">
                 <Suspense fallback={<SimulationLoader />}>
@@ -297,20 +332,41 @@ export default function LessonDetail() {
           </div>
         ))}
 
-        {/* Completion + CTA Section */}
+        {/* ✅ Lesson Completion */}
         {user && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
             disabled={!isNextLesson}
             className={`px-6 py-3 rounded-lg font-semibold mt-6 ${
-              isNextLesson ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              isNextLesson
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
             {isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
           </button>
         )}
 
-        {/* Enroll CTA */}
+        {/* 🧪 Lab Access Teaser */}
+        {user && !enrolledCourses.includes(courseSlug) && (
+          <div className="text-center mt-12 p-6 bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900 dark:to-emerald-800 rounded-2xl shadow-lg border border-green-200 dark:border-green-700">
+            <h3 className="text-lg sm:text-xl font-semibold text-green-700 dark:text-green-300 mb-2">
+              🧪 Hands-On Lab Available for This Lesson!
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-4 max-w-2xl mx-auto">
+              Want to apply what you just learned in a real-world environment?  
+              Try the interactive lab designed for this topic — directly from your browser.
+            </p>
+            <button
+              onClick={() => navigate("/labs")}
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all"
+            >
+              Access Lab Environment 🔓
+            </button>
+          </div>
+        )}
+
+        {/* 🚀 Enroll CTA */}
         <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
           <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
             🚀 Want to go deeper?
@@ -326,45 +382,43 @@ export default function LessonDetail() {
           </button>
         </div>
 
-        {/* ✅ New Lab Access Button */}
+        {/* 🔒 Lab Access Button */}
         <div className="text-center mt-6">
-  {user ? (
-    enrolledCourses.includes(courseSlug) ? (
-      // ✅ Premium enrolled user
-      <button
-        onClick={() => navigate("/labs")}
-        className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
-      >
-        🧪 Access Lab Environment
-      </button>
-    ) : (
-      // ⚠️ Logged-in but free user
-      <button
-        onClick={() => navigate("/enroll")}
-        className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-all"
-      >
-        🔒 Upgrade to Unlock Lab Access
-      </button>
-    )
-  ) : (
-    // 🔑 Not logged in
-    <button
-      onClick={() => navigate("/login")}
-      className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all"
-    >
-      🔐 Login to Access Labs
-    </button>
-  )}
-</div>
+          {user ? (
+            enrolledCourses.includes(courseSlug) ? (
+              <button
+                onClick={() => navigate("/labs")}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+              >
+                🧪 Access Lab Environment
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/enroll")}
+                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-all"
+              >
+                🔒 Upgrade to Unlock Lab Access
+              </button>
+            )
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all"
+            >
+              🔐 Login to Access Labs
+            </button>
+          )}
+        </div>
 
-
-        {/* Navigation Buttons */}
+        {/* Navigation */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
           <button
             onClick={goPrev}
             disabled={lessonIndex === 0}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition shadow-md duration-200 ${
-              lessonIndex === 0 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
+              lessonIndex === 0
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
             }`}
           >
             ← Previous Lesson
@@ -379,7 +433,9 @@ export default function LessonDetail() {
             onClick={goNext}
             disabled={lessonIndex === lessons.length - 1}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition shadow-md duration-200 ${
-              lessonIndex === lessons.length - 1 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
+              lessonIndex === lessons.length - 1
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg"
             }`}
           >
             Next Lesson →
@@ -389,13 +445,17 @@ export default function LessonDetail() {
 
       {/* Sidebar */}
       <div className="hidden lg:block w-64 sticky top-28 h-max border-l border-gray-200 dark:border-gray-700 pl-6">
-        <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Lesson Contents</h4>
+        <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+          Lesson Contents
+        </h4>
         <ul className="space-y-2 text-sm">
           {lesson.content.map((block, idx) => (
             <li
               key={idx}
               className={`cursor-pointer p-2 rounded-md transition ${
-                activeSection === idx ? "bg-indigo-100 dark:bg-indigo-700 font-semibold" : "hover:bg-indigo-50 dark:hover:bg-gray-700"
+                activeSection === idx
+                  ? "bg-indigo-100 dark:bg-indigo-700 font-semibold"
+                  : "hover:bg-indigo-50 dark:hover:bg-gray-700"
               }`}
               onClick={() => scrollToSection(idx)}
             >

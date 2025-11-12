@@ -39,6 +39,10 @@ import Payment from "./pages/Payment";
 // ✅ Import global user context hook
 import { useUser } from "./contexts/UserContext";
 import AdminWaitlist from "./pages/AdminWaitlist";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Labs from "./pages/Labs";
+import Enroll from "./pages/Enroll";
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -169,6 +173,8 @@ function App() {
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseSlug" element={<CourseDetail />} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonDetail />} />
+            <Route path="/labs" element={<ProtectedRoute><Labs /> </ProtectedRoute>} />
+            <Route path="/enroll" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
