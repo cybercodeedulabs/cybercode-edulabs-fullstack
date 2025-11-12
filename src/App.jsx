@@ -173,9 +173,9 @@ function App() {
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:courseSlug" element={<CourseDetail />} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonDetail />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/labs" element={<ProtectedRoute><Labs /> </ProtectedRoute>} />
             <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
-            <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />

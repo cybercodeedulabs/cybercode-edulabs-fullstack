@@ -375,23 +375,25 @@ export default function LessonDetail() {
             Enroll in the full <strong>{lesson.title}</strong> course for hands-on labs, mentor support, and certification.
           </p>
           <button
-            onClick={() => navigate("/enroll")}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all"
-          >
-            Enroll for Deep Dive & Certification
-          </button>
+  onClick={() => navigate(`/enroll/${courseSlug}`)}
+  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all"
+>
+  Enroll for Deep Dive & Certification
+</button>
+
         </div>
 
         {/* 🔒 Lab Access Button */}
         <div className="text-center mt-6">
           {user ? (
             enrolledCourses.includes(courseSlug) ? (
-              <button
-                onClick={() => navigate("/labs")}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
-              >
-                🧪 Access Lab Environment
-              </button>
+             <button
+  onClick={() => navigate("/labs")}
+  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+>
+  🧪 Access Lab Environment
+</button>
+
             ) : (
               <button
                 onClick={() => navigate("/enroll")}
