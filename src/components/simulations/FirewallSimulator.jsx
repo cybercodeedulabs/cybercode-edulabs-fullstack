@@ -3,12 +3,12 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
- * FirewallSimulator.jsx (Full Lab Version)
+ * FirewallSimulator.jsx (with Port Tooltips)
  * -------------------------------------------------------
- * Includes:
- * - Realistic firewall packet animation
- * - IDS alert logic
- * - Live log console with export + clear options
+ * Interactive Firewall + IDS simulation with:
+ * - Port icons & tooltips
+ * - Packet animation (trail + burst)
+ * - Live log console (clear/export)
  */
 
 const FirewallSimulator = () => {
@@ -21,6 +21,13 @@ const FirewallSimulator = () => {
   const [alert, setAlert] = useState("");
   const [packetTrail, setPacketTrail] = useState([]);
   const [logs, setLogs] = useState([]);
+
+  // Port metadata (icon + tooltip)
+  const portDetails = {
+    22: { icon: "🔑", desc: "SSH — Secure Remote Login" },
+    80: { icon: "🌐", desc: "HTTP — Unsecured Web Traffic" },
+    443: { icon: "🔒", desc: "HTTPS — Encrypted Web Traffic" },
+  };
 
   const toggleRule = (port) => {
     setRules({
@@ -95,7 +102,7 @@ const FirewallSimulator = () => {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-2xl border border-gray-200">
       <h2 className="text-xl font-semibold mb-4 text-center text-blue-700">
-        🔒 Firewall Rule Visualizer — Full Lab Mode
+        🔒 Firewall Rule Visualizer (with Port Insights)
       </h2>
 
       {/* Rule Table */}
@@ -110,7 +117,15 @@ const FirewallSimulator = () => {
         <tbody>
           {Object.keys(rules).map((port) => (
             <tr key={port}>
-              <td className="border p-2 text-center font-mono">{port}</td>
+              <td className="border p-2 text-center font-mono relative group">
+                <span className="flex items-center justify-center gap-1">
+                  {portDetails[port]?.icon} {port}
+                </span>
+                {/* Tooltip */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 w-max bg-gray-800 text-gray-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  {portDetails[port]?.desc}
+                </div>
+              </td>
               <td className="border p-2 text-center">TCP</td>
               <td className="border p-2 text-center">
                 <button
@@ -138,7 +153,7 @@ const FirewallSimulator = () => {
         >
           {Object.keys(rules).map((port) => (
             <option key={port} value={port}>
-              Port {port}
+              Port {port} — {portDetails[port]?.desc.split("—")[0].trim()}
             </option>
           ))}
         </select>
