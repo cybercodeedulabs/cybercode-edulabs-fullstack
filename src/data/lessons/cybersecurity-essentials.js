@@ -460,40 +460,40 @@ Include these in your portfolio: screenshot of hardened config, sample log analy
     ]
   },
 
-  {
-    slug: "firewalls-ids-ips",
-    title: "Firewalls, IDS & IPS — Defensive Shields of the Network",
-    content: [
-      {
-        type: "text",
-        value: `
+{
+  slug: "firewalls-ids-ips",
+  title: "Firewalls, IDS & IPS — Defensive Shields of the Network",
+  content: [
+    {
+      type: "text",
+      value: `
 Every secure network is protected by layers — **Firewalls**, **Intrusion Detection Systems (IDS)**, and **Intrusion Prevention Systems (IPS)**.  
 These are your **first line of defense** against external and internal threats.
       `
-      },
-      {
-        type: "image",
-        value: "/lessonimages/cybersecurity/defense-in-depth.png",
-        alt: "Defense in Depth layered security architecture"
-      },
-      {
-        type: "image",
-        value: "/lessonimages/cybersecurity/firewall-layers-diagram.png",
-        alt: "Firewall and IDS layered defense architecture diagram"
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/defense-in-depth.png",
+      alt: "Defense in Depth layered security architecture"
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/firewall-layers-diagram.png",
+      alt: "Firewall and IDS layered defense architecture diagram"
+    },
+    {
+      type: "text",
+      value: `
 ### 🎯 Learning Objectives
 - Understand the role of firewalls, IDS, and IPS in network defense.  
 - Learn how packet filtering and rule matching work.  
 - Differentiate between detection and prevention systems.  
 - Simulate how packets are allowed or blocked based on configured rules.
       `
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "text",
+      value: `
 ### 🧱 1. Firewalls — Gatekeepers of Traffic
 A **firewall** inspects network packets and decides whether to allow or deny them based on rules.
 
@@ -505,22 +505,22 @@ A **firewall** inspects network packets and decides whether to allow or deny the
 **Example Rule:**
 \`ALLOW tcp FROM 192.168.1.0/24 TO ANY PORT 22\`
       `
-      },
-      {
-        type: "code",
-        language: "bash",
-        value: `# Basic UFW firewall commands (Ubuntu)
+    },
+    {
+      type: "code",
+      language: "bash",
+      value: `# Basic UFW firewall commands (Ubuntu)
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow 22/tcp
 sudo ufw allow 443/tcp
 sudo ufw enable
 sudo ufw status verbose`,
-        runnable: false
-      },
-      {
-        type: "text",
-        value: `
+      runnable: false
+    },
+    {
+      type: "text",
+      value: `
 ### 🕵️ 2. Intrusion Detection & Prevention Systems
 IDS and IPS go beyond simple filtering — they analyze **patterns**, **signatures**, and **behavior**.
 
@@ -533,15 +533,15 @@ IDS and IPS go beyond simple filtering — they analyze **patterns**, **signatur
 
 An IDS monitors traffic and raises alerts; an IPS can drop malicious packets before they reach the host.
       `
-      },
-      {
-        type: "image",
-        value: "/lessonimages/cybersecurity/ids-packet-flow.png",
-        alt: "Packet flow through IDS and IPS detection pipeline"
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/ids-packet-flow.png",
+      alt: "Packet flow through IDS and IPS detection pipeline"
+    },
+    {
+      type: "text",
+      value: `
 ### 💻 3. Simulation — Firewall Rule Visualizer (UI Idea)
 Learner can toggle rules like:
 - Allow Port 22 → ✅ SSH connects
@@ -551,10 +551,21 @@ Learner can toggle rules like:
 Each action updates a **live diagram** showing packet traversal through firewall → IDS → host.  
 This visual reinforcement builds intuition on how layered defense functions.
       `
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — Firewall Rule Visualizer  
+Below is a live simulation. Toggle Allow/Deny for each port and send packets to see what happens!
+      `
+    },
+    {
+      type: "component",
+      value: FirewallSimulator
+    },
+    {
+      type: "text",
+      value: `
 ### 🧪 Safe Lab Exercise
 1. Run two Docker containers — client and web server.  
 2. Enable UFW on the server; only allow ports 22 and 443.  
@@ -563,10 +574,10 @@ This visual reinforcement builds intuition on how layered defense functions.
 5. (Optional) Install Snort in IDS mode and capture alerts.  
 Record which packets were dropped vs allowed.
       `
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "text",
+      value: `
 ### 🚀 Mini Project — “Build Your Own Mini-Firewall”
 Create a Python script that:
 - Reads a simple ruleset (JSON: port, protocol, action).  
@@ -575,10 +586,10 @@ Create a Python script that:
 
 Optional: visualize results in browser using your simulation interface.
       `
-      },
-      {
-        type: "text",
-        value: `
+    },
+    {
+      type: "text",
+      value: `
 ### 🎓 Career Notes
 Knowledge of firewall and IDS operations is critical for:
 - **SOC Analyst** — interpreting alerts and tuning signatures.  
@@ -587,20 +598,10 @@ Knowledge of firewall and IDS operations is critical for:
 
 Mastering these tools helps you think like both **defender and attacker**.
       `
-      },
-      {
-        type: "text",
-        value: `
-### 💻 Interactive Simulation — Firewall Rule Visualizer
-Below is a live simulation. Toggle Allow/Deny for each port and send packets to see what happens!
-      `
-      },
-      {
-        type: "component",
-        value: FirewallSimulator
-      }
-    ]
-  }
+    }
+  ]
+},
+
 ];
 
 export default cybersecurityEssentials;
