@@ -1081,7 +1081,7 @@ Below is a simple IAM simulator. Toggle permissions and see whether access is al
     },
     {
       type: "component",
-      value: "IAMSimulator"
+      value: IAMSimulator
     },
     {
       type: "text",
