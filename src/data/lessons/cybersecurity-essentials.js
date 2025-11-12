@@ -644,6 +644,111 @@ Mastering these tools helps you think like both **defender and attacker**.
     }
   ]
 },
+{
+  slug: "malware-phishing-endpoint-protection",
+  title: "Malware, Phishing & Endpoint Protection — Guarding the Human and the Machine",
+  content: [
+    {
+      type: "text",
+      value: `
+The most sophisticated firewalls and IDS won't help if malware slips through an unsuspecting user’s click.  
+**Endpoint security** protects where humans and machines meet — your laptop, phone, and email inbox.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/malware-types-overview.png",
+      alt: "Overview of common malware types and infection vectors"
+    },
+    {
+      type: "text",
+      value: `
+### 🦠 Common Malware Types
+| Type | Description | Example |
+|------|--------------|----------|
+| Virus | Attaches to files and spreads when executed | ILOVEYOU |
+| Worm | Self-replicates without human action | Conficker |
+| Trojan | Disguises as legitimate software | FakeAV |
+| Ransomware | Encrypts data and demands payment | WannaCry |
+| Spyware | Monitors user activity silently | Pegasus |
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/phishing-flow.png",
+      alt: "Phishing attack flow from email to credential theft"
+    },
+    {
+      type: "text",
+      value: `
+### 🎯 Phishing Attacks
+Phishing is **social engineering via email or messages**:
+- Pretends to be a trusted source (bank, HR, cloud login)
+- Tricks user into clicking links or giving credentials
+- Can install malware or steal data
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — Phishing Email Classifier
+Below is a simulation where you review sample emails and classify them as *Phishing* or *Legitimate*.  
+This builds critical human firewall instincts.
+      `
+    },
+    {
+      type: "component",
+      value: require("../../components/simulations/PhishingEmailSimulator").default
+    },
+    {
+      type: "text",
+      value: `
+### 🧰 Endpoint Defense Layers
+| Layer | Description |
+|--------|-------------|
+| Antivirus | Scans and quarantines malicious files |
+| EDR | Monitors process behavior and isolates suspicious actions |
+| DLP | Prevents sensitive data from leaving the device |
+| Patch Management | Keeps OS and apps up-to-date |
+| User Awareness | Trains users to spot phishing attempts |
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/endpoint-defense-architecture.png",
+      alt: "Endpoint defense architecture showing AV, EDR, DLP, and user awareness"
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+1. Set up a Windows or Linux VM with an open-source antivirus (ClamAV, Windows Defender).  
+2. Download the **EICAR test file** (safe malware test) and observe detection behavior.  
+3. Simulate phishing awareness by analyzing real vs fake email headers.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project — Endpoint Defense Report
+Create a short report documenting:
+- How ransomware encrypts data  
+- How antivirus or EDR detects it  
+- What prevention methods users can adopt (patching, backups, training)
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+Mastering endpoint protection is essential for:
+- **SOC Analyst** — analyzing alerts from antivirus and EDR tools  
+- **Incident Responder** — isolating infected machines  
+- **Security Awareness Trainer** — educating users on phishing defense  
+      `
+    }
+  ]
+},
 
 
 ];
