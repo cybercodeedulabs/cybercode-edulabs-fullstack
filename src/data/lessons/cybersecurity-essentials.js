@@ -10,6 +10,8 @@ import VulnerabilityScannerSimulator from "../../components/simulations/Vulnerab
 import SIEMLogAnalyzerSimulator from "../../components/simulations/SIEMLogAnalyzerSimulator";
 import ForensicsSimulator from "../../components/simulations/ForensicsSimulator";
 import IAMSimulator from "../../components/simulations/IAMSimulator.jsx";
+import CICDPipelineSimulator from "../../components/simulations/CICDPipelineSimulator";
+
 
 
 
@@ -1115,6 +1117,75 @@ Skills from this module help in:
 - **Cloud Architect**
 
 💡 These roles are in high demand — mastering IAM and Zero Trust is key for enterprise security.
+      `
+    }
+  ]
+},
+{
+  slug: "devsecops-automation",
+  title: "DevSecOps & Automation in Security Pipelines",
+  content: [
+    {
+      type: "text",
+      value: `
+DevSecOps integrates security into the development lifecycle — shifting left so issues are found earlier and fixed faster.  
+Automation ensures repeated checks (SAST, dependency scans, container scans) run consistently as part of CI/CD.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/devsecops-workflow.png",
+      alt: "DevSecOps workflow: code → build → test → scan → deploy with security gates"
+    },
+    {
+      type: "text",
+      value: `
+### 🔁 Key Concepts
+- **Shift Left**: Move security earlier into development (code review, SAST).  
+- **Security Gates**: Automated checks that pass/fail pipeline stages.  
+- **Continuous Compliance**: Automate policy checks and drift detection.  
+- **Secrets Management** & Infrastructure as Code (IaC) scanning are vital.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — CI/CD Security Pipeline  
+Toggle gates, introduce misconfigurations (secrets, outdated deps, insecure containers) and run the pipeline to see pass/fail and remediation hints.
+      `
+    },
+    {
+      type: "component",
+      value: CICDPipelineSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+1. Create a GitHub Actions workflow with simple jobs: build, test, and a placeholder security job.  
+2. Add a dummy SAST step that fails when a pattern (e.g., "TODO_SECRET") is found.  
+3. Practice adding a dependency update check and ensure the pipeline blocks deploy until fixed.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project
+Build a small demo pipeline (GitHub Actions or GitLab CI) that:
+- Runs unit tests  
+- Runs a static analyzer (e.g., semgrep)  
+- Checks Docker image with trivy  
+- Fails deploy on critical findings and posts a summary to Slack
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+DevSecOps skills map to:
+- **DevSecOps Engineer**  
+- **Security Automation Engineer**  
+- **Platform Security Specialist**
       `
     }
   ]
