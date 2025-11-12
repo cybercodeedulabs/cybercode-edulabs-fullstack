@@ -12,6 +12,7 @@ import ForensicsSimulator from "../../components/simulations/ForensicsSimulator"
 import IAMSimulator from "../../components/simulations/IAMSimulator.jsx";
 import CICDPipelineSimulator from "../../components/simulations/CICDPipelineSimulator";
 import IncidentResponseSimulator from "../../components/simulations/IncidentResponseSimulator";
+import SOCDashboardSimulator from "../../components/simulations/SOCDashboardSimulator";
 
 
 
@@ -1260,6 +1261,114 @@ Incident response is a key skill for:
 - **Incident Responders**  
 - **Digital Forensics Engineers**  
 - **Threat Hunters**
+      `
+    }
+  ]
+},
+{
+  slug: "capstone-project",
+  title: "Final Capstone Project — Building a Secure Enterprise Network",
+  content: [
+    {
+      type: "text",
+      value: `
+The journey ends here — but your *real-world cybersecurity career* begins.  
+In this final capstone, you'll **design, build, and secure** a small enterprise network architecture using all the skills learned so far.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/enterprise-network-architecture.png",
+      alt: "Secure enterprise network architecture diagram with firewall, DMZ, SIEM, and users"
+    },
+    {
+      type: "text",
+      value: `
+### 🧠 Objective
+Create a **mini enterprise security lab** that integrates:
+- **Networking & Firewalls** (secure segmentation, NAT)
+- **IDS/IPS** (alert and block intrusions)
+- **Linux Hardening** (restrict root, enable UFW)
+- **IAM Policies** (least privilege)
+- **DevSecOps CI/CD** (scan + deploy)
+- **SIEM Dashboard** (log correlation and alerts)
+      `
+    },
+    {
+      type: "text",
+      value: `
+### ⚙️ Architecture Overview
+1. **Users (Employees)** → Access internal apps via VPN  
+2. **DMZ Servers** → Public web apps, WAF-protected  
+3. **Internal Network** → App + DB tiers, tightly firewalled  
+4. **SIEM System** → Centralized log aggregation  
+5. **SOC Dashboard** → Real-time incident visualization  
+6. **Backup & Restore** → Encrypted, offsite copies
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/soc-dashboard-overview.png",
+      alt: "SOC dashboard overview showing SIEM alerts and monitored systems"
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Lab Implementation Steps
+1. **Set up virtual networks** (using VirtualBox, AWS, or Azure sandbox).  
+2. **Deploy Linux servers** (1 web, 1 DB, 1 SIEM node).  
+3. **Enable UFW** and define inbound/outbound rules.  
+4. **Install Suricata or Snort** on the gateway for IDS/IPS.  
+5. **Forward logs** to Wazuh or ELK stack.  
+6. **Set IAM rules** to restrict SSH, database, and API access.  
+7. **Integrate DevSecOps** scan in CI/CD (GitHub Actions or Jenkins).  
+8. Simulate a small cyberattack (port scan, weak login attempt) and observe detection in your SIEM.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — SOC Event Dashboard  
+Below is a visualization idea showing how events propagate across the network to the SOC.
+      `
+    },
+    {
+      type: "component",
+      value: SOCDashboardSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Deliverables
+- **Network Diagram (.png or draw.io)**  
+- **Firewall & IDS Config Files**  
+- **System Hardening Report**  
+- **Incident Summary (based on your test attack)**  
+- **Screenshots** of SIEM alerts and mitigations
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🧩 Evaluation Criteria
+| Area | Description | Weight |
+|------|--------------|--------|
+| Design | Secure, well-segmented topology | 30% |
+| Implementation | Proper setup of tools & configs | 40% |
+| Reporting | Clear documentation & screenshots | 20% |
+| Innovation | Automation, visualization, custom scripts | 10% |
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Outcome
+By completing this project, you’ll:
+- Build a complete **defensive architecture** from scratch  
+- Document like a real **SOC engineer**  
+- Present your environment as a **portfolio project** to recruiters  
+
+This final exercise transforms your learning into **hands-on expertise** — ready for the cybersecurity industry.
       `
     }
   ]
