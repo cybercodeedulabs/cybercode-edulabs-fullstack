@@ -9,6 +9,7 @@ import PhishingEmailSimulator from "../../components/simulations/PhishingEmailSi
 import VulnerabilityScannerSimulator from "../../components/simulations/VulnerabilityScannerSimulator";
 import SIEMLogAnalyzerSimulator from "../../components/simulations/SIEMLogAnalyzerSimulator";
 import ForensicsSimulator from "../../components/simulations/ForensicsSimulator";
+import IAMSimulator from "../../components/simulations/IAMSimulator.jsx";
 
 
 
@@ -996,6 +997,124 @@ Skills here feed directly into:
 - **Forensic Analyst** — evidence collection and analysis  
 - **Incident Responder** — preserving and triaging compromised systems  
 - **eDiscovery Specialist** — legal admissibility of digital evidence
+      `
+    }
+  ]
+},
+{
+  slug: "cloud-security-and-iam",
+  title: "Cloud Security & Identity Management (IAM)",
+  content: [
+    {
+      type: "text",
+      value: `
+The modern enterprise runs in the **cloud** — but every cloud misconfiguration can expose critical data.  
+This lesson focuses on protecting cloud resources using **Identity and Access Management (IAM)** and **Zero Trust principles**.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/cloud-security-overview.png",
+      alt: "Cloud Security Overview Diagram showing users, IAM, encryption, and monitoring"
+    },
+    {
+      type: "text",
+      value: `
+### ☁️ What Is Cloud Security?
+Cloud security is about **securing people, processes, and data** in environments like AWS, Azure, or Google Cloud.  
+
+It covers:
+- Identity and access control (who can access what)
+- Data protection and encryption
+- Network isolation and firewalls
+- Continuous monitoring and compliance
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🔐 Identity & Access Management (IAM)
+IAM is the **front door** of your cloud.
+
+Key Concepts:
+- **Principle of Least Privilege (PoLP):** Grant only required permissions.  
+- **Role-Based Access Control (RBAC):** Assign roles to groups, not individuals.  
+- **Multi-Factor Authentication (MFA):** Protect accounts beyond passwords.  
+- **Federation & SSO:** Integrate with corporate identity providers.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/iam-hierarchy.png",
+      alt: "IAM Hierarchy Diagram showing users, groups, roles, and policies"
+    },
+    {
+      type: "text",
+      value: `
+### 🧠 Zero Trust Architecture (ZTA)
+Zero Trust assumes *no one and nothing is trusted by default*, even inside the network.
+
+Core Ideas:
+1. Verify explicitly (authenticate every request).  
+2. Use least privilege.  
+3. Assume breach — design for resilience.
+
+💡 **Example:** Instead of allowing “All EC2 instances to talk,” only allow necessary APIs between known services.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🧩 Visualization Idea — IAM Policy Simulator
+Learners can toggle IAM roles, permissions, and see access results:
+- User → ReadOnlyPolicy ✅ Allowed  
+- User → DeleteBucket ❌ Denied  
+Visual feedback helps build intuition about permission boundaries.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — IAM Access Control Demo  
+Below is a simple IAM simulator. Toggle permissions and see whether access is allowed.
+      `
+    },
+    {
+      type: "component",
+      value: "IAMSimulator"
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+1. Create a free-tier AWS IAM user with *ReadOnlyAccess*.  
+2. Try running \`aws s3 rm s3://yourbucket --recursive\`.  
+3. Observe “AccessDenied” message.  
+4. Add a custom policy granting S3 delete and retry.  
+Compare logs in AWS CloudTrail.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project — Build Your Cloud Security Blueprint
+Create a visual map of a secure 3-tier cloud architecture:
+- Public subnet → Web App  
+- Private subnet → Database  
+- IAM roles for each service  
+Include MFA, encryption, and logging.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+Skills from this module help in:
+- **Cloud Security Engineer**
+- **DevSecOps Specialist**
+- **Cloud Architect**
+
+💡 These roles are in high demand — mastering IAM and Zero Trust is key for enterprise security.
       `
     }
   ]
