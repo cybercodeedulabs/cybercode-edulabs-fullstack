@@ -5,6 +5,8 @@ import PacketFlowSimulator from "../../components/simulations/PacketFlowSimulato
 import PacketTimelineSimulator from "../../components/simulations/PacketTimelineSimulator";
 import LinuxPermissionSimulator from "../../components/simulations/LinuxPermissionSimulator";
 import FirewallSimulator from "../../components/simulations/FirewallSimulator";
+import PhishingEmailSimulator from "../../components/simulations/PhishingEmailSimulator";
+
 
 const cybersecurityEssentials = [
   {
@@ -698,7 +700,7 @@ This builds critical human firewall instincts.
     },
     {
       type: "component",
-      value: require("../../components/simulations/PhishingEmailSimulator").default
+      value: PhishingEmailSimulator
     },
     {
       type: "text",
