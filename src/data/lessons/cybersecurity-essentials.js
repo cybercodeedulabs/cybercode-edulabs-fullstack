@@ -11,6 +11,8 @@ import SIEMLogAnalyzerSimulator from "../../components/simulations/SIEMLogAnalyz
 import ForensicsSimulator from "../../components/simulations/ForensicsSimulator";
 import IAMSimulator from "../../components/simulations/IAMSimulator.jsx";
 import CICDPipelineSimulator from "../../components/simulations/CICDPipelineSimulator";
+import IncidentResponseSimulator from "../../components/simulations/IncidentResponseSimulator";
+
 
 
 
@@ -1186,6 +1188,78 @@ DevSecOps skills map to:
 - **DevSecOps Engineer**  
 - **Security Automation Engineer**  
 - **Platform Security Specialist**
+      `
+    }
+  ]
+},
+{
+  slug: "incident-response",
+  title: "Incident Response & Recovery",
+  content: [
+    {
+      type: "text",
+      value: `
+When an organization suffers a security breach, **speed and coordination** determine the extent of damage.  
+Incident Response (IR) is a structured approach to detecting, containing, and recovering from attacks.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/incident-response-lifecycle.png",
+      alt: "Incident response lifecycle: Preparation → Detection → Containment → Eradication → Recovery → Lessons Learned"
+    },
+    {
+      type: "text",
+      value: `
+### ⚙️ Phases of Incident Response
+1. **Preparation** — Establish IR policy, playbooks, tools, and communication channels.  
+2. **Detection & Analysis** — Identify indicators of compromise (IoCs) and validate incidents.  
+3. **Containment** — Isolate affected systems to prevent lateral movement.  
+4. **Eradication** — Remove malware, close exploited vulnerabilities.  
+5. **Recovery** — Restore services from clean backups and monitor for reinfection.  
+6. **Lessons Learned** — Update policies and train staff to prevent recurrence.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — Incident Response Lifecycle  
+Adjust your response speed (fast, medium, slow) and observe how it affects damage impact.
+      `
+    },
+    {
+      type: "component",
+      value: IncidentResponseSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+1. Simulate an incident using a honeypot or sandbox VM.  
+2. Capture suspicious processes, logs, and network connections.  
+3. Practice containment (disconnect network), eradication (remove malware), and recovery (restore clean image).
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project — Incident Report Writing  
+Document an incident (real or simulated) including:
+- Attack summary  
+- Timeline  
+- Actions taken in each IR phase  
+- Root cause and preventive actions
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes  
+Incident response is a key skill for:
+- **SOC Analysts**  
+- **Incident Responders**  
+- **Digital Forensics Engineers**  
+- **Threat Hunters**
       `
     }
   ]
