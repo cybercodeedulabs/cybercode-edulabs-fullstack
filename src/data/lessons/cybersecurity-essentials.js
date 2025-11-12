@@ -7,6 +7,8 @@ import LinuxPermissionSimulator from "../../components/simulations/LinuxPermissi
 import FirewallSimulator from "../../components/simulations/FirewallSimulator";
 import PhishingEmailSimulator from "../../components/simulations/PhishingEmailSimulator";
 import VulnerabilityScannerSimulator from "../../components/simulations/VulnerabilityScannerSimulator";
+import SIEMLogAnalyzerSimulator from "../../components/simulations/SIEMLogAnalyzerSimulator";
+
 
 
 
@@ -828,6 +830,95 @@ Knowledge of vulnerability scanning and patch management is key for:
 - **Vulnerability Manager** – overseeing patch compliance  
 - **Penetration Tester** – validating real-world exploitability  
 - **Security Engineer** – automating remediation workflows
+      `
+    }
+  ]
+},
+{
+  slug: "siem-incident-response",
+  title: "SIEM & Incident Response — Detect, Analyze, Respond",
+  content: [
+    {
+      type: "text",
+      value: `
+In modern cybersecurity, prevention alone is not enough — detection and response are equally critical.  
+This is where **SIEM (Security Information and Event Management)** and **Incident Response (IR)** come into play.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/siem-architecture.png",
+      alt: "SIEM system architecture showing log sources, correlation engine, dashboards, and SOC workflow"
+    },
+    {
+      type: "text",
+      value: `
+### 🔍 SIEM Components
+1. **Log Collection:** Data from firewalls, servers, endpoints, and cloud systems.  
+2. **Normalization & Correlation:** Identifies patterns across multiple sources.  
+3. **Alerting & Dashboards:** Notifies analysts about suspicious behavior.  
+4. **Threat Hunting:** Analysts proactively search for anomalies.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### ⚡ Incident Response Phases (NIST Model)
+1. **Preparation** — Develop response policies and tools.  
+2. **Detection & Analysis** — Identify potential security events.  
+3. **Containment** — Isolate affected systems to prevent spread.  
+4. **Eradication** — Remove the root cause.  
+5. **Recovery** — Restore operations safely.  
+6. **Post-Incident Review** — Document lessons learned.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/cybersecurity/incident-response-cycle.png",
+      alt: "Incident response lifecycle showing preparation, detection, containment, eradication, recovery, and review"
+    },
+    {
+      type: "text",
+      value: `
+### 💻 Interactive Simulation — SIEM Log Analyzer
+Watch live logs and identify when a potential incident occurs.
+      `
+    },
+    {
+      type: "component",
+      value: SIEMLogAnalyzerSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🧪 Safe Lab Exercise
+- Deploy **Wazuh**, **Splunk**, or **ELK Stack** in a local VM.  
+- Ingest Linux and web server logs.  
+- Create a rule to detect repeated failed logins or privilege escalations.  
+- Document alert triggers and analyst response.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🚀 Mini Project
+Build a small **Incident Response Playbook** (Markdown or PDF):  
+Include:
+- How to identify a brute-force attack  
+- What containment steps to take  
+- Communication protocol  
+- Evidence collection checklist
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🎓 Career Notes
+Mastery of SIEM and IR workflows is required for:
+- **SOC Analyst (Tier 1 & 2)**  
+- **Incident Responder**  
+- **Threat Hunter**  
+- **Blue Team Engineer**
       `
     }
   ]
