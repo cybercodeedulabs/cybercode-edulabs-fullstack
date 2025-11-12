@@ -1,4 +1,9 @@
 // src/data/courses/cybersecurityEssentials.js
+import DecisionTreeSimulator from "../../components/simulations/DecisionTreeSimulator";
+import ThreatMapSimulator from "../../components/simulations/ThreatMapSimulator";
+import PacketFlowSimulator from "../../components/simulations/PacketFlowSimulator";
+import PacketTimelineSimulator from "../../components/simulations/PacketTimelineSimulator";
+import LinuxPermissionSimulator from "../../components/simulations/LinuxPermissionSimulator";
 import FirewallSimulator from "../../components/simulations/FirewallSimulator";
 
 const cybersecurityEssentials = [
@@ -67,6 +72,13 @@ They choose an action, and the system highlights:
 This simulation reinforces decision-making under real-world pressure.
       `
       },
+
+      // Simulation for Ethics
+      {
+        type: "component",
+        value: DecisionTreeSimulator
+      },
+
       {
         type: "text",
         value: `
@@ -164,6 +176,13 @@ Imagine a *Cyber Threat Map* in the lesson UI:
 This gamified visualization helps learners connect **attacker behavior** with **defensive strategy**.
       `
       },
+
+      // Simulation for Threat Map
+      {
+        type: "component",
+        value: ThreatMapSimulator
+      },
+
       {
         type: "text",
         value: `
@@ -264,6 +283,13 @@ Interactive **Packet Flow Simulator** — the learner clicks “Start Handshake�
 Then TLS negotiation lights up green (encrypted) or red (plain text).
       `
       },
+
+      // Packet flow simulator
+      {
+        type: "component",
+        value: PacketFlowSimulator
+      },
+
       {
         type: "text",
         value: `
@@ -340,6 +366,13 @@ Open a sample PCAP (safe) and:
 A dynamic **Packet Timeline View** — packets animate across the screen with labels like “SYN”, “GET /index.html”, “TLS Handshake”. Hover to view headers and payload size.
       `
       },
+
+      // Packet timeline simulator
+      {
+        type: "component",
+        value: PacketTimelineSimulator
+      },
+
       {
         type: "text",
         value: `
@@ -425,6 +458,13 @@ echo "test" >> /srv/app/config.txt  # should be denied`,
 - **Permission Matrix**: toggle rwx bits visually and show access results for specific users.  
 - **Process Tree**: interactive map of parent → child processes highlighting unknown binaries.`
       },
+
+      // Linux permission simulator
+      {
+        type: "component",
+        value: LinuxPermissionSimulator
+      },
+
       {
         type: "image",
         value: "/lessonimages/cybersecurity/linux-log-analysis-flow.png",
@@ -460,13 +500,13 @@ Include these in your portfolio: screenshot of hardened config, sample log analy
     ]
   },
 
-{
-  slug: "firewalls-ids-ips",
-  title: "Firewalls, IDS & IPS — Defensive Shields of the Network",
-  content: [
-    {
-      type: "text",
-      value: `
+  {
+    slug: "firewalls-ids-ips",
+    title: "Firewalls, IDS & IPS — Defensive Shields of the Network",
+    content: [
+      {
+        type: "text",
+        value: `
 Every secure network is protected by layers — **Firewalls**, **Intrusion Detection Systems (IDS)**, and **Intrusion Prevention Systems (IPS)**.  
 These are your **first line of defense** against external and internal threats.
       `
