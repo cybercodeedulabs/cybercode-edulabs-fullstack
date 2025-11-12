@@ -1311,6 +1311,11 @@ Create a **mini enterprise security lab** that integrates:
       value: "/lessonimages/cybersecurity/soc-dashboard-overview.png",
       alt: "SOC dashboard overview showing SIEM alerts and monitored systems"
     },
+     {
+      type: "image",
+      value: "/lessonimages/cybersecurity/soc-event-flow.png",
+      alt: "SOC Event Flow — firewall, IDS, and endpoint logs flowing into SIEM dashboard"
+    },
     {
       type: "text",
       value: `
