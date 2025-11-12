@@ -404,7 +404,7 @@ export default function LessonDetail() {
             )
           ) : (
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/register")}
               className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all"
             >
               🔐 Login to Access Labs

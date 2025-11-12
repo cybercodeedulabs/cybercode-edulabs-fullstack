@@ -43,7 +43,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Labs from "./pages/Labs";
 import Enroll from "./pages/Enroll";
 
-
 function App() {
   const [darkMode, setDarkMode] = useState(false);
 
@@ -53,7 +52,7 @@ function App() {
 
   // ✅ Home Page Component
   const HomePage = () => {
-    const { user, logout } = useUser(); // ✅ Access global user context
+    const { user, logout } = useUser();
 
     return (
       <>
@@ -171,12 +170,15 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/courses" element={<Courses />} />
-            <Route path="/courses/:courseSlug" element={<CourseDetail />} />
-            <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<LessonDetail />} />
+
+            {/* ✅ Protect individual courses and lessons */}
+            <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+            <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
+
             <Route path="/register" element={<Register />} />
-            <Route path="/labs" element={<ProtectedRoute><Labs /> </ProtectedRoute>} />
+            <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
             <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -194,11 +196,8 @@ function App() {
           </Routes>
         </main>
 
-        {/* Global Cookie Banner */}
         <CookieBanner />
         <Footer />
-
-        {/* ✅ Global AI Assistant (appears on all pages) */}
         <AIAssistant />
       </div>
     </Router>

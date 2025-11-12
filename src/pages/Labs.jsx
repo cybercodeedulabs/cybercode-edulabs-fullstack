@@ -8,7 +8,7 @@ export default function Labs() {
   const navigate = useNavigate();
     useEffect(() => {
     if (!user) {
-      navigate("/login");
+      navigate("/register");
     } else if (enrolledCourses.length === 0) {
       navigate("/courses"); // redirect non-enrolled users to browse courses
     }
@@ -67,7 +67,7 @@ export default function Labs() {
             You need to <strong>log in</strong> to access labs.
           </p>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/register")}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all"
           >
             🔐 Login to Continue
