@@ -155,7 +155,7 @@ export default function LessonDetail() {
     }
   };
 
-  // Scroll spy for TOC
+  // Scroll spy
   useEffect(() => {
     const handleScroll = () => {
       sectionRefs.current.forEach((ref, idx) => {
@@ -181,7 +181,6 @@ export default function LessonDetail() {
     if (user && isNextLesson && enrolledCourses.includes(courseSlug)) completeLesson(courseSlug, lessonSlug);
   };
 
-  // 🧩 Loading shimmer for simulations
   const SimulationLoader = () => (
     <div className="animate-pulse bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800 shadow-md">
       <div className="h-5 bg-indigo-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
@@ -287,7 +286,7 @@ export default function LessonDetail() {
               </div>
             )}
 
-            {/* 🧩 Simulation / Component with Loader */}
+            {/* 🧩 Simulation / Component */}
             {block.type === "component" && (
               <div className="my-10">
                 <Suspense fallback={<SimulationLoader />}>
@@ -298,7 +297,7 @@ export default function LessonDetail() {
           </div>
         ))}
 
-        {/* Completion Button */}
+        {/* Completion + CTA Section */}
         {user && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
@@ -310,6 +309,54 @@ export default function LessonDetail() {
             {isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
           </button>
         )}
+
+        {/* Enroll CTA */}
+        <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
+          <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+            🚀 Want to go deeper?
+          </h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            Enroll in the full <strong>{lesson.title}</strong> course for hands-on labs, mentor support, and certification.
+          </p>
+          <button
+            onClick={() => navigate("/enroll")}
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all"
+          >
+            Enroll for Deep Dive & Certification
+          </button>
+        </div>
+
+        {/* ✅ New Lab Access Button */}
+        <div className="text-center mt-6">
+  {user ? (
+    enrolledCourses.includes(courseSlug) ? (
+      // ✅ Premium enrolled user
+      <button
+        onClick={() => navigate("/labs")}
+        className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
+      >
+        🧪 Access Lab Environment
+      </button>
+    ) : (
+      // ⚠️ Logged-in but free user
+      <button
+        onClick={() => navigate("/enroll")}
+        className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-all"
+      >
+        🔒 Upgrade to Unlock Lab Access
+      </button>
+    )
+  ) : (
+    // 🔑 Not logged in
+    <button
+      onClick={() => navigate("/login")}
+      className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all"
+    >
+      🔐 Login to Access Labs
+    </button>
+  )}
+</div>
+
 
         {/* Navigation Buttons */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -340,7 +387,7 @@ export default function LessonDetail() {
         </div>
       </div>
 
-      {/* Sidebar TOC */}
+      {/* Sidebar */}
       <div className="hidden lg:block w-64 sticky top-28 h-max border-l border-gray-200 dark:border-gray-700 pl-6">
         <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Lesson Contents</h4>
         <ul className="space-y-2 text-sm">
