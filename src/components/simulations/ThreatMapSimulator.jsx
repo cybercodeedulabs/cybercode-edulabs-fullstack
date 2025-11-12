@@ -38,31 +38,31 @@ export default function ThreatMapSimulator() {
       <div className="relative h-48 bg-gradient-to-b from-gray-50 to-white rounded-lg overflow-hidden border border-gray-100">
         {/* simplified "map" — animated arcs */}
         {running && visible.ransom && (
-          <motion.div
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: "80%", opacity: 1 }}
-            transition={{ duration: 2, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-            className="absolute left-2 top-6 w-2 h-2 rounded-full bg-red-400 shadow"
-          />
-        )}
+  <motion.div
+    initial={{ left: "0%", opacity: 0 }}
+    animate={{ left: "95%", opacity: 1 }}
+    transition={{ duration: 2.5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+    className="absolute top-6 w-2 h-2 rounded-full bg-red-400 shadow"
+  />
+)}
 
         {running && visible.phish && (
-          <motion.div
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: "70%", opacity: 1 }}
-            transition={{ duration: 1.6, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.4 }}
-            className="absolute left-4 top-20 w-2 h-2 rounded-full bg-yellow-400 shadow"
-          />
-        )}
+  <motion.div
+    initial={{ left: "0%", opacity: 0 }}
+    animate={{ left: "95%", opacity: 1 }}
+    transition={{ duration: 2, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.4 }}
+    className="absolute top-20 w-2 h-2 rounded-full bg-yellow-400 shadow"
+  />
+)}
 
         {running && visible.botnet && (
-          <motion.div
-            initial={{ x: -10, opacity: 0 }}
-            animate={{ x: "60%", opacity: 1 }}
-            transition={{ duration: 1.2, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.8 }}
-            className="absolute left-6 top-34 w-2 h-2 rounded-full bg-green-400 shadow"
-          />
-        )}
+  <motion.div
+    initial={{ left: "0%", opacity: 0 }}
+    animate={{ left: "95%", opacity: 1 }}
+    transition={{ duration: 1.8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.8 }}
+    className="absolute top-32 w-2 h-2 rounded-full bg-green-400 shadow"
+  />
+)}
 
         <div className="absolute bottom-2 right-2 text-xs text-gray-400">Simulated flows — not real data</div>
       </div>
