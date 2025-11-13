@@ -65,6 +65,16 @@ export default function ReactComponentSimulator({ defaultCode = "" }) {
         }
       }
 
+      // 🧩 3️⃣ Auto-fix common React hooks (useState → React.useState)
+cleanedCode = cleanedCode
+  .replace(/\buseState\b/g, "React.useState")
+  .replace(/\buseEffect\b/g, "React.useEffect")
+  .replace(/\buseRef\b/g, "React.useRef")
+  .replace(/\buseContext\b/g, "React.useContext")
+  .replace(/\buseReducer\b/g, "React.useReducer")
+  .replace(/\buseMemo\b/g, "React.useMemo")
+  .replace(/\buseCallback\b/g, "React.useCallback");
+
       // ⚡ 3️⃣ Transform JSX → plain JS
       const transformed = Babel.transform(cleanedCode, {
         presets: ["react", "env"],
