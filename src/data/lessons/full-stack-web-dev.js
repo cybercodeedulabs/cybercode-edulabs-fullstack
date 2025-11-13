@@ -1,3 +1,4 @@
+import ClientServerFlow from "../../components/simulations/full-stack/ClientServerFlow"
 const fullStackWebDev = [
     {
   slug: "intro-to-full-stack",
