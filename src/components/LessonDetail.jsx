@@ -9,6 +9,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
+import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
+
 
 export default function LessonDetail() {
   const { courseSlug, lessonSlug } = useParams();
@@ -273,6 +275,18 @@ export default function LessonDetail() {
                   >
                     {block.value}
                   </SyntaxHighlighter>
+                  {/* ✅ JSX Simulator for language: "jsx" */}
+{block.language === "jsx" && (
+  <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+      ⚛️ JSX Code Detected — Launching React Simulator...
+    </p>
+    <Suspense fallback={<div className="animate-pulse text-gray-400">Loading JSX Simulator...</div>}>
+      <ReactComponentSimulator defaultCode={block.value} />
+    </Suspense>
+  </div>
+)}
+
                   <button
                     className="absolute top-3 right-3 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400"
                     onClick={() => handleCopy(block.value, idx)}
