@@ -71,9 +71,9 @@ export default function DynamicRoutingSimulator() {
         </button>
       </div>
 
-      <div className="bg-black text-green-300 font-mono text-sm p-3 rounded mb-3 h-40 overflow-auto">
+        <div className="bg-black text-green-300 font-mono text-sm p-3 rounded mb-3 h-40 overflow-auto whitespace-pre-line">
         {log.length ? log.join("\n") : "Ready to simulate..."}
-      </div>
+        </div>
 
       {routes.length > 0 && (
         <table className="w-full text-sm border dark:border-gray-700">
