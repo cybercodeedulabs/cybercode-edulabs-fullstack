@@ -805,6 +805,12 @@ If the packet reaches zero TTL, it’s dropped, and an ICMP “Time Exceeded” 
 `
     },
     {
+  type: "image",
+  value: "/lessonimages/ccna/packet-flow-diagram.png",
+  alt: "Packet Flow Across Routers"
+},
+
+    {
       type: "component",
       value: PacketRoutingSimulator,
       description: "Visualize packet movement hop-by-hop through multiple routers with routing table lookups and next-hop animations."
