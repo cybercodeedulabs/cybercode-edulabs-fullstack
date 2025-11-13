@@ -6,6 +6,7 @@ import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulati
 import IPSubnetVisualizer from "../../components/simulations/ccna/IPSubnetVisualizer";
 import PacketRoutingSimulator from "../../components/simulations/ccna/PacketRoutingSimulator";
 import VLANIsolationSimulator from "../../components/simulations/ccna/VLANIsolationSimulator";
+import StaticRouteSimulator from "../../components/simulations/ccna/StaticRouteSimulator";
 
 const networkingCCNA = [
   {
@@ -923,6 +924,190 @@ Switch# show vlan brief
 - VLANs isolate traffic at Layer 2 for security and scalability.  
 - Trunks allow VLANs to span multiple switches.  
 - VLAN tagging (802.1Q) keeps traffic separated on shared links.
+`
+      }
+    ]
+  },
+  {
+    slug: "ip-routing-and-static-routes",
+    title: "IP Routing and Static Routes",
+    content: [
+      {
+        type: "text",
+        value: `
+### 🌍 What is IP Routing?
+
+IP Routing is the process of **forwarding data packets from one network to another** based on their destination IP addresses.  
+Every router acts as a **network traffic manager** — it decides the best path for data to travel across interconnected networks.
+
+When a packet arrives on a router:
+1. The router **checks the destination IP** in the header.  
+2. It looks up the **routing table** for the most specific match.  
+3. The router **forwards** the packet out through the proper interface.  
+4. If no match is found, the router may forward it to a **default route (0.0.0.0/0)** or **drop** it.
+
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🧠 Understanding the Routing Table
+
+A **routing table** contains all the known paths a router can use to reach various networks.  
+Each entry includes:
+
+| Field | Description |
+|--------|-------------|
+| **Destination Network** | The network or subnet the router can reach |
+| **Subnet Mask / Prefix** | Defines the network boundary |
+| **Next-Hop Address** | The next router on the path |
+| **Outgoing Interface** | The interface through which packets exit |
+| **Administrative Distance** | Priority ranking of the route source |
+| **Metric** | Path cost (used by dynamic protocols) |
+
+#### Example Routing Table
+| Destination | Next Hop | Interface | Type | Metric |
+|--------------|-----------|-----------|-------|---------|
+| 192.168.1.0/24 | — | G0/0 | Connected | — |
+| 192.168.2.0/24 | 10.0.0.2 | G0/1 | Static | 1 |
+| 0.0.0.0/0 | 10.0.0.254 | G0/2 | Default | 1 |
+
+📘 *Routers always prefer the route with the **longest prefix match** (most specific subnet).*
+`
+      },
+      {
+        type: "image",
+        value: "/lessonimages/ccna/static-routing-overview.png",
+        alt: "Static routing overview showing multiple routers and next-hop paths"
+      },
+      {
+        type: "text",
+        value: `
+### ⚙️ How Routing Works — Step by Step
+
+Let’s trace how a router decides where to forward a packet.
+
+1. **Packet arrives** on an incoming interface.
+2. Router checks **destination IP** (e.g., 192.168.2.25).
+3. Looks up the routing table — finds all possible matches.
+4. Picks the **route with the longest prefix** (most specific network).
+5. Determines the **next hop** and **egress interface**.
+6. Rewrites the **Layer 2 (MAC) header** to reach the next hop.
+7. Forwards the packet.
+
+If **no route matches**, the router:
+- Uses the **default route (0.0.0.0/0)** if configured.
+- Otherwise, discards the packet and sends an ICMP “Destination Unreachable” back to the source.
+
+💡 *Every hop in the path repeats this decision process until the packet reaches its destination.*
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🛠️ Static Routing Explained
+
+A **Static Route** is a manually configured route that defines how traffic should reach a specific network.  
+Unlike dynamic routing protocols (like OSPF, EIGRP, or BGP), static routes **don’t change automatically** — they remain in place until manually updated.
+
+#### ✅ Advantages:
+- Simple and predictable.
+- Uses minimal CPU and bandwidth.
+- Perfect for small networks or lab environments.
+
+#### ⚠️ Disadvantages:
+- Doesn’t adapt to network failures automatically.
+- Needs manual updates when topology changes.
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🔧 Example: Configuring a Static Route
+
+Consider the following topology:
+
+\`\`\`
+[PC1]--192.168.1.0/24--[R1]--10.0.0.0/30--[R2]--192.168.2.0/24--[PC2]
+\`\`\`
+
+To allow PC1 to reach PC2, we configure R1 and R2 with static routes:
+
+**On Router R1:**
+\`\`\`bash
+R1(config)# ip route 192.168.2.0 255.255.255.0 10.0.0.2
+\`\`\`
+
+**On Router R2:**
+\`\`\`bash
+R2(config)# ip route 192.168.1.0 255.255.255.0 10.0.0.1
+\`\`\`
+
+✅ Now, both routers know how to reach each other’s LAN networks.
+
+#### How it Works
+- R1 sees a packet destined for 192.168.2.25.
+- It checks the routing table and finds:  
+  \`192.168.2.0/24 → next-hop 10.0.0.2\`
+- It forwards the packet to R2’s interface.
+- R2 recognizes 192.168.2.25 as part of its LAN and delivers it directly.
+`
+      },
+      {
+        type: "component",
+        value: StaticRouteSimulator
+      },
+      {
+        type: "text",
+        value: `
+### 🧩 Verifying Static Routes on Cisco IOS
+
+Use these commands to confirm your configuration:
+
+\`\`\`bash
+R1# show ip route
+C    192.168.1.0/24 is directly connected, GigabitEthernet0/0
+S    192.168.2.0/24 [1/0] via 10.0.0.2, GigabitEthernet0/1
+
+R1# ping 192.168.2.10
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.2.10, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5)
+\`\`\`
+
+If you see “!” — it means the static route is working correctly 🎉
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🧮 The Default Route
+
+A **default route** acts as a catch-all path for unknown destinations.
+
+\`\`\`bash
+R1(config)# ip route 0.0.0.0 0.0.0.0 10.0.0.254
+\`\`\`
+
+💡 This is used to forward traffic to the **Internet** or an **upstream router** when no specific match exists.
+
+#### Example:
+When R1 receives traffic for 8.8.8.8 (Google DNS) — it doesn’t match any internal route.  
+It sends the packet via the default route to 10.0.0.254 (ISP gateway).
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🧠 Key Takeaways
+
+- Every router builds and maintains its own routing table.  
+- The **longest prefix match** decides the route for each packet.  
+- **Static routes** give manual control, while **default routes** handle unknown traffic.  
+- Use static routes in small or stable environments; for large ones, use dynamic routing protocols.  
+
+In the next lesson, we’ll explore **Dynamic Routing (RIP, OSPF)** to automate route learning and failover.
 `
       }
     ]
