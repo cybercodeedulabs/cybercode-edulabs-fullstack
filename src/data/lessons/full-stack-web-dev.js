@@ -618,7 +618,7 @@ Example document:
 
 | Mistake | Solution |
 |----------|-----------|
-| Forgot to call \`app.use(express.json())\` | Add it before defining routes |
+| Forgot to call \\\`app.use(express.json())\\\` | Add it before defining routes |
 | Forgot to connect DB before using models | Import and await connection |
 | Wrong cluster URI format | Check `.env` and ensure correct username/password |
 | Missing schema export | Always export your Mongoose model |
