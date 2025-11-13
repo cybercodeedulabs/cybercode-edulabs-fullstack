@@ -135,8 +135,7 @@ print(greet("Cybercode"))
       {
         type: "text",
         value: `
-🔹 **Modules:** Store functions in a separate file like \`utils.py\`, then import them.
-
+🔹 **Modules:** Store functions in a separate file like \`utils.py\`, then import them.  
 🔹 **Packages:** Create a folder with an \`__init__.py\` file — this becomes a reusable package for automation tools.
         `
       },
@@ -261,61 +260,13 @@ for bucket in s3.list_buckets()['Buckets']:
   },
 
   {
-    title: "Final Project: Automation Dashboard",
-    slug: "automation-dashboard-project",
-    content: [
-      {
-        type: "text",
-        value: `
-🎯 **Capstone Project: Cloud Automation Dashboard**
-- Build a Flask-based dashboard that automates AWS EC2 instance listing.
-- Display instance names, IDs, and statuses in a web UI.
-- Integrate with \`boto3\` and SQLite to track actions.
-        `
-      },
-      {
-        type: "code",
-        language: "python",
-        runnable: false,
-        value: `
-from flask import Flask, render_template
-import boto3
-
-app = Flask(__name__)
-ec2 = boto3.client('ec2')
-
-@app.route('/')
-def index():
-    instances = ec2.describe_instances()
-    return {"count": len(instances['Reservations'])}
-
-if __name__ == "__main__":
-    app.run(debug=True)
-        `
-      },
-      {
-        type: "text",
-        value: `
-✅ **Deliverables:**
-- Flask project folder
-- AWS integration
-- README.md documenting setup and results
-        `
-      }
-    ]
-  },
-// Continuation — remaining lessons for python-job-focused.js
-
-pythonJobFocused.push(
-  {
     title: "Error Handling & Debugging",
     slug: "error-handling-debugging",
     content: [
       {
         type: "text",
         value: `
-A professional developer doesn't just write code — they handle errors gracefully and log every critical operation.  
-In this lesson, you'll learn structured exception handling and debugging techniques.
+A professional developer doesn't just write code — they handle errors gracefully and log every critical operation.
         `
       },
       {
@@ -338,8 +289,7 @@ finally:
       {
         type: "text",
         value: `
-💡 **Pro Tip:** Use Python's built-in \`logging\` module instead of print statements in production scripts.  
-This ensures logs are stored persistently and can be integrated with monitoring systems like ELK or CloudWatch.
+💡 **Pro Tip:** Use Python's built-in \`logging\` module instead of print statements in production scripts.
         `
       }
     ]
@@ -352,8 +302,7 @@ This ensures logs are stored persistently and can be integrated with monitoring 
       {
         type: "text",
         value: `
-Object-Oriented Programming (OOP) helps structure Python automation tools and backend apps cleanly.  
-It allows reusability, encapsulation, and easy maintenance — core principles in enterprise-grade systems.
+Object-Oriented Programming (OOP) helps structure Python automation tools and backend apps cleanly.
         `
       },
       {
@@ -376,12 +325,6 @@ class AWS_Server(Server):
 s1 = AWS_Server("web-prod-01", "10.0.0.5")
 s1.connect()
         `
-      },
-      {
-        type: "text",
-        value: `
-💼 **Use Case:** OOP concepts like inheritance and polymorphism are heavily used in tools like Ansible, Flask, and custom DevOps frameworks.
-        `
       }
     ]
   },
@@ -393,8 +336,7 @@ s1.connect()
       {
         type: "text",
         value: `
-Most backend systems and automation dashboards store results in databases.  
-Here, you'll learn to interact with both local (SQLite) and enterprise (PostgreSQL) databases.
+Most backend systems and automation dashboards store results in databases.
         `
       },
       {
@@ -417,14 +359,7 @@ for row in cursor.execute("SELECT * FROM logs"):
 conn.close()
         `
       },
-      { type: "component", value: SqliteLab },
-      {
-        type: "text",
-        value: `
-🔹 SQLite is ideal for quick automation data.  
-🔹 For production, use PostgreSQL or AWS RDS with the \`psycopg2\` library.
-        `
-      }
+      { type: "component", value: SqliteLab }
     ]
   },
 
@@ -452,17 +387,7 @@ def create_user(username):
 create_user("student01")
         `
       },
-      { type: "component", value: DevOpsAutomationLab },
-      {
-        type: "text",
-        value: `
-⚙️ **Common Tasks Automated:**
-- Log rotation
-- Backup scripts
-- Continuous Integration triggers (Jenkins)
-- Cloud provisioning
-        `
-      }
+      { type: "component", value: DevOpsAutomationLab }
     ]
   },
 
@@ -473,8 +398,7 @@ create_user("student01")
       {
         type: "text",
         value: `
-Flask is a lightweight web framework used for building backend APIs and dashboards.  
-This lesson helps you create a basic REST API used in cloud automation dashboards.
+Flask is a lightweight web framework used for building backend APIs and dashboards.
         `
       },
       {
@@ -494,13 +418,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
         `
       },
-      { type: "component", value: FlaskApiLab },
-      {
-        type: "text",
-        value: `
-💡 **Pro Tip:** Many DevOps platforms (e.g., Jenkins or Grafana extensions) use Flask APIs for integration.
-        `
-      }
+      { type: "component", value: FlaskApiLab }
     ]
   },
 
@@ -511,8 +429,7 @@ if __name__ == '__main__':
       {
         type: "text",
         value: `
-Testing ensures your automation scripts and backend services work as expected.  
-Learn how to use Python's \`unittest\` framework and integrate testing into CI/CD pipelines.
+Testing ensures your automation scripts and backend services work as expected.
         `
       },
       {
@@ -532,13 +449,6 @@ class TestMath(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
         `
-      },
-      {
-        type: "text",
-        value: `
-✅ Add testing to every automation script.  
-It builds confidence before deployments and avoids production incidents.
-        `
       }
     ]
   },
@@ -547,13 +457,6 @@ It builds confidence before deployments and avoids production incidents.
     title: "Working with YAML, JSON & Config Files",
     slug: "working-with-yaml-json-configs",
     content: [
-      {
-        type: "text",
-        value: `
-Infrastructure-as-Code tools like Terraform, Ansible, and Jenkins use YAML or JSON extensively.  
-Mastering config file manipulation is a must for DevOps and backend engineers.
-        `
-      },
       {
         type: "code",
         language: "python",
@@ -574,12 +477,6 @@ print("Server Name:", data["server"]["name"])
 json_output = json.dumps(data, indent=4)
 print(json_output)
         `
-      },
-      {
-        type: "text",
-        value: `
-💡 **Practical Use:** Parse Kubernetes manifests or Ansible playbooks dynamically.
-        `
       }
     ]
   },
@@ -591,8 +488,7 @@ print(json_output)
       {
         type: "text",
         value: `
-When you deploy scripts to production, you don't ship individual files — you package them.  
-Learn to structure Python projects, create virtual environments, and publish them using \`pip\`.
+When you deploy scripts to production, you don't ship individual files — you package them.
         `
       },
       {
@@ -611,18 +507,9 @@ echo "from setuptools import setup, find_packages
 setup(name='mypackage', version='1.0', packages=find_packages())" > setup.py
         `
       },
-      { type: "component", value: PackageBuilderLab },
-      {
-        type: "text",
-        value: `
-🚀 **Outcome:** You’ll be able to publish internal utilities or reusable automation libraries for your organization.
-        `
-      },
+      { type: "component", value: PackageBuilderLab }
     ]
-  },
-),
-
-
+  }
 ];
 
 export default pythonJobFocused;
