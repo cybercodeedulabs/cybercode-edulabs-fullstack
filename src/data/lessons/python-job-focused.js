@@ -1,4 +1,11 @@
 // src/data/lessons/python-job-focused.js
+// Auto-generated detailed, job-focused lessons file for Cybercode EduLabs.
+// This file includes extended explanations, line-by-line commentary, practical tips,
+// mini-exercises, and preserves simulation components at their original lesson spots.
+//
+// IMPORTANT: keep import paths consistent with your project structure.
+// The file is intentionally verbose to serve as a complete lesson reference.
+
 import FileAutomationLab from "../../components/simulations/python-job-focused/FileAutomationLab";
 import FlaskApiLab from "../../components/simulations/python-job-focused/FlaskApiLab";
 import AwsS3Lab from "../../components/simulations/python-job-focused/AwsS3Lab";
@@ -7,6 +14,12 @@ import PackageBuilderLab from "../../components/simulations/python-job-focused/P
 import SqliteLab from "../../components/simulations/python-job-focused/SqliteLab";
 
 const pythonJobFocused = [
+  /* ---------------------------------------------------------------------------
+     Lesson 1 : Introduction to Python for Professionals
+     - Why Python matters in industry
+     - Environment setup with rationale
+     - Professional habits
+     --------------------------------------------------------------------------- */
   {
     title: "Introduction to Python for Professionals",
     slug: "intro-to-python-for-professionals",
@@ -14,77 +27,106 @@ const pythonJobFocused = [
       {
         type: "text",
         value: `
-Python isn't just for beginners — it’s the backbone of automation, DevOps, data pipelines, and backend services across the IT industry.
-In this lesson, you'll understand why Python appears in job descriptions for backend, DevOps, SRE, and automation roles, and how to prepare a development environment that mirrors professional practice.
-        `
+Overview (extended):
+Python is used across many layers of modern software stacks: as a scripting language for automation, as a backend language for services (Flask, FastAPI), in cloud automation (boto3), in data pipelines (Airflow tasks), and for test automation. What makes Python ideal is its readability, vast ecosystem, and the balance between fast development and sufficient performance for many backend tasks.
+
+This lesson gives you context on where you'll see Python in job descriptions, what employers expect in terms of environment setup, and the day-to-day workflows you should be comfortable with.
+`
       },
       {
         type: "text",
         value: `
-Learning outcomes:
-- Recognize where Python fits in modern systems (automation, backend, cloud integration).
-- Prepare a reproducible development environment.
-- Learn the small habits professionals use (version control, virtual environments, linting).
-        `
+Workplace patterns & expectations:
+- Reproducible environments: Projects should declare their dependencies and pin versions so that any developer or CI system gets the same behavior.
+- Version control & branching: Use Git feature branches, write good commit messages, and open PRs for code review.
+- Testing & automation: Tests should run in CI on every push; avoid hosting manual-only procedures.
+- Logging & observability: Scripts and services should emit structured logs so they can be aggregated and monitored.
+`
+      },
+      {
+        type: "text",
+        value: `
+How to think like a professional:
+- Small commits with meaningful messages.
+- Keep functions small and focused; one responsibility per function.
+- Write tests that verify both happy paths and edge cases.
+- Automate repetitive tasks: if you perform it twice manually, script it.
+`
       },
       {
         type: "code",
         language: "bash",
         runnable: false,
         value: `
-# Install Python (if not installed)
+# system-level setup (Ubuntu example)
 sudo apt update && sudo apt install python3 python3-pip -y
 
-# Install VS Code (optional)
+# optional: install VS Code for development
 sudo snap install --classic code
 
-# Configure Git
+# configure git identity locally (used for commits)
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
-        `
+`
       },
       {
         type: "text",
         value: `
-Command breakdown:
-- 'sudo apt update' refreshes package index; 'sudo apt install python3 python3-pip -y' installs Python and pip.
-- 'snap install --classic code' installs VS Code on systems with snap available (Ubuntu). Use appropriate installers for other OSes.
-- 'git config --global' sets global Git identity used in commit metadata; in team settings, CI may override identity locally.
-        `
-      },
-      {
-        type: "text",
-        value: `
-Why virtual environments:
-- Avoid dependency conflicts between projects.
-- Make builds reproducible by pinning dependencies in requirements.txt or lock files.
-- Tools: venv (built-in), virtualenv, pipenv, poetry.
-        `
+Commands explained with reasoning:
+- \`apt update\` refreshes package metadata so you have latest packages list.
+- Installing \`python3\` and \`pip\` ensures you have the interpreter and package manager.
+- VS Code is optional but widely used; ensure you install recommended extensions: Python, Pylance, and GitLens.
+- Git identity helps team members track authorship; CI systems usually set their own identities when performing automated commits.
+`
       },
       {
         type: "code",
         language: "bash",
         runnable: false,
         value: `
-# Create and activate venv
-python3 -m venv myenv
-source myenv/bin/activate
-# Verify python and pip refer to the venv path
-which python
-which pip
-        `
+# virtual environment creation
+python3 -m venv .venv
+# activate it (Linux/macOS)
+source .venv/bin/activate
+# Windows (PowerShell)
+# .venv\\Scripts\\Activate.ps1
+`
       },
       {
         type: "text",
         value: `
-Usage tips:
-- Always check 'python --version' and 'pip freeze' when debugging environment issues.
-- Commit a minimal README with local setup steps and a requirements.txt file generated via 'pip freeze > requirements.txt' (or use a lock file with poetry).
-        `
+Why use \`.venv\` and not only system Python:
+- Multiple projects may need different versions of a library (e.g., boto3 1.x vs 2.x). Virtual environments prevent conflicts.
+- In CI, you recreate the environment from lock files to ensure consistent test runs.
+- Use \`.venv\` (dot-prefixed) to indicate it's project-local and often added to .gitignore.
+`
+      },
+      {
+        type: "text",
+        value: `
+Practical checklist for the first day at a new job:
+1. Clone the repo and checkout the project's README.
+2. Create and activate virtual environment.
+3. Install dependencies from requirements.txt or pyproject.toml.
+4. Run the test suite to ensure environment is correct.
+5. Start the dev server (or run a small smoke test).
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Create a project folder, initialize git, create a .venv, install the 'requests' package, and write a README that explains how to reproduce your environment.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 2 : Python Fundamentals Refresher
+     - Variables, types, formatting, loops, comprehensions
+     - Practical advice for production-ready scripts
+     --------------------------------------------------------------------------- */
   {
     title: "Python Fundamentals Refresher",
     slug: "python-fundamentals-refresher",
@@ -92,9 +134,9 @@ Usage tips:
       {
         type: "text",
         value: `
-Overview:
-Refresh of core Python language features used daily in automation and backend tasks: variables, types, formatting, loops, comprehensions. These basics are frequently probed during interviews and critical in debugging production scripts.
-        `
+Overview (extended):
+This lesson revisits language constructs you'll use constantly. Pay attention to writing code that is readable, predictable, and easy to test. Small language features like f-strings and comprehensions improve developer productivity and reduce bugs when used appropriately.
+`
       },
       {
         type: "code",
@@ -107,17 +149,17 @@ version = 3.10
 is_active = True
 
 print(f"Welcome to {name}, Python {version} is_active={is_active}")
-        `
+`
       },
       {
         type: "text",
         value: `
-Line-by-line:
-- 'name' is a string variable.
-- 'version' demonstrates numeric types (float/int depending on value).
-- 'is_active' is a boolean.
-- f-strings are efficient and readable for variable interpolation: f"...{var}..."
-        `
+Explanation:
+- Variables are dynamically typed; their type is determined at runtime.
+- f-strings (formatted strings) are efficient and preferred for readability.
+- Avoid ambiguous variable names; prefer descriptive names in production code.
+- To inspect types during development, use the 'type()' function (e.g., type(version)).
+`
       },
       {
         type: "code",
@@ -129,31 +171,45 @@ servers = ["app01", "app02", "db01"]
 for s in servers:
     print(f"Connecting to {s}...")
 
-# List comprehension (used in automation scripts)
+# List comprehension
 status = [f"{s}: OK" for s in servers]
 print(status)
-        `
+`
       },
       {
         type: "text",
         value: `
-Explanation & best practices:
-- Use descriptive variable names.
-- For production scripts, add logging instead of print statements, and use structured logging with levels (INFO, WARNING, ERROR).
-- List comprehensions are concise; prefer readability over clever one-liners when collaborating in teams.
-        `
+Detailed notes:
+- Use logging instead of print() for anything that might be monitored or useful for debugging in production.
+- When iterating many items (e.g., thousands of servers), consider generator expressions to avoid memory spikes.
+- Example: (status for s in servers) is a generator if you use parentheses; list comprehensions create lists in memory.
+`
       },
       {
         type: "text",
         value: `
-Exercise:
-- Modify the loop to skip servers whose names start with 'db' and print a warning for skipped items.
-- Replace prints with 'logging' module calls and configure a basic logger.
-        `
+Performance insight:
+- For CPU-bound heavy tasks, Python's single-threaded nature (GIL) matters; in such cases use multiprocessing or native extensions.
+- For I/O-bound tasks (network calls, file reads), consider using async/await or concurrent.futures for higher throughput.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercises:
+1. Replace print() with logging (basicConfig level INFO) and verify messages appear.
+2. Implement a function that takes server names and returns only those that are not databases (e.g., filter out names starting with "db").
+3. Benchmark a list comprehension vs for-loop for a million items and observe runtime/memory.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 3 : Functions, Modules & Packages
+     - Why modularization matters
+     - Testing and packaging tips
+     --------------------------------------------------------------------------- */
   {
     title: "Functions, Modules & Packages",
     slug: "functions-modules-packages",
@@ -161,9 +217,9 @@ Exercise:
       {
         type: "text",
         value: `
-Overview:
-Functions decompose logic into reusable units. Modules (.py files) group related functions. Packages (folders with __init__.py) group modules and are used to distribute code. Learn how to structure code for testability and reuse.
-        `
+Overview (extended):
+Functions let you encapsulate behavior. Modules organize functions and classes. Packages group modules and provide an API boundary. Good modularization makes code testable and maintainable.
+`
       },
       {
         type: "code",
@@ -174,31 +230,35 @@ def greet(user):
     return f"Hello, {user}! Welcome to Cybercode EduLabs."
 
 print(greet("Cybercode"))
-        `
+`
       },
       {
         type: "text",
         value: `
-Why return instead of print:
-- Returning values separates concerns: function produces data; caller decides how to use it (print, log, test).
-- Easier to unit-test return values.
-- Add docstrings and type hints for clarity:
+Why returning values is better than printing:
+- Separation of concerns: function computes; caller decides I/O.
+- Easier to unit test returned values using assert statements.
+- You can reuse the function in different contexts (CLI, web API, background job).
+`
+      },
+      {
+        type: "text",
+        value: `
+Docstrings and typing:
+- Add docstrings to explain parameters and return values.
+- Use type hints for clarity:
   def greet(user: str) -> str:
-      """Return greeting for user"""
-        `
+      \"\"\"Return a greeting message for the given user.\"\"\"
+`
       },
       {
         type: "text",
         value: `
-Module & package structure:
-- Put related functions in modules (e.g., utils.py).
-- Group modules into packages:
-  mypackage/
-    __init__.py
-    network.py
-    aws_utils.py
-- Use __all__ in __init__.py to define public API for the package.
-        `
+Module/package organization:
+- Use small modules (single responsibility) to ease testing.
+- Expose a clean public API from your package via __init__.py using __all__.
+- Keep CLI and library code separate: if your module is both a script and a library, guard CLI code with if __name__ == "__main__": to avoid running it on import.
+`
       },
       {
         type: "code",
@@ -210,19 +270,24 @@ automation_tool/
     __init__.py
     network.py
     aws_utils.py
-        `
+`
       },
       {
         type: "text",
         value: `
-Practical tip:
-- Use relative imports within packages (from .network import ping).
-- Keep modules small and focused to improve readability and test coverage.
-        `
+Practical: Creating a reusable utility module
+1. Create files utils.py and io_helpers.py.
+2. Add functions and unit tests in tests/test_utils.py.
+3. Run tests locally and ensure they pass in CI.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 4 : File Handling & OS Automation
+     - Safe file writes, atomic operations, and the simulation component
+     --------------------------------------------------------------------------- */
   {
     title: "File Handling & OS Automation",
     slug: "file-handling-os-automation",
@@ -230,9 +295,9 @@ Practical tip:
       {
         type: "text",
         value: `
-Overview:
-File operations and OS-level automation are central to DevOps tasks: collecting logs, rotating files, archiving artifacts, reading configs. This lesson demonstrates safe file writes and points to simulation practice.
-        `
+Overview (extended):
+File operations are fundamental: logs, artifacts, backup rotation. This lesson shows safe patterns for file writes, explains why atomic operations matter, and points to the FileAutomationLab for hands-on practice.
+`
       },
       {
         type: "code",
@@ -246,16 +311,16 @@ with open(log_file, "a") as f:
     f.write(f"Log entry created at {datetime.datetime.now()}\\n")
 
 print("✅ Log updated:", os.path.abspath(log_file))
-        `
+`
       },
       {
         type: "text",
         value: `
-Code explanation:
-- 'open(..., "a")' opens file in append mode; does not overwrite existing content.
-- 'with' ensures file is closed when block ends—even on errors.
-- 'os.path.abspath' shows exact path where file was written; helpful when scripts run under cron or containers where current working directory may differ.
-        `
+Detailed explanation:
+- Append mode ('a') ensures old logs are preserved. For rotating logs, you would rename the existing log file and create a new file, or preferably use logging.handlers.
+- The 'with' statement is a context manager that ensures files are closed on exit. This prevents file descriptor leaks, especially when scripts run in long-lived processes.
+- Use os.path.join() rather than concatenating strings for cross-platform compatibility.
+`
       },
       {
         type: "component",
@@ -264,21 +329,26 @@ Code explanation:
       {
         type: "text",
         value: `
-Simulation note:
-FileAutomationLab provides a sandbox to practice file creation, safe writes, cleanup, and directory handling. Use it to try creating temp directories, check file permissions, and test cleanup logic for idempotent scripts.
-        `
+FileAutomationLab notes:
+- The lab simulates making directories, copying files, cleaning tmp folders, and handling permission errors.
+- Practice: Write a script that rotates logs when the file exceeds a threshold (e.g., 5 MB). The rotation should be atomic: write to a temporary file then rename.
+`
       },
       {
         type: "text",
         value: `
-Production considerations:
-- Prefer Python's 'logging' module with rotating handlers (RotatingFileHandler or TimedRotatingFileHandler).
-- When handling concurrent writes, use file locks or external logging services to avoid corruption.
-        `
+Advanced ideas:
+- For concurrent writes from multiple processes, use file locking (fcntl on Unix) or external logging services.
+- For high-throughput logging, send logs to syslog or a remote ingestion endpoint and avoid heavy synchronous disk writes.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 5 : Working with APIs (Requests + JSON)
+     - Timeouts, sessions, retries, and error handling
+     --------------------------------------------------------------------------- */
   {
     title: "Working with APIs (Requests + JSON)",
     slug: "working-with-apis",
@@ -286,9 +356,9 @@ Production considerations:
       {
         type: "text",
         value: `
-Overview:
-APIs are the glue between services. Learn how to call REST APIs, parse JSON responses, and handle errors robustly. This lesson demonstrates basic patterns and defensive coding practices.
-        `
+Overview (extended):
+API interactions require careful handling of timeouts, retries, authentication, and parsing. This lesson demonstrates practical, production-minded patterns using requests and JSON handling.
+`
       },
       {
         type: "code",
@@ -297,35 +367,47 @@ APIs are the glue between services. Learn how to call REST APIs, parse JSON resp
         value: `
 import requests
 
-response = requests.get("https://api.github.com/users/octocat")
+response = requests.get("https://api.github.com/users/octocat", timeout=5)
 if response.status_code == 200:
     data = response.json()
-    print("Username:", data["login"])
-    print("Followers:", data["followers"])
+    print("Username:", data.get("login"))
+    print("Followers:", data.get("followers"))
 else:
     print("Error fetching data:", response.status_code)
-        `
+`
       },
       {
         type: "text",
         value: `
-Best practices:
-- Use timeouts (requests.get(url, timeout=5)).
-- Use sessions (requests.Session()) to reuse connections.
-- Handle exceptions: requests.exceptions.RequestException covers common network errors.
-- For retries, use urllib3 Retry or a small wrapper to implement exponential backoff.
-        `
+Best practices explained:
+- timeout=5 prevents the request from hanging forever; tune this based on expected latency.
+- Use response.raise_for_status() when you want exceptions for 4xx/5xx responses.
+- Wrap network calls in try/except to catch RequestException and log failures.
+- For multiple calls, use requests.Session() to reuse TCP connections and improve performance.
+`
       },
       {
         type: "text",
         value: `
-Exercise:
-- Convert the example into a function that returns parsed data or raises a custom exception on failures. Add tests mocking network responses.
-        `
+Retries and backoff:
+- Implement exponential backoff (e.g., 1s, 2s, 4s) for transient errors.
+- Use urllib3.util.retry.Retry with requests.adapters.HTTPAdapter to configure retries for requests.Session().
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Write a wrapper function fetch_json(url) that returns parsed JSON or raises a custom error with helpful diagnostics (URL, status, body snippet).
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 6 : Python for Cloud & AWS SDK (boto3)
+     - Listing buckets, credentials, pagination, and simulation component
+     --------------------------------------------------------------------------- */
   {
     title: "Python for Cloud & AWS SDK (boto3)",
     slug: "python-aws-boto3",
@@ -333,9 +415,9 @@ Exercise:
       {
         type: "text",
         value: `
-Overview:
-Automating AWS tasks via boto3 is a common requirement. This lesson shows a minimal pattern for listing S3 buckets and discusses credential and security best practices.
-        `
+Overview (extended):
+Boto3 is the standard AWS SDK for Python. This lesson covers basic usage (clients vs resources), credential best practices, and using simulated labs to avoid charging real accounts during development.
+`
       },
       {
         type: "code",
@@ -345,9 +427,18 @@ Automating AWS tasks via boto3 is a common requirement. This lesson shows a mini
 import boto3
 
 s3 = boto3.client('s3')
-for bucket in s3.list_buckets()['Buckets']:
-    print(bucket['Name'])
-        `
+for bucket in s3.list_buckets().get('Buckets', []):
+    print(bucket.get('Name'))
+`
+      },
+      {
+        type: "text",
+        value: `
+Notes on clients vs resources:
+- client = low-level service client which returns dictionaries and mirrors API calls.
+- resource = higher-level object-oriented interface (e.g., boto3.resource('s3')) useful for intuitive object operations.
+- Beware of paging: list_buckets is small, but list_objects_v2 requires handling ContinuationToken when many objects exist.
+`
       },
       {
         type: "component",
@@ -356,23 +447,34 @@ for bucket in s3.list_buckets()['Buckets']:
       {
         type: "text",
         value: `
-Explain & secure:
-- boto3.client('s3') creates a low-level client for S3 operations.
-- list_buckets() returns a dict with 'Buckets'. Always check for the key to avoid KeyError.
-- Authentication: prefer IAM roles (EC2 task roles, ECS tasks, Lambda roles) or environment variables configured in secure CI/CD rather than hard-coded keys.
-        `
+AwsS3Lab notes:
+- The lab simulates S3 operations allowing you to practice PUT/GET and listing without real AWS creds.
+- Practice: write a function upload_file(local_path, bucket, key) and handle common errors like NoSuchBucket or AccessDenied gracefully.
+`
       },
       {
         type: "text",
         value: `
-Production tips:
-- Use pagination for listing large object sets (list_objects_v2 with ContinuationToken).
-- Implement exponential backoff on throttling errors (HTTP 429) and use AWS SDK retry configuration.
-        `
+Credentials & security:
+- Prefer IAM roles for EC2/ECS/Lambda. For local development, use named profiles in ~/.aws/credentials or environment variables.
+- Never commit access keys to git.
+`
+      },
+      {
+        type: "text",
+        value: `
+Production patterns:
+- Use S3 object lifecycle policies for archival, and multipart upload for large files.
+- Instrument operations with metrics (latency, error rates) and alerts for failures.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 7 : Error Handling & Debugging
+     - Specific exceptions, stack traces, logging, and debugging tools
+     --------------------------------------------------------------------------- */
   {
     title: "Error Handling & Debugging",
     slug: "error-handling-debugging",
@@ -380,9 +482,9 @@ Production tips:
       {
         type: "text",
         value: `
-Overview:
-Robust error handling and systematic debugging accelerate issue resolution and prevent production incidents. Learn to catch specific exceptions, log useful context, and use debug tools.
-        `
+Overview (extended):
+Handling errors properly helps you recover gracefully and provides actionable logs for incident response. Learn to capture context, avoid swallowing exceptions, and reproduce issues locally.
+`
       },
       {
         type: "code",
@@ -399,29 +501,43 @@ except ValueError:
     print("❌ Invalid input, please enter a number.")
 finally:
     print("Execution complete.")
-        `
+`
       },
       {
         type: "text",
         value: `
-Explain the example:
-- Specific exceptions allow precise handling and clearer logs.
-- 'finally' is used for cleanup tasks such as closing file handles or releasing locks.
-- Replace prints with logging and use logger.exception(...) inside except blocks to capture stack traces.
-        `
+Explanation and improvements:
+- Replace print statements with logging. Example:
+  import logging
+  logger = logging.getLogger(__name__)
+  logger.exception("Failed to process number")
+- Use logger.exception in except blocks to automatically include stack trace in logs.
+- Avoid a bare except: except Exception as e: is better when you need to log unknown issues, but prefer to handle known exceptions specifically.
+`
       },
       {
         type: "text",
         value: `
-Debugging tools:
-- pdb: interactive debugger; use 'pdb.set_trace()' to drop into the interpreter.
-- IDE breakpoints: let you step through code, inspect variables, and evaluate expressions.
-- Reproduce issues with small scripts and add unit tests for the failing case.
-        `
+Debugging techniques:
+- Reproduce a failing scenario in a minimal script.
+- Use pdb (import pdb; pdb.set_trace()) or IDE breakpoints to step through.
+- Use logging with different handlers (console for dev, file or remote for production).
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Convert the example to use logging, and add a unit test that mocks input() to supply invalid data and asserts the correct log message or raised exception.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 8 : Object-Oriented Python for Projects
+     - Classes, inheritance, composition, and design tips
+     --------------------------------------------------------------------------- */
   {
     title: "Object-Oriented Python for Projects",
     slug: "object-oriented-python",
@@ -429,9 +545,9 @@ Debugging tools:
       {
         type: "text",
         value: `
-Overview:
-OOP organizes code into classes that encapsulate data and behavior. Use classes to model domain entities (e.g., Server, Job), encapsulate connection logic, and make code more maintainable.
-        `
+Overview (extended):
+Classes model entities and encapsulate related behavior. Use composition to assemble behaviors and inheritance for clear hierarchical relationships. Favor small classes with well-defined responsibilities.
+`
       },
       {
         type: "code",
@@ -452,20 +568,31 @@ class AWS_Server(Server):
 
 s1 = AWS_Server("web-prod-01", "10.0.0.5")
 s1.connect()
-        `
+`
       },
       {
         type: "text",
         value: `
 Design notes:
-- Use inheritance for clear is-a relationships; prefer composition for behavior reuse (inject a connector object rather than embedding connection code).
-- Add type hints and docstrings for better IDE support and readability.
-- For stateful systems, consider thread-safety, connection pooling, and resource cleanup (context managers).
-        `
+- Use __repr__ and __str__ methods to aid debugging when objects are printed.
+- Consider making Server a dataclass (from dataclasses import dataclass) when the class primarily holds data.
+- For connection logic, move actual network code out of connect() and into a ConnectionManager to allow easier testing/mocking.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Refactor Server class into a dataclass and inject a connector object that performs the real connect logic; write a unit test that mocks the connector.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 9 : Databases with Python
+     - SQLite example, parameterized queries, simulation component, production notes
+     --------------------------------------------------------------------------- */
   {
     title: "Databases with Python",
     slug: "databases-with-python",
@@ -473,9 +600,9 @@ Design notes:
       {
         type: "text",
         value: `
-Overview:
-Relational databases are commonly used for storing logs, job metadata, and dashboards. SQLite is a great local dev DB; for production use Postgres/MySQL with proper connection pooling and migration tooling.
-        `
+Overview (extended):
+Databases store state, logs, and metadata. SQLite is excellent for prototypes and local dev. Understand parameterized queries and why ORMs or query builders are useful in production.
+`
       },
       {
         type: "code",
@@ -495,7 +622,7 @@ for row in cursor.execute("SELECT * FROM logs"):
     print(row)
 
 conn.close()
-        `
+`
       },
       {
         type: "component",
@@ -504,23 +631,35 @@ conn.close()
       {
         type: "text",
         value: `
-Explain the example:
-- Use parameterized queries to avoid injection:
+Explained and improved:
+- Use parameterized queries to avoid SQL injection:
   cursor.execute("INSERT INTO logs (action) VALUES (?)", (action,))
-- Use connection contexts (with sqlite3.connect(...) as conn:) to ensure commits and closes.
-        `
+- Prefer using 'with sqlite3.connect(...) as conn:' so commit/rollback happens automatically.
+- For production, use PostgreSQL with psycopg2 and connection pooling.
+`
       },
       {
         type: "text",
         value: `
-Production suggestions:
-- Use SQLAlchemy or an ORM for portability and easier migrations.
-- Use Alembic for database migrations and connection pools (psycopg2 pool) for scalable web apps.
-        `
+Migration & schema:
+- Use Alembic for tracking schema changes.
+- Keep migrations in source control and apply them in CI/CD before deploy.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Modify the script to accept a command-line argument for the action string and insert it safely into the DB.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 10 : Scripting & Automation (DevOps Tasks)
+     - Use of subprocess, idempotency, simulation component
+     --------------------------------------------------------------------------- */
   {
     title: "Scripting & Automation (DevOps Tasks)",
     slug: "scripting-and-automation",
@@ -528,23 +667,28 @@ Production suggestions:
       {
         type: "text",
         value: `
-Overview:
-Use Python for tasks that glue systems together: provisioning, backups, monitoring, and orchestrating tools. Scripts should be idempotent, safe, and easy to run in CI or cron.
-        `
+Overview (extended):
+Automation scripts should be safe, idempotent, and observable. This lesson shows patterns for executing shell commands safely, validating inputs, and integrating scripts into system workflows. The DevOpsAutomationLab gives you a safe practice environment.
+`
       },
       {
         type: "code",
         language: "python",
         runnable: true,
         value: `
-import os
+import subprocess
 
 def create_user(username):
-    print(f"Creating user: {username}")
-    os.system(f"sudo useradd {username}")
+    # safer than os.system: pass arguments as a list
+    try:
+        subprocess.run(["sudo", "useradd", username], check=True, capture_output=True, text=True)
+        print(f"User {username} created.")
+    except subprocess.CalledProcessError as e:
+        print("Failed to create user:", e.stderr)
+        # handle error or retry as required
 
 create_user("student01")
-        `
+`
       },
       {
         type: "component",
@@ -553,22 +697,36 @@ create_user("student01")
       {
         type: "text",
         value: `
-Why avoid os.system in serious scripts:
-- os.system spawns a shell and returns exit code without capturing stdout/stderr. Prefer subprocess.run([...], check=True, capture_output=True, text=True) for safer command execution with proper error handling.
-- Always validate inputs to shell commands and prefer passing arg lists instead of a joined string to avoid shell injection vulnerabilities.
-        `
+Why subprocess.run is better:
+- It avoids shell interpolation vulnerabilities.
+- You can capture stdout/stderr and the return code.
+- 'check=True' raises an exception on non-zero exit, enabling immediate error handling rather than silently continuing.
+`
       },
       {
         type: "text",
         value: `
-Idempotency:
-- Ensure scripts can run multiple times without side effects (e.g., check if user exists before creating).
-- Use flags or state files in /var or a DB to track completed steps.
-        `
+Idempotency and safety:
+- Check if user exists before creating: use 'id -u username' or inspect /etc/passwd.
+- When modifying system state, either run scripts as part of a configuration management tool (Ansible) or add strict validation and dry-run modes.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Implement a 'delete_user' function that safely removes a user only if they exist and archives their home directory to a backup location.
+`
       }
     ]
   },
 
+  /* --------------------------------------------------------------------------- truncated for brevity in this step
+
+  /* ---------------------------------------------------------------------------
+     Lesson 11 : Web Development with Flask
+     - Minimal API, Blueprint, deployment hints, simulation component
+     --------------------------------------------------------------------------- */
   {
     title: "Web Development with Flask",
     slug: "web-development-with-flask",
@@ -576,9 +734,9 @@ Idempotency:
       {
         type: "text",
         value: `
-Overview:
-Flask is a lightweight framework ideal for building small APIs and dashboards used in automation tools and monitoring. This lesson demonstrates an endpoint pattern and notes production considerations.
-        `
+Overview (extended):
+Flask is great for small APIs and dashboards. This lesson covers structuring a Flask app, creating endpoints, and deploying with a production server. FlaskApiLab provides interactive practice.
+`
       },
       {
         type: "code",
@@ -595,7 +753,7 @@ def status():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-        `
+`
       },
       {
         type: "component",
@@ -604,23 +762,35 @@ if __name__ == '__main__':
       {
         type: "text",
         value: `
-Explain the example:
-- Use 'jsonify' to ensure correct headers and JSON output.
-- In development 'debug=True' helps live reload and error pages; do not enable in production.
-- Use Blueprints in larger apps to segment routes by domain (auth, api, admin).
-        `
+Detailed notes:
+- Use Blueprints to split large apps: auth_bp, api_bp, admin_bp.
+- For testing, use Flask's test_client to simulate requests without network calls.
+- In production, run Gunicorn with multiple workers behind Nginx and configure logging to files/aggregator.
+`
       },
       {
         type: "text",
         value: `
-Production deployment:
-- Use Gunicorn or uWSGI behind Nginx.
-- Add authentication (token-based, OAuth) and rate limiting for endpoints that make infrastructure changes.
-        `
+Security & performance:
+- Validate inputs (use marshmallow or pydantic for request schema validation).
+- Apply rate limiting and authentication (JWT, OAuth2).
+- Use connection pools for DB access; avoid opening a new DB connection per request.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Add an endpoint /instances that reads from a simulated AWS call (or mock) and returns instance summaries with basic pagination.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 12 : Unit Testing & Best Practices
+     - unittest vs pytest, mocking, CI integration
+     --------------------------------------------------------------------------- */
   {
     title: "Unit Testing & Best Practices",
     slug: "unit-testing-best-practices",
@@ -628,9 +798,9 @@ Production deployment:
       {
         type: "text",
         value: `
-Overview:
-Unit tests increase confidence and catch regressions. Combine unit tests with integration tests in CI. Mock external services when unit-testing to keep tests fast and deterministic.
-        `
+Overview (extended):
+Tests validate behavior and prevent regressions. Use unit tests for logic, integration tests for external services, and end-to-end tests for user flows. Integrate tests into CI to enforce quality.
+`
       },
       {
         type: "code",
@@ -648,20 +818,33 @@ class TestMath(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-        `
+`
       },
       {
         type: "text",
         value: `
-Testing guidance:
-- Use pytest for cleaner syntax and fixtures.
-- Use mocking (unittest.mock) to isolate external systems (network, AWS).
-- Run tests in CI and fail builds when tests regress.
-        `
+Best practices:
+- Prefer pytest for brevity and powerful fixtures; but unittest is fine and portable.
+- Use mocking (unittest.mock or pytest-mock) to replace network calls, AWS calls, and DB access in unit tests.
+- Keep unit tests fast and deterministic; let integration tests hit real services in controlled test environments.
+`
+      },
+      {
+        type: "text",
+        value: `
+CI suggestions:
+- Run tests on pull requests and fail builds when tests regress.
+- Optionally run linters (flake8), type checks (mypy), and security scans in CI.
+- Cache dependencies in CI to reduce build times.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 13 : Working with YAML, JSON & Config Files
+     - Parsing, validation, secrets handling
+     --------------------------------------------------------------------------- */
   {
     title: "Working with YAML, JSON & Config Files",
     slug: "working-with-yaml-json-configs",
@@ -669,9 +852,9 @@ Testing guidance:
       {
         type: "text",
         value: `
-Overview:
-Config files (YAML/JSON) are essential for parameterizing scripts and deployments. Validate configs and treat them as data, not code.
-        `
+Overview (extended):
+Config files are the interface between runtime behavior and the code. Keep configs declarative and avoid putting secrets in them. Validate configs against a schema before using them in automation scripts.
+`
       },
       {
         type: "code",
@@ -692,20 +875,31 @@ print("Server Name:", data["server"]["name"])
 # Convert YAML to JSON
 json_output = json.dumps(data, indent=4)
 print(json_output)
-        `
+`
       },
       {
         type: "text",
         value: `
-Best practices:
-- Prefer 'yaml.safe_load' over 'yaml.load' for untrusted inputs.
-- Validate config using jsonschema or custom checks.
-- Keep secrets out of config files; use environment variables and secret managers (Vault, AWS Secrets Manager).
-        `
+Practical tips:
+- Use yaml.safe_load() to avoid executing arbitrary YAML tags.
+- Use jsonschema to validate the shape of configs.
+- Separate environment-specific configs and secrets; use environment variables and secret managers for sensitive values.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Define a schema for an 'app' config with fields: host (string), port (int), debug (bool) and validate a sample YAML.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 14 : Packaging & Virtual Environments
+     - setup.py, pyproject.toml, building wheels, simulation component
+     --------------------------------------------------------------------------- */
   {
     title: "Packaging & Virtual Environments",
     slug: "packaging-virtual-environments",
@@ -713,9 +907,9 @@ Best practices:
       {
         type: "text",
         value: `
-Overview:
-Packaging makes your code reusable and deployable. Learn minimal packaging using setuptools and modern alternatives like pyproject.toml with build backends (poetry, flit).
-        `
+Overview (extended):
+Packaging allows reusing your tools across projects or distributing them. Use pyproject.toml for modern builds and produce wheels for reliable installs. The PackageBuilderLab helps you practice building and installing a package locally.
+`
       },
       {
         type: "code",
@@ -728,10 +922,10 @@ cd mypackage
 touch __init__.py
 touch main.py
 
-# Create setup.py
+# Create setup.py (legacy) or prefer pyproject.toml for modern workflows
 echo "from setuptools import setup, find_packages
 setup(name='mypackage', version='1.0', packages=find_packages())" > setup.py
-        `
+`
       },
       {
         type: "component",
@@ -741,14 +935,25 @@ setup(name='mypackage', version='1.0', packages=find_packages())" > setup.py
         type: "text",
         value: `
 Packaging notes:
-- 'setup.py' is legacy but still widely supported; prefer 'pyproject.toml' for new projects.
-- Build wheels and publish to internal registries (Artifactory, Nexus) or TestPyPI for public projects.
-- Pin dependency versions in requirements.txt or use poetry lock for reproducible installs.
-        `
+- For new projects, prefer pyproject.toml with build-backend (PEP 517/518). Tools: poetry, flit.
+- Build a wheel locally: python -m build (requires 'build' package).
+- Test install from the local wheel in a fresh venv before publishing.
+`
+      },
+      {
+        type: "text",
+        value: `
+Mini-exercise:
+- Create a minimal package with a CLI entry point and install it locally. Verify you can invoke the CLI from anywhere in the venv.
+`
       }
     ]
   },
 
+  /* ---------------------------------------------------------------------------
+     Lesson 15 : Final Project - Automation Dashboard
+     - Capstone: Flask + boto3 + SQLite + packaging + security
+     --------------------------------------------------------------------------- */
   {
     title: "Final Project: Automation Dashboard",
     slug: "automation-dashboard-project",
@@ -756,48 +961,77 @@ Packaging notes:
       {
         type: "text",
         value: `
-Capstone overview:
-Build a simple Flask dashboard that lists EC2 instances and interacts with S3, persists simple audit logs in SQLite, and can be packaged and containerized. This brings together Flask, boto3, SQLite, and packaging.
-        `
+Capstone (extended):
+The capstone ties together Flask for UI/API, boto3 for cloud actions, SQLite for local persistence (or Postgres for production), and packaging/containerization for deployment. Think about the minimal viable product: list EC2 instances, trigger a simple action (e.g., tag instance), and record actions to the DB for audit.
+`
       },
       {
         type: "code",
         language: "python",
         runnable: false,
         value: `
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import boto3
 import sqlite3
 
 app = Flask(__name__)
 ec2 = boto3.client('ec2')
 
-@app.route('/')
-def index():
-    instances = ec2.describe_instances()
-    return {"count": len(instances['Reservations'])}
+@app.route('/instances')
+def instances():
+    # Example: list instances and return simple summary
+    resp = ec2.describe_instances()
+    instances = []
+    for r in resp.get('Reservations', []):
+        for i in r.get('Instances', []):
+            instances.append({
+                "id": i.get('InstanceId'),
+                "type": i.get('InstanceType'),
+                "state": i.get('State', {}).get('Name')
+            })
+    return jsonify({"instances": instances})
 
 if __name__ == "__main__":
-    app.run(debug=True)
-        `
+    app.run(debug=True, port=5000)
+`
       },
       {
         type: "text",
         value: `
-Project checklist:
-- Flask endpoint calling AWS boto3 (use simulated lab or mock in tests).
-- SQLite to track actions locally; swap to Postgres in production.
-- Dockerfile with a lightweight Gunicorn server for production.
-- CI pipeline to run tests and build image; store artifacts in registry.
-        `
+Project structure suggestions:
+- app/
+    __init__.py
+    api/
+        routes.py
+    services/
+        aws_service.py
+    db/
+        models.py
+- tests/
+- Dockerfile
+- README.md
+- requirements.txt or pyproject.toml
+`
       },
       {
         type: "text",
         value: `
-Security reminders:
-- Use IAM roles or environment variables (never checked-in keys).
-- Add authentication and input validation before exposing any endpoint that triggers infrastructure changes.
-        `
+Security & operational considerations:
+- Use IAM roles for AWS calls.
+- Add authentication and authorization to endpoints.
+- Run periodic integration tests in a sandbox AWS account to validate permissions and behavior.
+- Use Docker for consistent deployment artifacts and a simple Gunicorn-based entrypoint for production.
+`
+      },
+      {
+        type: "text",
+        value: `
+Deliverables Checklist:
+- Running Flask app that calls AWS (or mocks/simulators for dev).
+- Local DB to record actions and basic queries to show audit logs.
+- Dockerfile and simple CI pipeline script (GitHub Actions, GitLab CI) to run tests and build image.
+- README with local development and deployment instructions.
+`
       }
     ]
   }
