@@ -177,47 +177,69 @@ useEffect(() => {
 
 
       if (language === "go" || language === "golang") {
-        setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Go code..." }));
-        try {
-          const payload = new URLSearchParams();
-          payload.append("version", "2");
-          payload.append("body", code);
-          const resp = await fetch("https://go.dev/_/play/compile", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: payload.toString(),
-          });
-          if (!resp.ok) throw new Error("Go API not reachable (CORS)");
-          const data = await resp.json();
-          if (data.Errors) setOutputs((prev) => ({ ...prev, [idx]: data.Errors }));
-          else {
-            const output = (data.Events || []).map((e) => e.Message || "").join("");
-            setOutputs((prev) => ({
-              ...prev,
-              [idx]: output || "✅ Go executed successfully.",
-            }));
-          }
-        } catch (err) {
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = "https://go.dev/play/";
-          form.target = "_blank";
-          const textarea = document.createElement("textarea");
-          textarea.name = "body";
-          textarea.value = code;
-          form.appendChild(textarea);
-          document.body.appendChild(form);
-          form.submit();
-          document.body.removeChild(form);
-          setOutputs((prev) => ({
-            ...prev,
-            [idx]: "Opened in Go Playground (fallback).",
-          }));
-        } finally {
-          setRunning((s) => ({ ...s, [idx]: false }));
-        }
-        return;
-      }
+  setOutputs((prev) => ({
+    ...prev,
+    [idx]: "⏳ Preparing Go environment..."
+  }));
+
+  try {
+    const payload = new URLSearchParams();
+    payload.append("version", "2");
+    payload.append("body", code);
+
+    const resp = await fetch("https://go.dev/_/play/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: payload.toString(),
+    });
+
+    if (!resp.ok) throw new Error("Go API not reachable (CORS)");
+    const data = await resp.json();
+
+    if (data.Errors) {
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: `❌ Go Compilation Error:\n${data.Errors}`,
+      }));
+    } else {
+      const output = (data.Events || []).map((e) => e.Message || "").join("");
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: output || "✅ Go executed successfully in browser sandbox.",
+      }));
+    }
+  } catch (err) {
+    // 🧠 Graceful fallback explanation
+    const fallbackMessage =
+      "⚠️ Inline Go execution isn't supported in this browser environment.\n\n" +
+      "👉 Your code will now open in the official **Go Playground** for safe execution.\n\n" +
+      "💡 Tip: To run Go locally, save this as `main.go` and use:\n" +
+      "   go run main.go";
+
+    setOutputs((prev) => ({
+      ...prev,
+      [idx]: fallbackMessage,
+    }));
+
+    // 🔗 Open in official Go Playground
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "https://go.dev/play/";
+    form.target = "_blank";
+    const textarea = document.createElement("textarea");
+    textarea.name = "body";
+    textarea.value = code;
+    form.appendChild(textarea);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  } finally {
+    setRunning((s) => ({ ...s, [idx]: false }));
+  }
+  return;
+}
 
       if (["c", "cpp", "java"].includes(language)) {
         window.open("https://onecompiler.com", "_blank");
