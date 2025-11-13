@@ -5,6 +5,7 @@ import NetworkDeviceQuiz from "../../components/simulations/ccna/NetworkDeviceQu
 import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulation";
 import IPSubnetVisualizer from "../../components/simulations/ccna/IPSubnetVisualizer";
 import PacketRoutingSimulator from "../../components/simulations/ccna/PacketRoutingSimulator";
+import VLANIsolationSimulator from "../../components/simulations/ccna/VLANIsolationSimulator";
 
 const networkingCCNA = [
   {
@@ -835,7 +836,97 @@ Routing is the backbone of global connectivity — it allows millions of network
     }
   ]
 },
+{
+    slug: "switching-and-vlans",
+    title: "Switching and VLANs",
+    content: [
+      {
+        type: "text",
+        value: `
+### 🧩 Introduction to Switching
 
+Switching is a core concept in networking where data packets are forwarded at **Layer 2 (Data Link)** using MAC addresses.  
+Unlike routers, switches build a **MAC address table (CAM Table)** to learn which devices are connected to which ports.
+
+**Key Switching Concepts:**
+- **MAC Learning:** Switch records the source MAC and port.
+- **Forwarding:** Packets are sent only to the destination port (unicast).
+- **Flooding:** Unknown destinations or broadcasts go to all ports.
+- **Aging:** MAC entries expire after inactivity.
+- **Switch Fabric:** Hardware-based frame forwarding at wire speed.
+`
+      },
+      {
+        type: "image",
+        value: "/lessonimages/ccna/switching-diagram.png",
+        alt: "Switch forwarding frames based on MAC table"
+      },
+      {
+        type: "text",
+        value: `
+### 🧭 VLAN Fundamentals
+
+A **Virtual Local Area Network (VLAN)** is a logical segmentation of a switch into multiple broadcast domains.  
+By default, all devices on a switch belong to VLAN 1 and can communicate freely.
+
+**Why VLANs?**
+- Reduce broadcast traffic  
+- Increase security by isolating traffic  
+- Improve management by grouping departments logically  
+
+**VLAN Terminology**
+| Term | Description |
+|------|--------------|
+| Access Port | Connects end devices to a specific VLAN |
+| Trunk Port | Carries multiple VLANs between switches |
+| VLAN ID | Identifier (1–4094) that defines VLAN scope |
+| Tagging | IEEE 802.1Q header inserted to mark VLAN ID |
+| Native VLAN | VLAN not tagged on trunk ports (default 1) |
+`
+      },
+      {
+        type: "component",
+        value: VLANIsolationSimulator
+      },
+      {
+        type: "text",
+        value: `
+### 🧪 VLAN Configuration Example
+
+\`\`\`bash
+# Create VLANs
+Switch(config)# vlan 10
+Switch(config-vlan)# name HR
+Switch(config)# vlan 20
+Switch(config-vlan)# name IT
+
+# Assign ports
+Switch(config)# interface fastEthernet 0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+
+Switch(config)# interface fastEthernet 0/2
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 20
+
+# Verify
+Switch# show vlan brief
+\`\`\`
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🧠 Key Takeaways
+
+- Switches use MAC tables to forward traffic efficiently.  
+- VLANs isolate traffic at Layer 2 for security and scalability.  
+- Trunks allow VLANs to span multiple switches.  
+- VLAN tagging (802.1Q) keeps traffic separated on shared links.
+`
+      }
+    ]
+  },
 ];
 
 export default networkingCCNA;
