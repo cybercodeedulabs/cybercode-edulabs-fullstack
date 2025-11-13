@@ -80,9 +80,7 @@ export default function LessonDetail() {
     try {
       // 🧩 Detect Node.js-only modules (like Express, FS, HTTP, etc.)
       if (
-        /require\(['"]express['"]\)/.test(code) ||
-        /require\(['"]fs['"]\)/.test(code) ||
-        /require\(['"]http['"]\)/.test(code)
+        /require\(['"](express|fs|http|path|os|mongoose|dotenv)['"]\)/.test(code)
       ) {
         setOutputs((prev) => ({
           ...prev,
