@@ -4,6 +4,7 @@ import BasicLanSimulator from "../../components/simulations/ccna/BasicLanSimulat
 import NetworkDeviceQuiz from "../../components/simulations/ccna/NetworkDeviceQuiz";
 import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulation";
 import IPSubnetVisualizer from "../../components/simulations/ccna/IPSubnetVisualizer";
+import PacketRoutingSimulator from "../../components/simulations/ccna/PacketRoutingSimulator";
 
 const networkingCCNA = [
   {
@@ -623,6 +624,208 @@ Each network gets *exactly what it needs*, no waste.
     {
       type: "component",
       value: IPSubnetVisualizer
+    }
+  ]
+},
+{
+  slug: "routing-fundamentals",
+  title: "Routing Fundamentals & Packet Flow",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔹 1. Introduction to Routing
+
+Routing is the process of determining the best path for data to travel from a source to its destination across interconnected networks.  
+Unlike switches that operate within a single LAN (Layer 2), **routers operate at Layer 3 (the Network Layer)**, using IP addresses to make forwarding decisions.
+
+When a packet leaves a network, it relies on routers to find its way to the next network.  
+Each router in this journey acts like a checkpoint — examining the packet’s destination IP and deciding where to forward it next.
+
+#### Real-world Analogy:
+Think of routing like a GPS system. When you enter a destination, the GPS determines the best roads (routes) to take to reach your goal efficiently.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 2. Role of a Router
+
+A **router** connects multiple networks together.  
+It examines packet headers, identifies destination IP addresses, and makes **path decisions** based on its internal routing table.
+
+Each interface of a router belongs to a **different network**.
+
+#### Example:
+Router A might have:
+- G0/0 → 192.168.10.1/24
+- G0/1 → 10.0.0.1/24
+
+This means Router A connects both **192.168.10.0/24** and **10.0.0.0/24** networks.
+Packets arriving on one interface can be routed to another, as long as Router A knows how to reach the destination.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 3. Types of Routing
+
+Routing can be categorized into three main types based on how routes are learned and managed:
+
+| Type | Description | Example Use |
+|------|--------------|-------------|
+| **Static Routing** | Manually configured routes by network administrators. | Small networks or fixed topologies. |
+| **Dynamic Routing** | Automatically learned routes via routing protocols (like OSPF, RIP, EIGRP). | Medium to large scalable networks. |
+| **Default Routing** | Used when no specific route matches a packet’s destination (usually 0.0.0.0/0). | Internet-bound traffic. |
+
+#### Example:
+\`ip route 0.0.0.0 0.0.0.0 10.0.0.254\`  
+➡ This defines a default route that forwards all unknown traffic to the next-hop router 10.0.0.254.
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 4. Routing Table Explained
+
+Each router maintains a **routing table**, which lists:
+- Known networks
+- Next-hop addresses
+- Outgoing interfaces
+- Metrics (e.g., cost or hop count)
+
+#### Example: Routing Table of Router A
+
+| Destination Network | Subnet Mask | Next Hop | Interface |
+|----------------------|-------------|-----------|------------|
+| 192.168.10.0 | 255.255.255.0 | — | G0/0 |
+| 192.168.20.0 | 255.255.255.0 | 10.0.0.2 | G0/1 |
+| 10.0.0.0 | 255.255.255.0 | — | G0/2 |
+| 0.0.0.0 | 0.0.0.0 | 10.0.0.254 | G0/2 |
+
+Each time a packet arrives, the router checks this table to determine the **next hop**.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 5. How Packet Forwarding Works
+
+Let’s follow the step-by-step process:
+
+1️⃣ The packet arrives on a router interface.  
+2️⃣ The router extracts the **destination IP address**.  
+3️⃣ It compares the address with entries in its **routing table**.  
+4️⃣ It selects the **best match** (longest prefix match).  
+5️⃣ The router encapsulates the packet in a new frame (with next-hop MAC).  
+6️⃣ The packet is forwarded through the outgoing interface.
+
+If the router cannot find a matching route, it uses a **default route** or discards the packet.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 6. Static vs Dynamic Routing Example
+
+#### Example: Static Routing
+\`\`\`
+RouterA(config)# ip route 192.168.2.0 255.255.255.0 10.0.0.2
+\`\`\`
+➡ Manually tells RouterA to send packets for 192.168.2.0/24 via 10.0.0.2.
+
+#### Example: Dynamic Routing (OSPF)
+\`\`\`
+RouterA(config)# router ospf 1
+RouterA(config-router)# network 192.168.10.0 0.0.0.255 area 0
+RouterA(config-router)# network 10.0.0.0 0.0.0.255 area 0
+\`\`\`
+➡ RouterA automatically exchanges routes with other routers in the same OSPF area.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 7. Common Routing Protocols Overview
+
+| Protocol | Type | Metric | Convergence Speed | Suitable For |
+|-----------|------|---------|------------------|---------------|
+| **RIP** | Distance Vector | Hop Count | Slow | Simple LANs |
+| **EIGRP** | Hybrid | Composite | Fast | Cisco-only setups |
+| **OSPF** | Link-State | Cost (Bandwidth) | Very Fast | Large enterprises |
+| **BGP** | Path Vector | Policy-Based | Moderate | Internet-scale routing |
+
+Routing protocols help routers exchange network information automatically and adapt to topology changes.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 8. Routing Decision Example
+
+Suppose a packet with destination 172.16.10.25 arrives at Router A.  
+Router A’s routing table is checked in the following order:
+
+1️⃣ Look for an exact match (172.16.10.0/24).  
+2️⃣ If not found, check for a broader match (172.16.0.0/16).  
+3️⃣ If still not found, forward via **default route (0.0.0.0/0)**.  
+4️⃣ If no match, drop the packet.
+
+This process is known as **Longest Prefix Match (LPM)** — the route with the most specific (longest) subnet mask is always chosen.
+
+`
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 9. Visual Example: Multi-Hop Routing
+
+\`\`\`
+PC (192.168.10.10)
+→ Router A (192.168.10.1 / 10.0.0.1)
+→ Router B (10.0.0.2 / 172.16.0.1)
+→ Router C (172.16.0.2 / 192.168.20.1)
+→ Web Server (192.168.20.10)
+\`\`\`
+
+Each router acts as a hop.  
+At each hop:
+- The **destination IP** remains the same.  
+- The **source/destination MAC addresses** change for every link.  
+- The **TTL (Time to Live)** decreases by one.
+
+If the packet reaches zero TTL, it’s dropped, and an ICMP “Time Exceeded” message is sent back (used in traceroute).
+
+`
+    },
+    {
+      type: "component",
+      value: PacketRoutingSimulator,
+      description: "Visualize packet movement hop-by-hop through multiple routers with routing table lookups and next-hop animations."
+    },
+    {
+      type: "text",
+      value: `
+### 🔹 10. Summary
+
+| Concept | Description |
+|----------|--------------|
+| **Router** | A Layer 3 device that forwards packets between networks. |
+| **Routing Table** | Stores known routes and next-hop information. |
+| **Static Routing** | Manually configured paths. |
+| **Dynamic Routing** | Automatically learned using protocols. |
+| **Default Route** | Used when no specific route matches. |
+| **Longest Prefix Match** | The router selects the most specific route to the destination. |
+
+Routing is the backbone of global connectivity — it allows millions of networks to interconnect seamlessly, forming the Internet.
+
+`
     }
   ]
 },
