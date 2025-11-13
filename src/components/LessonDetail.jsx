@@ -32,6 +32,12 @@ export default function LessonDetail() {
   const lessons = lessonsData[courseSlug] || [];
   const lessonIndex = lessons.findIndex((l) => l.slug === lessonSlug);
   const lesson = lessons[lessonIndex];
+  // 🧹 Reset outputs when switching to a new lesson
+useEffect(() => {
+  setOutputs({});
+  setCodeInputs({});
+  setRunning({});
+}, [lessonSlug]);
   const progress = courseProgress[courseSlug]?.currentLessonIndex || 0;
   const isNextLesson = lessonIndex === progress;
 
