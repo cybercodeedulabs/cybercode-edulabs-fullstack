@@ -61,7 +61,14 @@ export default function ReactComponentSimulator({ defaultCode = "" }) {
       if (!/ReactDOM\.render/.test(cleanedCode) && /function\s+[A-Z]/.test(cleanedCode)) {
         const componentName = cleanedCode.match(/function\s+([A-Z]\w*)/)?.[1];
         if (componentName) {
-          cleanedCode += `\nReactDOM.render(React.createElement(${componentName}), document.getElementById("root"));`;
+          cleanedCode += `\nconst rootElement = document.getElementById("root");
+if (ReactDOM.createRoot) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(React.createElement(${componentName}));
+} else {
+  ReactDOM.render(React.createElement(${componentName}), rootElement);
+}
+`;
         }
       }
 
