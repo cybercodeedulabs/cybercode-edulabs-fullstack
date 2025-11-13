@@ -72,7 +72,7 @@ export default function DynamicRoutingSimulator() {
       </div>
 
       <div className="bg-black text-green-300 font-mono text-sm p-3 rounded mb-3 h-40 overflow-auto">
-        {log.length ? log.join("\\n") : "Ready to simulate..."}
+        {log.length ? log.join("\n") : "Ready to simulate..."}
       </div>
 
       {routes.length > 0 && (
