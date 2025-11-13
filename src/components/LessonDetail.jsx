@@ -76,21 +76,44 @@ export default function LessonDetail() {
     }
 
     try {
-      if (language === "javascript" || language === "js") {
-        try {
-          // eslint-disable-next-line no-eval
-          const res = eval(code);
-          setOutputs((prev) => ({
-            ...prev,
-            [idx]: String(res ?? "✅ Code executed successfully."),
-          }));
-        } catch (err) {
-          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
-        } finally {
-          setRunning((s) => ({ ...s, [idx]: false }));
-        }
+  if (language === "javascript" || language === "js") {
+    try {
+      // 🧩 Detect Node.js-only modules (like Express, FS, HTTP, etc.)
+      if (
+        /require\(['"]express['"]\)/.test(code) ||
+        /require\(['"]fs['"]\)/.test(code) ||
+        /require\(['"]http['"]\)/.test(code)
+      ) {
+        setOutputs((prev) => ({
+          ...prev,
+          [idx]:
+            "⚠️ This code uses Node.js modules (like Express, FS, or HTTP). " +
+            "It must run in a server environment, not inside the browser.\n\n" +
+            "👉 To try it locally:\n" +
+            "1️⃣ Save the file as `server.js`\n" +
+            "2️⃣ Run `npm install express` (if applicable)\n" +
+            "3️⃣ Start with `node server.js`\n\n" +
+            "💡 Browser sandbox cannot execute Node.js code.",
+        }));
+        setRunning((s) => ({ ...s, [idx]: false }));
         return;
       }
+
+      // ✅ Safe to execute client-side JS
+      // eslint-disable-next-line no-eval
+      const res = eval(code);
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]: String(res ?? "✅ Code executed successfully."),
+      }));
+    } catch (err) {
+      setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+    } finally {
+      setRunning((s) => ({ ...s, [idx]: false }));
+    }
+    return;
+  }
+
 
       if (language === "python") {
         setOutputs((prev) => ({ ...prev, [idx]: "⏳ Loading Python runtime..." }));
