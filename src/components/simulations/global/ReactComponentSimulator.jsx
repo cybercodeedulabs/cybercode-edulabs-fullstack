@@ -38,9 +38,24 @@ ReactDOM.render(<Hello />, document.getElementById("root"));`);
 
     try {
       setError("");
-      const transformed = Babel.transform(code, {
-        presets: ["react", "env"],
-      }).code;
+      // ✅ Clean up import/export lines before transforming
+let cleanedCode = code
+  .replace(/import\s+.*?from\s+['"].*?['"];?/g, "") // remove imports
+  .replace(/export\s+default\s+/g, "") // remove default exports
+  .replace(/export\s+\{.*?\};?/g, ""); // remove named exports
+
+const transformed = Babel.transform(cleanedCode, {
+  presets: ["react", "env"],
+}).code;
+
+// ✅ Auto-render if code defines a function component but doesn't call ReactDOM.render
+if (!/ReactDOM\.render/.test(cleanedCode) && /function\s+[A-Z]/.test(cleanedCode)) {
+  const componentName = cleanedCode.match(/function\s+([A-Z]\w*)/)?.[1];
+  if (componentName) {
+    cleanedCode += `\nReactDOM.render(React.createElement(${componentName}), document.getElementById("root"));`;
+  }
+}
+
 
       const html = `
         <html>
