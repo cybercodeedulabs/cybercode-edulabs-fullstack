@@ -124,9 +124,27 @@ useEffect(() => {
   try {
     const pyodide = await loadPyodideIfNeeded();
     setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Python..." }));
+    // 🧠 Auto-load supported Pyodide packages if detected in import
+    const pyPackages = {
+      yaml: "pyyaml",
+      numpy: "numpy",
+      pandas: "pandas",
+      matplotlib: "matplotlib",
+      scipy: "scipy",
+    };
+
+    for (const [mod, pkg] of Object.entries(pyPackages)) {
+      if (new RegExp(`import\\s+${mod}`).test(code)) {
+        setOutputs((prev) => ({
+          ...prev,
+          [idx]: `📦 Installing required package: ${pkg}...`,
+        }));
+        await pyodide.loadPackage(pkg);
+      }
+    }
 
     // 🧠 Detect unsupported external packages (like requests, pandas, flask, etc.)
-    if (/import\s+(requests|flask|pandas|numpy|matplotlib|boto3|sklearn|sqlite3)/.test(code)) {
+    if (/import\s+(requests|flask|pandas|numpy|matplotlib|boto3|sklearn|sqlite3|subprocess|unittest)/.test(code)) {
       setOutputs((prev) => ({
         ...prev,
         [idx]:
