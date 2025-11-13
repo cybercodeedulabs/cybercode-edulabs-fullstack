@@ -50,7 +50,7 @@ export default function LessonDetail() {
     );
   }
 
-  // 🔹 Code Runner Logic
+  // 🧠 Code Runner Logic
   const handleRunCode = async (idx, language, defaultCode) => {
     const code = codeInputs[idx] ?? defaultCode ?? "";
     setRunning((s) => ({ ...s, [idx]: true }));
@@ -241,23 +241,55 @@ export default function LessonDetail() {
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
-                    h1: ({ node, ...props }) => (
-                      <h1 className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mt-6 mb-4" {...props} />
+                    code: ({ node, inline, className, children, ...props }) =>
+                      inline ? (
+                        <code
+                          className="bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded font-mono text-sm"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      ) : (
+                        <SyntaxHighlighter
+                          style={darkMode ? oneDark : oneLight}
+                          language={className?.replace("language-", "")}
+                          PreTag="div"
+                          className="rounded-xl border dark:border-gray-700 my-4"
+                        >
+                          {String(children).replace(/\n$/, "")}
+                        </SyntaxHighlighter>
+                      ),
+                    blockquote: ({ node, ...props }) => (
+                      <blockquote
+                        className="border-l-4 border-indigo-400 dark:border-indigo-500 bg-indigo-50/50 dark:bg-gray-800 px-4 py-3 italic rounded-r-lg my-4 text-gray-700 dark:text-gray-300"
+                        {...props}
+                      />
                     ),
-                    h2: ({ node, ...props }) => (
-                      <h2 className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 mt-6 mb-3" {...props} />
+                    table: ({ node, ...props }) => (
+                      <div className="overflow-x-auto my-4">
+                        <table
+                          className="min-w-full border border-gray-300 dark:border-gray-700 text-sm"
+                          {...props}
+                        />
+                      </div>
                     ),
-                    h3: ({ node, ...props }) => (
-                      <h3 className="text-xl font-semibold text-indigo-500 dark:text-indigo-400 mt-4 mb-2" {...props} />
+                    th: ({ node, ...props }) => (
+                      <th
+                        className="bg-indigo-100 dark:bg-indigo-800 text-left px-3 py-2 border dark:border-gray-700 font-semibold"
+                        {...props}
+                      />
+                    ),
+                    td: ({ node, ...props }) => (
+                      <td
+                        className="px-3 py-2 border dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                        {...props}
+                      />
                     ),
                     ul: ({ node, ...props }) => (
                       <ul className="list-disc list-inside space-y-2 pl-5" {...props} />
                     ),
                     li: ({ node, ...props }) => (
-                      <li className="text-gray-700 dark:text-gray-300 leading-relaxed" {...props} />
-                    ),
-                    p: ({ node, ...props }) => (
-                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed" {...props} />
+                      <li className="text-gray-800 dark:text-gray-300 leading-relaxed" {...props} />
                     ),
                   }}
                 >
@@ -361,7 +393,7 @@ export default function LessonDetail() {
           </div>
         ))}
 
-        {/* ✅ Lesson Completion Button */}
+        {/* ✅ Lesson Completion */}
         {user && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
@@ -376,8 +408,7 @@ export default function LessonDetail() {
           </button>
         )}
 
-        {/* CTA sections remain unchanged */}
-        {/* ... same as your version ... */}
+        {/* CTA + Sidebar remain unchanged */}
       </div>
 
       {/* Sidebar */}
