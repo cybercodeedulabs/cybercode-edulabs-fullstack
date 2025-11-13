@@ -2,6 +2,7 @@
 // Lesson 1 — Networking Basics (expanded, tutorial style)
 import BasicLanSimulator from "../../components/simulations/ccna/BasicLanSimulator";
 import NetworkDeviceQuiz from "../../components/simulations/ccna/NetworkDeviceQuiz";
+import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulation";
 
 const networkingCCNA = [
   {
@@ -42,7 +43,7 @@ Understanding networking makes your work predictable: you will be able to identi
       // Image - overview
       {
         type: "image",
-        value: "/images/ccna/networking-overview-diagram.png",
+        value: "/lessonimages/ccna/networking-overview-diagram.png",
         alt: "High-level network diagram: clients, switch, router, internet cloud"
       },
 
@@ -81,7 +82,7 @@ Below are the devices you will encounter and what each does in practical terms:
       // Image - devices
       {
         type: "image",
-        value: "/images/ccna/network-devices.png",
+        value: "/lessonimages/ccna/network-devices.png",
         alt: "Icons and short descriptions of Router, Switch, Firewall, Access Point"
       },
 
@@ -307,6 +308,146 @@ Resources:
       }
     ]
   },
+  {
+  slug: "osi-model-explained",
+  title: "The OSI Model Explained",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🧩 What is the OSI Model?
+
+The **OSI (Open Systems Interconnection)** model is a conceptual framework that defines how data travels from one device to another over a network.  
+It breaks the process into **seven distinct layers**, each responsible for a specific part of data communication.
+
+The OSI model ensures **interoperability** between systems, meaning devices from different vendors (like Cisco, Juniper, HP) can communicate seamlessly.
+
+---
+
+### 🌈 The 7 Layers of the OSI Model
+
+| Layer | Name | Function | Example Protocols / Devices |
+|-------|------|-----------|-----------------------------|
+| 7 | **Application** | Provides network services to user applications | HTTP, FTP, DNS, SMTP |
+| 6 | **Presentation** | Translates, encrypts, or compresses data | SSL/TLS, JPEG, MP3 |
+| 5 | **Session** | Manages connections and sessions between systems | RPC, NetBIOS |
+| 4 | **Transport** | Provides reliable delivery and error correction | TCP, UDP |
+| 3 | **Network** | Routes packets between different networks | IP, ICMP, Routers |
+| 2 | **Data Link** | Handles MAC addresses and frames | Ethernet, Switches |
+| 1 | **Physical** | Transmits raw bits over cables or air | Hubs, Cables, Wi-Fi |
+
+Remember it using this mnemonic:  
+👉 **"All People Seem To Need Data Processing"**
+
+---
+
+### ⚙️ How Data Moves Through the OSI Layers
+
+When a user sends an email or visits a website:
+1. The **Application Layer** creates the data (e.g., your HTTP request).  
+2. The **Presentation Layer** encrypts or compresses it.  
+3. The **Session Layer** opens a communication session with the server.  
+4. The **Transport Layer** breaks it into **segments**.  
+5. The **Network Layer** assigns **IP addresses** and routes data.  
+6. The **Data Link Layer** adds **MAC addresses**.  
+7. The **Physical Layer** transmits bits across the cable.
+
+On the receiving side, this process **reverses** (de-encapsulation).
+
+---
+
+### 📡 OSI Model Visualization
+
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/ccna/osi-model-diagram.png",
+      alt: "Layered OSI Model Diagram showing flow from Application to Physical"
+    },
+    {
+      type: "text",
+      value: `
+---
+
+### 🧠 Why OSI Model Matters for CCNA Students
+
+- Helps troubleshoot issues layer-by-layer.  
+  Example: If a website isn’t loading, is it a **Physical** issue (cable), **Network** issue (IP), or **Application** issue (DNS/HTTP)?
+- Used in almost every **Cisco exam** question and real-world troubleshooting.
+- Essential for **network design, packet analysis**, and **security inspection**.
+
+---
+
+### 🧪 Simulation: OSI Layer Data Flow Visualizer
+
+This is a **custom-built simulation** (you’ll create it under \`/simulations/ccna/OSIFlowSimulation.jsx\`)  
+that visually demonstrates **how data moves through each OSI layer**.
+
+#### 💻 Simulation Description:
+- You type a message like “Ping 192.168.1.1”.
+- The simulator animates data **encapsulation**:
+  - Adds headers/trailers layer by layer.
+  - Shows what each layer contributes (e.g., IP header, TCP segment, frame, bits).
+- You can toggle between **Sender View** and **Receiver View**.
+- It shows color-coded packets traveling across a cable animation.
+- The receiver then decapsulates layer by layer.
+
+#### Example concept:
+Each transition shows:
+> “Transport Layer: Added TCP header”  
+> “Network Layer: Added IP header (192.168.1.10 → 8.8.8.8)”  
+> “Data Link Layer: Added MAC Frame”  
+> “Physical Layer: Bits on the wire ⚡”
+
+When reversed:
+> “Receiver: Removed Physical layer bits → Up to Application Layer ✅”
+
+---
+
+### 🧩 Advanced Concept: Encapsulation & Decapsulation
+
+Encapsulation means adding protocol-specific headers at each OSI layer.
+
+For example, when sending an HTTP request:
+- HTTP data is wrapped with a **TCP header** (Transport Layer)
+- That’s wrapped with an **IP header** (Network Layer)
+- Then wrapped with a **Frame header/trailer** (Data Link)
+- Finally transmitted as **Bits** (Physical Layer)
+
+Decapsulation is the reverse at the receiver side.
+
+---
+
+### ⚠️ Common Exam Tip
+
+Cisco questions often ask:
+> “At which OSI layer does a router operate?”
+
+✅ **Answer:** Network Layer  
+> “At which OSI layer do switches operate?”
+
+✅ **Answer:** Data Link Layer  
+
+---
+
+### 🎯 Quick Recap
+
+- The OSI model has **7 layers** — from **Application** (top) to **Physical** (bottom).
+- Each layer performs **a unique function** in network communication.
+- **Encapsulation/Decapsulation** describes data flow.
+- It’s a must-know for **network design and troubleshooting**.
+
+---
+        `
+    },
+    {
+      type: "component",
+      value: OSIFlowSimulation
+    }
+  ]
+},
+
 ];
 
 export default networkingCCNA;
