@@ -8,6 +8,7 @@ import PacketRoutingSimulator from "../../components/simulations/ccna/PacketRout
 import VLANIsolationSimulator from "../../components/simulations/ccna/VLANIsolationSimulator";
 import StaticRouteSimulator from "../../components/simulations/ccna/StaticRouteSimulator";
 import DynamicRoutingSimulator from "../../components/simulations/ccna/DynamicRoutingSimulator";
+import VLANTrafficFlowSimulator from "../../components/simulations/ccna/VLANTrafficFlowSimulator";
 
 const networkingCCNA = [
   {
@@ -1276,6 +1277,147 @@ Legend:
       }
     ]
   },
+  {
+  slug: "vlans-and-trunking",
+  title: "VLANs and Trunking",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🧭 What You'll Learn
+- What VLANs are and why they're used
+- How VLAN segmentation improves performance and security
+- Access vs. Trunk ports
+- VLAN tagging (IEEE 802.1Q)
+- VLAN configuration on Cisco switches
+- VLAN Trunking Protocol (VTP)
+- Hands-on simulator demonstration
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🔍 What is a VLAN?
+A **VLAN (Virtual Local Area Network)** logically divides a physical network into smaller, isolated segments.  
+Instead of using multiple switches to separate departments, you can use a single managed switch and configure VLANs.
+
+For example:
+- VLAN 10 → HR Department
+- VLAN 20 → IT Department
+- VLAN 30 → Sales Department
+
+Each VLAN acts as an independent network — devices in one VLAN can’t communicate with another without a router (Inter-VLAN Routing).
+      `
+    },
+    {
+      type: "text",
+      value: `
+### ⚙️ Why VLANs?
+VLANs improve **security**, **performance**, and **flexibility**.
+
+| Benefit | Description |
+|----------|-------------|
+| **Security** | Limits communication between different departments. |
+| **Performance** | Reduces broadcast traffic in large LANs. |
+| **Scalability** | VLANs can be expanded without adding physical switches. |
+| **Manageability** | Simplifies troubleshooting and traffic analysis. |
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 💡 Access vs Trunk Ports
+
+| Port Type | Description | Example |
+|------------|-------------|----------|
+| **Access Port** | Carries traffic for a single VLAN. | PC or printer connected to switch |
+| **Trunk Port** | Carries multiple VLANs between switches. | Switch-to-switch or switch-to-router link |
+
+Each frame on a trunk port includes a **VLAN tag** — an extra 4-byte field added to the Ethernet frame as per **IEEE 802.1Q**.
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/ccna/vlan-trunking-diagram.png",
+      alt: "Diagram illustrating VLANs, trunk links, and access ports."
+    },
+    {
+      type: "text",
+      value: `
+### 🧱 VLAN Tagging (802.1Q)
+When frames traverse a trunk link, switches insert a tag identifying the VLAN ID.  
+When the frame reaches an access port, the tag is removed before delivery to the device.
+
+Each VLAN tag includes:
+- **12-bit VLAN ID**
+- **3-bit priority code (for QoS)**
+- **1-bit Canonical Format Indicator**
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 🧩 VLAN Configuration Example (Cisco)
+Here’s a sample Cisco IOS configuration for creating and assigning VLANs:
+
+\`\`\`bash
+Switch> enable
+Switch# configure terminal
+Switch(config)# vlan 10
+Switch(config-vlan)# name HR
+Switch(config-vlan)# exit
+Switch(config)# vlan 20
+Switch(config-vlan)# name IT
+Switch(config-vlan)# exit
+
+! Assign ports to VLANs
+Switch(config)# interface fastEthernet0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+Switch(config-if)# exit
+
+! Configure trunk port
+Switch(config)# interface gigabitEthernet0/1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20,30
+Switch(config-if)# end
+Switch# write memory
+\`\`\`
+
+💡 VLAN trunks typically use **802.1Q** encapsulation by default.
+      `
+    },
+    {
+      type: "text",
+      value: `
+### 📈 VLAN Trunking Protocol (VTP)
+Cisco’s **VTP** manages VLANs centrally.  
+When a new VLAN is created on one switch (VTP Server mode), it can automatically propagate to other switches in the same domain.
+
+| Mode | Description |
+|------|--------------|
+| **Server** | Can create, modify, and delete VLANs. |
+| **Client** | Receives VLAN info from servers; cannot modify. |
+| **Transparent** | Doesn’t participate in VTP updates. |
+      `
+    },
+    {
+      type: "component",
+      value: VLANTrafficFlowSimulator
+    },
+    {
+      type: "text",
+      value: `
+### 🎯 Summary
+- VLANs isolate traffic for performance and security.  
+- Trunks carry traffic between switches using tags.  
+- VTP automates VLAN propagation across the network.  
+- VLANs are foundational for scalable, segmented, and secure networks.
+      `
+    }
+  ]
+},
+
 ];
 
 export default networkingCCNA;
