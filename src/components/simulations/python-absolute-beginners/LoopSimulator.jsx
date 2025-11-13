@@ -8,7 +8,7 @@ export default function LoopSimulator() {
   const simulateLoop = () => {
     let logs = "";
     for (let i = 0; i < count; i++) {
-      logs += `Iteration ${i + 1}\\n`;
+      logs += `Iteration ${i + 1}\n`;
     }
     setOutput(logs);
   };
