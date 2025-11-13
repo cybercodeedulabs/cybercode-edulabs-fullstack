@@ -120,23 +120,43 @@ useEffect(() => {
 
 
       if (language === "python") {
-        setOutputs((prev) => ({ ...prev, [idx]: "⏳ Loading Python runtime..." }));
-        try {
-          const pyodide = await loadPyodideIfNeeded();
-          setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Python..." }));
-          const captured = [];
-          pyodide.setStdout({ batched: (s) => captured.push(s) });
-          pyodide.setStderr({ batched: (s) => captured.push(s) });
-          const result = await pyodide.runPythonAsync(code);
-          let outText = captured.join("") || String(result || "✅ Python executed.");
-          setOutputs((prev) => ({ ...prev, [idx]: outText }));
-        } catch (err) {
-          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
-        } finally {
-          setRunning((s) => ({ ...s, [idx]: false }));
-        }
-        return;
-      }
+  setOutputs((prev) => ({ ...prev, [idx]: "⏳ Loading Python runtime..." }));
+  try {
+    const pyodide = await loadPyodideIfNeeded();
+    setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Python..." }));
+
+    // 🧠 Detect unsupported external packages (like requests, pandas, flask, etc.)
+    if (/import\s+(requests|flask|pandas|numpy|matplotlib|boto3|sklearn)/.test(code)) {
+      setOutputs((prev) => ({
+        ...prev,
+        [idx]:
+          "⚠️ This code imports external Python libraries (e.g., requests, pandas, flask).\n" +
+          "Pyodide — the in-browser Python runtime — supports only standard libraries.\n\n" +
+          "👉 To try this locally:\n" +
+          "1️⃣ Save this code as `script.py`\n" +
+          "2️⃣ Run `pip install <library>` (e.g., `pip install requests`)\n" +
+          "3️⃣ Execute using `python script.py`\n\n" +
+          "💡 Browser sandbox cannot install or use external pip modules.",
+      }));
+      setRunning((s) => ({ ...s, [idx]: false }));
+      return;
+    }
+
+    const captured = [];
+    pyodide.setStdout({ batched: (s) => captured.push(s) });
+    pyodide.setStderr({ batched: (s) => captured.push(s) });
+
+    const result = await pyodide.runPythonAsync(code);
+    let outText = captured.join("") || String(result || "✅ Python executed.");
+    setOutputs((prev) => ({ ...prev, [idx]: outText }));
+  } catch (err) {
+    setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+  } finally {
+    setRunning((s) => ({ ...s, [idx]: false }));
+  }
+  return;
+}
+
 
       if (language === "go" || language === "golang") {
         setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Go code..." }));
