@@ -3,6 +3,7 @@
 import BasicLanSimulator from "../../components/simulations/ccna/BasicLanSimulator";
 import NetworkDeviceQuiz from "../../components/simulations/ccna/NetworkDeviceQuiz";
 import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulation";
+import IPSubnetVisualizer from "../../components/simulations/ccna/IPSubnetVisualizer";
 
 const networkingCCNA = [
   {
@@ -444,6 +445,184 @@ Cisco questions often ask:
     {
       type: "component",
       value: OSIFlowSimulation
+    }
+  ]
+},
+{
+  slug: "ip-addressing-and-subnetting",
+  title: "IP Addressing & Subnetting",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🌐 What is an IP Address?
+
+An **IP address (Internet Protocol Address)** is a unique number assigned to each device connected to a network.  
+It allows computers to **find and communicate** with each other, much like a phone number identifies a person.
+
+An IPv4 address is **32 bits long**, represented as four octets separated by dots:
+
+\`\`\`
+192.168.10.15
+\`\`\`
+
+Each octet can range from **0 to 255**, because it represents 8 bits (2⁸ = 256 possible values).
+
+---
+
+### 🧩 IP Address Structure
+
+An IP address is divided into two parts:
+
+| Part | Description |
+|------|--------------|
+| **Network Portion** | Identifies the specific network. |
+| **Host Portion** | Identifies a specific device (host) within that network. |
+
+Example:  
+In the address **192.168.10.15/24**,  
+- **192.168.10** → Network portion  
+- **.15** → Host portion  
+- **/24** → Subnet mask (means 24 bits reserved for the network)
+
+---
+
+### ⚙️ Subnet Mask and CIDR Notation
+
+A **Subnet Mask** defines how many bits are used for the network.
+
+| CIDR | Subnet Mask | No. of Hosts | Example Network |
+|------|--------------|--------------|-----------------|
+| /8   | 255.0.0.0    | 16,777,214   | 10.0.0.0        |
+| /16  | 255.255.0.0  | 65,534       | 172.16.0.0      |
+| /24  | 255.255.255.0| 254          | 192.168.1.0     |
+| /30  | 255.255.255.252 | 2         | Point-to-Point Link |
+
+---
+
+### 🧮 How Subnetting Works
+
+Subnetting divides a larger network into smaller, more efficient subnetworks.
+
+**Example:**
+You have a network **192.168.10.0/24** (254 hosts).  
+You want 4 subnets.
+
+Each new subnet steals **2 bits** from the host portion:
+\`\`\`
+Original Mask: /24 → 11111111.11111111.11111111.00000000  
+New Mask: /26 → 11111111.11111111.11111111.11000000
+\`\`\`
+
+This gives:
+- **4 Subnets** → 192.168.10.0, .64, .128, .192  
+- **62 Hosts per subnet**
+
+---
+
+### 🧠 Why Subnetting Matters
+
+- Controls broadcast domains  
+- Improves security and performance  
+- Efficiently manages IP allocation  
+- Reduces congestion in enterprise networks
+
+---
+
+### 📊 IPv4 Address Classes
+
+| Class | Range | Default Mask | Usage |
+|-------|--------|---------------|--------|
+| A | 1.0.0.0 – 126.255.255.255 | /8 | Large organizations |
+| B | 128.0.0.0 – 191.255.255.255 | /16 | Medium networks |
+| C | 192.0.0.0 – 223.255.255.255 | /24 | Small networks |
+| D | 224.0.0.0 – 239.255.255.255 | — | Multicasting |
+| E | 240.0.0.0 – 255.255.255.255 | — | Experimental |
+
+---
+
+### 🧮 Binary to Decimal Conversion
+
+Each octet in an IP address represents **8 bits**:
+
+| Binary | Decimal |
+|---------|----------|
+| 11000000.10101000.00000001.00000001 | 192.168.1.1 |
+
+Each bit has a value of **128, 64, 32, 16, 8, 4, 2, 1**
+
+\`\`\`
+192 = 128 + 64
+168 = 128 + 32 + 8
+1 = 1
+\`\`\`
+
+---
+
+### 🔍 Public vs Private IPs
+
+| Type | Range | Example |
+|------|--------|----------|
+| **Private (LAN use)** | 10.0.0.0–10.255.255.255 | 10.0.0.1 |
+| | 172.16.0.0–172.31.255.255 | 172.16.10.1 |
+| | 192.168.0.0–192.168.255.255 | 192.168.1.10 |
+| **Public (Internet)** | Anything outside these ranges | 8.8.8.8 |
+
+---
+
+### 🧪 Simulation: IP Subnet Visualizer (Unique Concept)
+
+This is a **highly interactive simulation** you’ll create under:
+\`/simulations/ccna/IPSubnetVisualizer.jsx\`
+
+#### 💡 Description:
+- User inputs **network address** (e.g., 192.168.10.0) and **CIDR mask** (e.g., /26).  
+- The simulator dynamically shows:
+  - Binary and decimal representation
+  - Number of subnets and hosts
+  - Broadcast address
+  - First and last usable IPs per subnet
+- It visually *draws boxes* representing subnets with color-coded host ranges.
+- A “Next Subnet” button scrolls through available subnets.
+
+#### 🧭 Example Output:
+
+---
+
+### 🔥 Advanced Section: VLSM (Variable Length Subnet Masking)
+
+VLSM allows **different subnet sizes** within one network block.  
+This saves IPs by assigning just enough for each subnet.
+
+Example:  
+- Subnet A (50 hosts) → /26  
+- Subnet B (10 hosts) → /28  
+- Subnet C (2 hosts) → /30  
+
+Each network gets *exactly what it needs*, no waste.
+
+---
+
+### 🧩 Quick Recap
+
+- IPv4 addresses are **32-bit identifiers**
+- **Subnetting** divides networks for better control
+- **CIDR notation** simplifies addressing
+- **VLSM** optimizes usage in modern networks
+- Private vs Public IPs define internal vs Internet usage
+- Subnetting is a **core CCNA skill** for routers and switches
+
+---
+      `
+    },
+    {
+      type: "image",
+      value: "/lessonimages/ccna/ip-subnet-diagram.png",
+      alt: "Illustration showing IP address division into network and host portions"
+    },
+    {
+      type: "component",
+      value: IPSubnetVisualizer
     }
   ]
 },
