@@ -7,6 +7,7 @@ import IPSubnetVisualizer from "../../components/simulations/ccna/IPSubnetVisual
 import PacketRoutingSimulator from "../../components/simulations/ccna/PacketRoutingSimulator";
 import VLANIsolationSimulator from "../../components/simulations/ccna/VLANIsolationSimulator";
 import StaticRouteSimulator from "../../components/simulations/ccna/StaticRouteSimulator";
+import DynamicRoutingSimulator from "../../components/simulations/ccna/DynamicRoutingSimulator";
 
 const networkingCCNA = [
   {
@@ -1108,6 +1109,169 @@ It sends the packet via the default route to 10.0.0.254 (ISP gateway).
 - Use static routes in small or stable environments; for large ones, use dynamic routing protocols.  
 
 In the next lesson, we’ll explore **Dynamic Routing (RIP, OSPF)** to automate route learning and failover.
+`
+      }
+    ]
+  },
+  {
+    slug: "dynamic-routing-protocols",
+    title: "Dynamic Routing Protocols (RIP & OSPF)",
+    content: [
+      {
+        type: "text",
+        value: `
+### 🌐 Introduction
+
+While **Static Routing** provides precise control, it’s inefficient in large or frequently changing networks.  
+**Dynamic Routing Protocols** automate the exchange of routing information between routers, adapting to topology changes instantly.
+
+These protocols ensure:
+- Automatic **route discovery**  
+- Continuous **route maintenance**  
+- **Failover and redundancy** in case of link failures  
+
+There are two main categories:
+1. **Distance Vector Protocols** – Exchange entire routing tables periodically (e.g., RIP).  
+2. **Link State Protocols** – Share link state information and build a topology map (e.g., OSPF, IS-IS).  
+`
+      },
+      {
+        type: "image",
+        value: "/lessonimages/ccna/dynamic-routing-overview.png",
+        alt: "Dynamic routing overview showing routers exchanging routing updates automatically"
+      },
+      {
+        type: "text",
+        value: `
+### 🧭 1. Distance Vector Routing (RIP)
+
+**RIP (Routing Information Protocol)** is one of the earliest routing protocols, using **hop count** as its metric.
+
+#### 📋 Key Characteristics:
+- Uses **UDP port 520**.
+- Metric = number of hops (max 15 hops).
+- Updates sent every **30 seconds**.
+- Simple to configure but not scalable for large networks.
+
+#### Example Topology
+\`\`\`
+[R1]——[R2]——[R3]
+\`\`\`
+
+#### Configuration Example
+\`\`\`bash
+R1(config)# router rip
+R1(config-router)# version 2
+R1(config-router)# network 192.168.1.0
+R1(config-router)# network 10.0.0.0
+R1(config-router)# no auto-summary
+\`\`\`
+
+RIP routers will automatically share their networks and learn others dynamically.
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🔍 Verifying RIP Routes
+
+To view learned routes:
+\`\`\`bash
+R1# show ip route rip
+R    192.168.3.0/24 [120/1] via 10.0.0.2, 00:00:12, GigabitEthernet0/1
+\`\`\`
+
+Legend:
+- **R** – Route learned via RIP  
+- **120** – Administrative distance for RIP  
+- **1** – Metric (hop count)  
+`
+      },
+      {
+        type: "text",
+        value: `
+### ⚙️ 2. Link State Routing (OSPF)
+
+**OSPF (Open Shortest Path First)** uses the **Dijkstra algorithm** to calculate the shortest path to each destination.  
+Unlike RIP, OSPF doesn’t send the entire table — it only shares **link state updates (LSAs)** when a change occurs.
+
+#### 🧩 Key Features:
+- Uses **Cost (based on bandwidth)** as metric.  
+- Supports **areas** for hierarchical design.  
+- Converges rapidly after network changes.  
+- Uses **multicast (224.0.0.5, 224.0.0.6)** for communication.
+
+#### Example Configuration
+\`\`\`bash
+R1(config)# router ospf 1
+R1(config-router)# network 192.168.1.0 0.0.0.255 area 0
+R1(config-router)# network 10.0.0.0 0.0.0.3 area 0
+\`\`\`
+
+✅ This enables OSPF on two interfaces, both part of Area 0 (Backbone Area).
+`
+      },
+      {
+        type: "text",
+        value: `
+### 📡 OSPF Adjacency Formation Process
+
+When two OSPF routers connect:
+1. They send **Hello packets** to discover neighbors.
+2. They establish a **2-Way** communication.
+3. They exchange **Database Description (DBD)** packets.
+4. They send **Link State Requests (LSR)** to learn missing info.
+5. They become **Fully Adjacent** and synchronize LSDBs.
+
+💡 OSPF routers maintain the same **Link State Database (LSDB)** within an area.
+`
+      },
+      {
+        type: "component",
+        value: DynamicRoutingSimulator
+      },
+      {
+        type: "text",
+        value: `
+### 🔎 Verifying OSPF Routes
+
+\`\`\`bash
+R1# show ip route ospf
+O    192.168.3.0/24 [110/2] via 10.0.0.2, 00:00:13, GigabitEthernet0/1
+\`\`\`
+
+Legend:
+- **O** — Route learned via OSPF  
+- **110** — Administrative Distance for OSPF  
+- **2** — Cost metric (sum of outgoing interface costs)
+`
+      },
+      {
+        type: "text",
+        value: `
+### ⚔️ RIP vs OSPF Comparison
+
+| Feature | RIP | OSPF |
+|----------|-----|------|
+| Algorithm | Distance Vector | Link State |
+| Metric | Hop Count | Cost (Bandwidth) |
+| Max Hops | 15 | Unlimited |
+| Convergence | Slow | Fast |
+| Protocol | UDP 520 | IP Protocol 89 |
+| Scalability | Small Networks | Large Networks |
+| Updates | Periodic (30s) | Event-Driven |
+| Administrative Distance | 120 | 110 |
+`
+      },
+      {
+        type: "text",
+        value: `
+### 🧠 Summary
+
+- **RIP** shares full routing tables regularly; easy but slow and limited.  
+- **OSPF** builds a full topology map; fast, reliable, and scalable.  
+- Dynamic protocols adapt automatically — ideal for enterprise networks.  
+- CCNA engineers must understand both concepts deeply and know when to use static vs dynamic routing.
 `
       }
     ]
