@@ -126,7 +126,7 @@ useEffect(() => {
     setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running Python..." }));
 
     // 🧠 Detect unsupported external packages (like requests, pandas, flask, etc.)
-    if (/import\s+(requests|flask|pandas|numpy|matplotlib|boto3|sklearn)/.test(code)) {
+    if (/import\s+(requests|flask|pandas|numpy|matplotlib|boto3|sklearn|sqlite3)/.test(code)) {
       setOutputs((prev) => ({
         ...prev,
         [idx]:
