@@ -51,113 +51,194 @@ function App() {
   }, [darkMode]);
 
   // ✅ Home Page Component
-  const HomePage = () => {
-    const { user, logout } = useUser();
+// ✅ Home Page Component (Upgraded Landing Page)
+const HomePage = () => {
+  const { user, logout } = useUser();
 
-    return (
-      <>
-        {/* Hero Section */}
-        <section className="relative bg-gray-900 text-white overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-30"
-            style={{ backgroundImage: "url('/images/hero-banner.png')" }}
-          ></div>
-          <div className="relative z-10 px-6 py-32 max-w-6xl mx-auto text-center">
-            <motion.h1
-              className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight"
-              initial={{ opacity: 0, y: -40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              Transform Your Career with Real-Time Learning
-            </motion.h1>
-            <motion.p
-              className="text-lg md:text-xl text-gray-200 mb-10 max-w-3xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-            >
-              Learn high-demand tech skills from industry experts and earn certifications through real-world projects.
-            </motion.p>
+  return (
+    <>
+      {/* =======================
+          HERO SECTION
+      ==========================*/}
+      <section className="relative bg-gray-900 text-white overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30"
+          style={{ backgroundImage: "url('/images/hero-banner.png')" }}
+        ></div>
 
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-            >
-              {user ? (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="inline-flex items-center px-6 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-base font-medium shadow transition"
-                  >
-                    👋 Welcome, {user.name?.split(" ")[0]} — Go to Dashboard
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="inline-flex items-center px-6 py-3 bg-red-500 text-white hover:bg-red-600 rounded-lg text-base font-medium shadow transition"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/courses"
-                    className="inline-flex items-center px-6 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg text-base font-medium shadow transition"
-                  >
-                    🚀 Explore Courses
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center px-6 py-3 bg-white text-gray-800 hover:bg-gray-100 rounded-lg text-base font-medium shadow transition"
-                  >
-                    📝 Register Now
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 rounded-lg text-base font-medium shadow transition gap-2"
-                  >
-                    <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
-                    Sign in with Google
-                  </Link>
-                </>
-              )}
-            </motion.div>
-          </div>
-        </section>
+        <div className="relative z-10 px-6 py-32 max-w-7xl mx-auto text-center">
+          <motion.h1
+            className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight"
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            Learn. Build. Deploy.<br />
+            <span className="text-indigo-400">All in One Tech Ecosystem.</span>
+          </motion.h1>
 
-        {/* Course Categories */}
-        <section id="courses" className="py-16 bg-white dark:bg-gray-950">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
-            Courses by Category
-          </h2>
-          <CourseCategoryTabs />
-        </section>
+          <motion.p
+            className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers
+            India’s first developer-focused cloud platform — built for real innovation.
+          </motion.p>
 
-        {/* Features Section */}
-        <section className="bg-gray-100 dark:bg-gray-900 py-16 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
-              Why Choose Cybercode EduLabs?
+          {/* CTA Buttons */}
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
+                >
+                  👋 Welcome {user.name?.split(" ")[0]} — Dashboard
+                </Link>
+                <button
+                  onClick={logout}
+                  className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/courses"
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
+                >
+                  🚀 Explore Courses
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg"
+                >
+                  🎯 Free Demo Class
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2"
+                >
+                  <img src="/images/google.svg" className="w-5 h-5" />
+                  Sign in with Google
+                </Link>
+              </>
+            )}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* =======================
+            CLOUD PROMO BLOCK
+      ==========================*/}
+      <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              ☁️ Introducing Cybercode Cloud
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <FeatureItem icon="projects" title="Real-Time Projects" description="Work on industry-grade projects to gain practical experience." />
-              <FeatureItem icon="exposure" title="Corporate Exposure" description="Collaborate with corporate teams and improve job-readiness." />
-              <FeatureItem icon="training" title="Job-Focused Training" description="Courses tailored to in-demand job skills and career paths." />
-              <FeatureItem icon="certificate" title="Experience Certificate" description="Get certified and boost your resume with real experience." />
+            <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">
+              India’s first indigenous cloud platform built for developers, startups, 
+              and enterprises. Fast, scalable, secure — and designed to empower you.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                to="/cloud"
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow"
+              >
+                🔥 Explore Cloud Platform
+              </Link>
+              <Link
+                to="/cloud"
+                className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow"
+              >
+                Join Waitlist
+              </Link>
             </div>
           </div>
-        </section>
 
-        {/* Registration CTA */}
-        <div id="register">
-          <RegistrationCTA />
+          <img
+            src="/images/cloud-illustration.png"
+            alt="Cloud Platform"
+            className="rounded-lg shadow-lg"
+          />
         </div>
-      </>
-    );
-  };
+      </section>
+
+      {/* =======================
+         COURSE CATEGORIES
+      ==========================*/}
+      <section id="courses" className="py-20 bg-white dark:bg-gray-950">
+        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+          Explore Courses by Category
+        </h2>
+        <CourseCategoryTabs />
+      </section>
+
+      {/* =======================
+          FEATURES
+      ==========================*/}
+      <section className="bg-gray-100 dark:bg-gray-900 py-16 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
+            Why Students Choose Cybercode
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <FeatureItem icon="projects" title="Real-Time Projects" description="Work on industry-grade workflows." />
+            <FeatureItem icon="exposure" title="Corporate Exposure" description="Workflows used by tech companies." />
+            <FeatureItem icon="training" title="Job-Focused Training" description="All courses designed for real jobs." />
+            <FeatureItem icon="certificate" title="Experience Certificate" description="Boost your resume with hands-on experience." />
+          </div>
+        </div>
+      </section>
+
+      {/* =======================
+          TESTIMONIALS
+      ==========================*/}
+      <section className="py-20 bg-white dark:bg-gray-950 px-6">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
+            What Our Students Say
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-10">
+            <div className="p-6 rounded-lg shadow bg-gray-50 dark:bg-gray-800">
+              <p className="text-gray-700 dark:text-gray-300 text-lg">
+                “The simulators and hands-on labs changed everything. This is the most practical
+                training I have ever taken.”
+              </p>
+              <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Student A</p>
+            </div>
+
+            <div className="p-6 rounded-lg shadow bg-gray-50 dark:bg-gray-800">
+              <p className="text-gray-700 dark:text-gray-300 text-lg">
+                “Cybercode’s teaching style helped me move from beginner to job-ready in months.”
+              </p>
+              <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Student B</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =======================
+          REGISTRATION CTA
+      ==========================*/}
+      <div id="register">
+        <RegistrationCTA />
+      </div>
+    </>
+  );
+};
+
 
   return (
     <Router>
