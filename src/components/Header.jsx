@@ -12,14 +12,12 @@ function Header({ darkMode, setDarkMode }) {
   const { user, logout } = useUser();
   const navigate = useNavigate();
 
-  // Updated brand-aligned taglines
   const taglines = [
     "India’s First Cloud & EdTech Hybrid",
     "Empowering Skills and Cloud Innovation",
     "Learn. Build. Deploy. All at Cybercode",
   ];
 
-  // Rotating taglines
   useEffect(() => {
     const interval = setInterval(() => {
       setTaglineIndex((prev) => (prev + 1) % taglines.length);
@@ -27,7 +25,6 @@ function Header({ darkMode, setDarkMode }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Scroll shadow toggle
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -39,14 +36,17 @@ function Header({ darkMode, setDarkMode }) {
     navigate("/");
   };
 
-  // Added: Demo + Cloud Waitlist
   const links = [
     { name: "Home", to: "/" },
     { name: "Courses", to: "/courses" },
     { name: "Labs", to: "/labs" },
     { name: "Projects", to: "/projects" },
     { name: "Cloud", to: "/cloud", highlight: true },
-    { name: "Demo Class", to: "/register", badge: true },
+    {
+      name: "Demo Class",
+      to: "/demo",
+      demo: true
+    },
     { name: "Contact", to: "/contact" },
   ];
 
@@ -67,7 +67,7 @@ function Header({ darkMode, setDarkMode }) {
 
       {/* Main Header */}
       <div className="p-4 flex justify-between items-center max-w-7xl mx-auto">
-        
+
         {/* Brand Logo */}
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate("/")}>
           <img src={logo} alt="Cybercode Logo" className="h-11 w-auto" />
@@ -87,18 +87,27 @@ function Header({ darkMode, setDarkMode }) {
             <Link
               key={link.name}
               to={link.to}
-              className={`relative transition-colors ${
-                link.highlight
-                  ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-                  : "text-gray-800 dark:text-gray-200"
-              }`}
-            >
-              {link.name === "Cloud" ? "☁️ Cloud" : link.name}
+              className={`
+                transition-all font-medium
 
-              {link.badge && (
-                <span className="ml-1 px-2 py-0.5 text-xs bg-green-600 text-white rounded-full">
-                  Free
-                </span>
+                ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
+
+                ${
+                  link.demo
+                    ? "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center gap-2 text-sm animate-pulse-slow hover:scale-105 hover:shadow-2xl transition-transform"
+                    : "text-gray-800 dark:text-gray-200 hover:text-indigo-500"
+                }
+              `}
+            >
+              {link.demo ? (
+                <>
+                  🎯 Demo Class
+                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    FREE
+                  </span>
+                </>
+              ) : (
+                link.name === "Cloud" ? "☁️ Cloud" : link.name
               )}
             </Link>
           ))}
@@ -175,13 +184,28 @@ function Header({ darkMode, setDarkMode }) {
               key={link.name}
               to={link.to}
               onClick={() => setMenuOpen(false)}
-              className={`text-lg ${
-                link.highlight
-                  ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-                  : "text-gray-800 dark:text-gray-200"
-              }`}
+              className={`
+                text-lg 
+
+                ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
+
+                ${
+                  link.demo
+                    ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
+                    : "text-gray-800 dark:text-gray-200"
+                }
+              `}
             >
-              {link.name}
+              {link.demo ? (
+                <>
+                  🎯 Demo Class
+                  <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    FREE
+                  </span>
+                </>
+              ) : (
+                link.name
+              )}
             </Link>
           ))}
 
