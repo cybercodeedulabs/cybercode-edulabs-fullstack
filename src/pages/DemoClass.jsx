@@ -12,7 +12,7 @@ import React, { useState } from "react";
  * 2) Deploy your Apps Script as Web App (Anyone) and use that URL.
  */
 
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwapYFnZRhIMwRCwetEVuPQjf08GFuVKeRX5L7CwzZ8uKMNkLcNa13_CWVurmKo7tvgiw/exec"; // << REPLACE
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwWsG2iB3Uvp3HC5sXUFaMiVG-50sauCUohX0h85OeI6k0BB35UYThlj_YCk1y5fPpn5A/exec"; // << REPLACE
 const SECRET_TOKEN = "cybercode-secret-123"; // << REPLACE
 
 export default function DemoClass() {
