@@ -173,9 +173,10 @@ function Header({ darkMode, setDarkMode }) {
       </div>
 
       {/* Mobile Menu */}
+      {/* Mobile Menu */}
       <div
-        className={`md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md transform transition-all duration-300 origin-top ${
-          menuOpen ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"
+        className={`md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md transition-all duration-300 origin-top ${
+          menuOpen ? "block" : "hidden"
         }`}
       >
         <nav className="flex flex-col p-4 space-y-4">
@@ -238,6 +239,7 @@ function Header({ darkMode, setDarkMode }) {
           )}
         </nav>
       </div>
+
     </header>
   );
 }
