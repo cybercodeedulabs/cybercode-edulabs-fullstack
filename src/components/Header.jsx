@@ -182,32 +182,33 @@ function Header({ darkMode, setDarkMode }) {
         <nav className="flex flex-col p-4 space-y-4">
           {links.map((link) => (
             <Link
-              key={link.name}
-              to={link.to}
-              onClick={() => setMenuOpen(false)}
-              className={`
-                text-lg 
+  key={link.name}
+  to={link.to}
+  onClick={() => {
+    setTimeout(() => setMenuOpen(false), 150);
+  }}
+  className={`
+    text-lg 
+    ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
+    ${
+      link.demo
+        ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
+        : "text-gray-800 dark:text-gray-200"
+    }
+  `}
+>
+  {link.demo ? (
+    <>
+      🎯 Demo Class
+      <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+        FREE
+      </span>
+    </>
+  ) : (
+    link.name
+  )}
+</Link>
 
-                ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
-
-                ${
-                  link.demo
-                    ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
-                    : "text-gray-800 dark:text-gray-200"
-                }
-              `}
-            >
-              {link.demo ? (
-                <>
-                  🎯 Demo Class
-                  <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    FREE
-                  </span>
-                </>
-              ) : (
-                link.name
-              )}
-            </Link>
           ))}
 
           {user ? (
