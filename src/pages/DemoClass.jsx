@@ -117,24 +117,27 @@ export default function DemoClass() {
 
         {/* Video + benefits */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
-          <div>
-            <div className="aspect-w-16 aspect-h-9 w-full rounded-lg overflow-hidden shadow-lg">
-              {/* Replace with your own video ID */}
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="Cybercode Demo Intro"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-            <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <li>• Hands-on simulators and real projects</li>
-              <li>• Job-focused curriculum and mentorship</li>
-              <li>• Q&A session with trainers</li>
-            </ul>
-          </div>
+        {/* ===============================
+      Intro Video Section
+=============================== */}
+<div className="max-w-3xl mx-auto mb-10">
+  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+    🎥 Cybercode EduLabs – Intro Video
+  </h2>
+
+  <div className="relative w-full h-0 pb-[56.25%] rounded-xl overflow-hidden shadow-xl">
+    <iframe
+      className="absolute top-0 left-0 w-full h-full"
+      src="https://www.youtube.com/embed/ti58uJx-X0I?si=3fxkJmPop2fxSpP8"
+      title="Cybercode EduLabs Intro Video"
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+      referrerPolicy="strict-origin-when-cross-origin"
+    ></iframe>
+  </div>
+</div>
+
 
           {/* Form card */}
           <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl shadow-md">
