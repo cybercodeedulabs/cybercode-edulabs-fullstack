@@ -1,10 +1,8 @@
-// src/components/simulations/DecisionTreeSimulator.jsx
 import React, { useState } from "react";
 
 /**
  * DecisionTreeSimulator
- * Small interactive ethical decision tree.
- * Learners choose options and receive feedback (ethical/legal).
+ * Interactive ethical decision tree with mobile-friendly styling.
  */
 export default function DecisionTreeSimulator() {
   const scenarios = [
@@ -45,35 +43,88 @@ export default function DecisionTreeSimulator() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow-md border border-gray-200">
-      <h3 className="text-lg font-semibold mb-4 text-indigo-700">🧭 Ethical Decision Tree — Practice</h3>
-      <div className="mb-3 text-sm text-gray-700">{scenarios[current].title}</div>
+    <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
 
-      <div className="space-y-2 mb-4">
+      <h3 className="text-lg font-semibold mb-4 text-indigo-700 dark:text-indigo-300">
+        🧭 Ethical Decision Tree — Practice
+      </h3>
+
+      <div className="mb-3 text-sm text-gray-700 dark:text-gray-300">
+        {scenarios[current].title}
+      </div>
+
+      {/* Choices */}
+      <div className="space-y-3 mb-5">
         {scenarios[current].choices.map((c) => (
           <button
             key={c.id}
             onClick={() => choose(c)}
-            className="w-full text-left px-3 py-2 rounded-md border hover:shadow-sm transition flex justify-between items-center bg-gray-50"
+            className="
+              w-full flex justify-between items-center 
+              px-4 py-3 rounded-md border shadow-sm
+              bg-gray-50 dark:bg-gray-800
+              text-gray-900 dark:text-gray-100
+              hover:bg-gray-100 dark:hover:bg-gray-700
+              transition
+            "
           >
-            <span>{c.text}</span>
-            <span className="text-xs text-gray-500">Choose</span>
+            <span className="font-medium">{c.text}</span>
+            <span className="text-xs text-gray-600 dark:text-gray-300">Choose</span>
           </button>
         ))}
       </div>
 
+      {/* Feedback Box */}
       {feedback && (
-        <div className={`p-3 rounded-md ${feedback.result === "good" ? "bg-green-50 border border-green-200 text-green-700" : feedback.result === "bad" ? "bg-red-50 border border-red-200 text-red-700" : "bg-yellow-50 border border-yellow-200 text-yellow-700" } mb-4`}>
-          <div className="font-semibold">{feedback.result === "good" ? "✅ Ethical" : feedback.result === "bad" ? "❌ Not Ethical" : "⚠️ Mixed"}</div>
+        <div
+          className={`
+            p-3 rounded-md mb-4
+            ${
+              feedback.result === "good"
+                ? "bg-green-50 border border-green-300 text-green-700"
+                : feedback.result === "bad"
+                ? "bg-red-50 border border-red-300 text-red-700"
+                : "bg-yellow-50 border border-yellow-300 text-yellow-700"
+            }
+          `}
+        >
+          <div className="font-semibold">
+            {feedback.result === "good"
+              ? "✅ Ethical"
+              : feedback.result === "bad"
+              ? "❌ Not Ethical"
+              : "⚠️ Mixed"}
+          </div>
           <div className="text-sm mt-1">{feedback.reason}</div>
         </div>
       )}
 
-      <div className="flex justify-between">
-        <button onClick={prev} className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200">← Prev</button>
+      {/* Navigation Buttons */}
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={prev}
+          className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+        >
+          ← Prev
+        </button>
+
         <div className="space-x-2">
-          <button onClick={() => { setFeedback(null); setCurrent(0); }} className="px-3 py-2 rounded-md bg-indigo-50 text-indigo-700">Restart</button>
-          <button onClick={next} className="px-3 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700">Next →</button>
+          <button
+            onClick={() => {
+              setFeedback(null);
+              setCurrent(0);
+            }}
+            className="px-4 py-2 rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
+          >
+            Restart
+          </button>
+
+          <button
+            onClick={next}
+            className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
+          >
+            Next →
+          </button>
         </div>
       </div>
     </div>
