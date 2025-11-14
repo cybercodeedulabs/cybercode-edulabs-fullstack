@@ -203,7 +203,8 @@ function App() {
               <FeatureItem
                 icon="ai"
                 title="AI-Powered Smart Learning"
-                description="Learn with Chitti — your AI assistant that guides you through every concept, workflow and real scenario."
+                description="AI-driven learning support that assists you through concepts, workflows, and real production scenarios.
+"
               />
 
               {/* 2. Hands-on cloud labs */}
