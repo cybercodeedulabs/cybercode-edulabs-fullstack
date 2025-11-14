@@ -1,30 +1,66 @@
 // src/components/ui/FeatureItem.jsx
-import { Briefcase, BookOpen, Award, Users } from "lucide-react";
+import { Briefcase, BookOpen, Award, Users, Cpu, CloudLightning, Sparkles } from "lucide-react";
 
 const icons = {
-  projects: <Briefcase className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />,
-  exposure: <Users className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />,
-  training: <BookOpen className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />,
-  certificate: <Award className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />,
+  projects: <Briefcase className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  exposure: <Users className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  training: <BookOpen className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  certificate: <Award className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+
+  // New icons (optional for future use)
+  ai: <Cpu className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  cloud: <CloudLightning className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  spark: <Sparkles className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
 };
 
 function FeatureItem({ icon, title, description }) {
   return (
-    <div className="rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center group">
-      {/* Icon with subtle hover scale */}
-      <div className="mb-4 transition-transform duration-300 group-hover:scale-110">
+    <div
+      className="
+        relative rounded-2xl p-6 
+        bg-white/80 dark:bg-gray-800/80 
+        backdrop-blur-xl 
+        shadow-[0_8px_30px_rgb(0,0,0,0.08)]
+        dark:shadow-[0_8px_30px_rgba(255,255,255,0.05)]
+        border border-white/20 dark:border-gray-700/40
+        transition-all duration-500 
+        group cursor-pointer
+        hover:-translate-y-2 hover:shadow-xl
+      "
+    >
+
+      {/* Animated gradient border */}
+      <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+      {/* Icon */}
+      <div className="flex justify-center mb-4 transform transition-transform duration-500 group-hover:scale-110">
         {icons[icon]}
       </div>
 
       {/* Title */}
-      <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+      <h4
+        className="
+          text-xl font-semibold 
+          text-gray-900 dark:text-white 
+          mb-2 tracking-wide
+          transition-colors duration-500
+          group-hover:text-indigo-600 dark:group-hover:text-indigo-400
+        "
+      >
         {title}
       </h4>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 dark:text-gray-300">
+      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
         {description}
       </p>
+
+      {/* Glow ring on hover */}
+      <div className="
+        absolute inset-0 rounded-2xl 
+        group-hover:ring-2 ring-indigo-400/40 
+        transition-all duration-500 pointer-events-none
+      "></div>
     </div>
   );
 }

@@ -188,21 +188,49 @@ function App() {
         </section>
 
         {/* =======================
-            FEATURES
-        ==========================*/}
-        <section className="bg-gray-100 dark:bg-gray-900 py-16 px-4">
+                FEATURES
+        ========================== */}
+        <section className="bg-gray-100 dark:bg-gray-900 py-20 px-6">
           <div className="max-w-7xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
+
+            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">
               Why Students Choose Cybercode
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              <FeatureItem icon="projects" title="Real-Time Projects" description="Work on industry-grade workflows." />
-              <FeatureItem icon="exposure" title="Corporate Exposure" description="Workflows used by tech companies." />
-              <FeatureItem icon="training" title="Job-Focused Training" description="Courses tailored to in-demand job skills and career paths." />
-              <FeatureItem icon="certificate" title="Experience Certificate" description="Get certified and boost your resume with real experience." />
+
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+              {/* 1. AI-powered learning */}
+              <FeatureItem
+                icon="ai"
+                title="AI-Powered Smart Learning"
+                description="Learn with Chitti — your AI assistant that guides you through every concept, workflow and real scenario."
+              />
+
+              {/* 2. Hands-on cloud labs */}
+              <FeatureItem
+                icon="cloud"
+                title="Hands-On Cloud Labs"
+                description="Practice on real cloud infrastructure powered by Cybercode Cloud — VMs, containers, networks and more."
+              />
+
+              {/* 3. Real-time project experience */}
+              <FeatureItem
+                icon="projects"
+                title="Real-Time Project Experience"
+                description="Industry-grade workflows that match real DevOps, cloud, and developer environments."
+              />
+
+              {/* 4. Career-focused training */}
+              <FeatureItem
+                icon="training"
+                title="Career-Focused Training Path"
+                description="Every course is structured for actual job roles, interviews, and real production tasks."
+              />
+
             </div>
           </div>
         </section>
+
 
         {/* =======================
             TESTIMONIALS
