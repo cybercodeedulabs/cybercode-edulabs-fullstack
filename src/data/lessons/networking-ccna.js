@@ -2500,6 +2500,246 @@ Network security requires layered defenses: correct Layer-2 protections, careful
     }
   ]
 },
+{
+  slug: "network-automation-and-monitoring",
+  title: "Network Automation & Monitoring — SNMP, NetFlow, APIs & Simple Automation",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔧 Lesson Overview
+
+Network automation and monitoring let engineers scale operations, reduce manual mistakes, and get fast visibility into network health. This lesson covers:
+- Monitoring primitives (SNMP, NetFlow/IPFIX)
+- Telemetry vs polling
+- Automation basics (APIs, SSH, Netconf/Restconf, gNMI)
+- Practical automation with Python & Ansible
+- A small AutomationSimulator to demonstrate a config-generator and telemetry view
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After this lesson you will be able to:
+- Explain SNMP basics (versions, MIBs, traps) and when to poll vs subscribe.
+- Describe NetFlow/IPFIX usage for traffic monitoring and security investigations.
+- Use device REST/NETCONF/gNMI APIs to read state and push small configs.
+- Write a minimal Python script to collect SNMP counters and an Ansible playbook to push simple config templates.
+- Use the AutomationSimulator to generate device configs and view simulated telemetry/alerts.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/monitoring-telemetry-overview.png",
+      alt: "Monitoring overview: SNMP polling vs streaming telemetry"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) SNMP (Simple Network Management Protocol)
+
+**SNMP basics**
+- Versions: **v1** (simple), **v2c** (community string), **v3** (secure: auth + encryption).
+- **MIBs** (Management Information Bases) define OIDs to read/write device values.
+- **Operations:** GET, GETNEXT, GETBULK, SET, TRAP/INFORM (asynchronous alerts).
+
+**Practical tips**
+- Use SNMPv3 in production (authPriv).
+- Poll important OIDs at sensible intervals (interfaces, CPU, memory, errors).
+- Configure traps for immediate alerts (link up/down, auth failures).
+
+**Useful commands / examples**
+\`\`\`text
+# SNMP walk (example)
+snmpwalk -v2c -c public 192.0.2.1 IF-MIB::ifDescr
+
+# SNMPv3 get (example)
+snmpget -v3 -u admin -l authPriv -a SHA -A authpass -x AES -X privpass 192.0.2.1 SNMPv2-MIB::sysUpTime.0
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) NetFlow / IPFIX
+
+- **NetFlow / IPFIX** export flow records (src/dst IP, ports, protocol, bytes, timestamps).
+- Use collectors (e.g., ntopng, nfdump, Elastic stack) to analyze traffic patterns, detect anomalies, and support security investigations.
+- **Sampling** reduces overhead (e.g., 1:1000 sample) for high-speed links.
+
+**Collector practice**
+- Configure exporters on edge routers; point to collector IP/port.
+- Monitor top talkers, top protocols, and unusual flows for threat hunting.
+      `
+    },
+
+    {
+      type: "code",
+      language: "yaml",
+      runnable: false,
+      value: `# Example: NetFlow (Cisco-like)
+ip flow-export destination 198.51.100.10 2055
+ip flow-export version 9
+ip flow-cache timeout active 60`
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) Telemetry & Modern APIs
+
+- **Polling (SNMP)** vs **Streaming Telemetry** (gRPC/gNMI, RESTCONF) — streaming provides higher-frequency, structured data.
+- **NETCONF / RESTCONF / gNMI** allow programmatic state retrieval and sometimes configuration.
+- **APIs**: many modern devices expose REST APIs (JSON) — easy to integrate with Python or automation platforms.
+
+**Recommendation:** For rapid telemetry, use streaming (gNMI) to central collectors; use REST/NETCONF for ad-hoc reads & automation tasks.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) Automation Tools & Patterns
+
+**Ansible** — agentless, SSH-based, great for config templating and orchestration. Use network modules (ios_config, nxos_config, etc.) and Jinja2 templates.
+
+**Python + Netmiko / Nornir** — scriptable, powerful for custom workflows and telemetry processing.
+
+**Idempotency** — ensure automation can be safely run multiple times without side effects.
+
+**Source control & CI** — store templates/playbooks in Git; run lint & dry-run in CI before applying to production.
+      `
+    },
+
+    {
+      type: "code",
+      language: "yaml",
+      runnable: false,
+      value: `# Example Ansible playbook (ios_config)
+- hosts: routers
+  gather_facts: no
+  connection: network_cli
+  tasks:
+    - name: Push hostname and banner
+      ios_config:
+        lines:
+          - hostname {{ inventory_hostname }}
+          - banner motd ^C Authorized access only ^C`
+    },
+
+    {
+      type: "code",
+      language: "python",
+      runnable: false,
+      value: `# Minimal Python example: fetch SNMP sysName using pysnmp
+from pysnmp.hlapi import *
+
+def get_sysname(host, community='public'):
+    for (errorIndication, errorStatus, errorIndex, varBinds) in getCmd(
+        SnmpEngine(),
+        CommunityData(community),
+        UdpTransportTarget((host, 161)),
+        ContextData(),
+        ObjectType(ObjectIdentity('SNMPv2-MIB', 'sysName', 0))
+    ):
+        if errorIndication:
+            raise Exception(errorIndication)
+        elif errorStatus:
+            raise Exception('%s at %s' % (errorStatus.prettyPrint(), errorIndex and varBinds[int(errorIndex)-1][0] or '?'))
+        else:
+            for varBind in varBinds:
+                return varBind.prettyPrint().split('= ',1)[1]
+
+print(get_sysname('192.0.2.1'))`
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Monitoring Architecture & Best Practices
+
+- Centralize telemetry to collectors (Prometheus, InfluxDB, Elastic, or vendor collectors).
+- Retention & sampling policies: keep high-resolution recent data and downsample older data.
+- Alerts: CPU, interface errors, interface down, high latency, unusual NetFlow spikes.
+- Dashboards: top talkers, interface utilization, device health, alarm trends.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/netflow-snmp-diagram.png",
+      alt: "NetFlow exporter -> collector -> analysis pipeline"
+    },
+
+    {
+      type: "text",
+      value: `
+## 6) Small Automation Patterns (practical examples)
+
+- **Config generator:** Jinja2 template that generates interface configurations from a CSV or JSON inventory.
+- **Idempotent updates:** compare running-config vs desired and only apply diffs.
+- **Canary deploy:** apply config to a single device, verify, then roll out.
+
+**Jinja2 example fragment**
+\`\`\`jinja
+interface {{ iface.name }}
+ description {{ iface.desc }}
+ ip address {{ iface.ip }} {{ iface.mask }}
+ no shutdown
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 7) Lab / Simulation (recommended)
+
+Use the interactive **AutomationSimulator** to:
+- Generate device configs from a small JSON inventory (hostname, interfaces).
+- Preview configs before applying.
+- Simulate SNMP polling and NetFlow exports, showing synthesized telemetry on a mini dashboard.
+- Demonstrate a simple Python script execution (simulated) to fetch sysName.
+
+**Component name to include in your lesson:** \`AutomationSimulator\`  
+(Place component at: /src/components/simulations/ccna/AutomationSimulator.jsx)
+      `
+    },
+
+    {
+      type: "component",
+      value: AutomationSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 8) Practical checklist (pre-deployment)
+
+- [ ] Version-control all automation artifacts (templates, playbooks, scripts).
+- [ ] Test automation in lab or staging; use dry-run modes.
+- [ ] Use RBAC for automation systems (separate accounts, limited scopes).
+- [ ] Monitor automation runs and keep audit logs.
+- [ ] Keep collectors and exporters reachable and secure (TLS, auth).
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## Summary
+
+Automation and monitoring are complementary: monitoring provides the data to detect issues and automation provides the means to remediate and scale. Start small (config templates and basic SNMP/NetFlow), use idempotent patterns and source control, and progressively adopt streaming telemetry and programmatic APIs for higher-scale operations.
+      `
+    }
+  ]
+}
 
 
 ];
