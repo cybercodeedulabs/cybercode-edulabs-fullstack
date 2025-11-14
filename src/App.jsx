@@ -194,7 +194,7 @@ function App() {
           <div className="max-w-7xl mx-auto text-center">
 
             <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">
-              Why Students Choose Cybercode
+              The Cybercode Advantage
             </h2>
 
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -239,7 +239,7 @@ function App() {
         <section className="py-20 bg-white dark:bg-gray-950 px-6">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
-              What Our Students Say
+              Student Success Stories
             </h2>
 
             <div className="grid md:grid-cols-2 gap-10">
