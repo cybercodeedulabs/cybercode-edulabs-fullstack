@@ -42,7 +42,11 @@ function Header({ darkMode, setDarkMode }) {
     { name: "Labs", to: "/labs" },
     { name: "Projects", to: "/projects" },
     { name: "Cloud", to: "/cloud", highlight: true },
-    { name: "Demo Class", to: "/demo", demo: true },
+    {
+      name: "Demo Class",
+      to: "/demo",
+      demo: true
+    },
     { name: "Contact", to: "/contact" },
   ];
 
@@ -85,7 +89,9 @@ function Header({ darkMode, setDarkMode }) {
               to={link.to}
               className={`
                 transition-all font-medium
+
                 ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
+
                 ${
                   link.demo
                     ? "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center gap-2 text-sm animate-pulse-slow hover:scale-105 hover:shadow-2xl transition-transform"
@@ -167,40 +173,42 @@ function Header({ darkMode, setDarkMode }) {
       </div>
 
       {/* Mobile Menu */}
+      {/* Mobile Menu */}
       <div
-        className={`
-          md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md 
-          transition-all duration-300 origin-top 
-          ${menuOpen ? "scale-y-100 opacity-100 pb-32" : "scale-y-0 opacity-0"}
-        `}
+        className={`md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md transition-all duration-300 origin-top ${
+          menuOpen ? "block" : "hidden"
+        }`}
       >
-        <nav className="flex flex-col p-4 space-y-4 pb-10">
+        <nav className="flex flex-col p-4 space-y-4">
           {links.map((link) => (
             <Link
-              key={link.name}
-              to={link.to}
-              onClick={() => setTimeout(() => setMenuOpen(false), 150)}
-              className={`
-                text-lg
-                ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
-                ${
-                  link.demo
-                    ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
-                    : "text-gray-800 dark:text-gray-200"
-                }
-              `}
-            >
-              {link.demo ? (
-                <>
-                  🎯 Demo Class
-                  <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    FREE
-                  </span>
-                </>
-              ) : (
-                link.name
-              )}
-            </Link>
+  key={link.name}
+  to={link.to}
+  onClick={() => {
+    setTimeout(() => setMenuOpen(false), 150);
+  }}
+  className={`
+    text-lg 
+    ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
+    ${
+      link.demo
+        ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
+        : "text-gray-800 dark:text-gray-200"
+    }
+  `}
+>
+  {link.demo ? (
+    <>
+      🎯 Demo Class
+      <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+        FREE
+      </span>
+    </>
+  ) : (
+    link.name
+  )}
+</Link>
+
           ))}
 
           {user ? (
@@ -232,6 +240,7 @@ function Header({ darkMode, setDarkMode }) {
           )}
         </nav>
       </div>
+
     </header>
   );
 }
