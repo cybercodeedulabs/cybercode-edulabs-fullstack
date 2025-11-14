@@ -2113,6 +2113,188 @@ NAT and PAT are essential tools to conserve IPv4 addresses and control inbound/o
     }
   ]
 },
+{
+  slug: "wan-technologies-overview",
+  title: "WAN Technologies — PPP, HDLC, MPLS, Metro Ethernet, Frame Relay",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🌐 Lesson Overview
+
+Wide Area Network (WAN) technologies connect branch offices, data centers, and remote sites across carrier networks.  
+This lesson introduces traditional and modern WAN options, including:
+- Legacy serial encapsulations (HDLC, PPP),
+- Modern high-speed carrier services (MPLS, Metro Ethernet),
+- Frame Relay concepts (for exam compatibility),
+- Key WAN control-plane and data-plane fundamentals,
+- Encapsulation negotiation (LCP/NCP), authentication, and link monitoring.
+
+Two diagrams included:
+- *wan-topologies.png*
+- *ppp-lcp-ncp-flow.png*
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After completing this lesson you will be able to:
+- Differentiate between HDLC and PPP encapsulations.
+- Explain PPP components (LCP, NCP, CHAP/PAP authentication).
+- Describe MPLS forwarding (labels, LSR, LSPs).
+- Understand Metro Ethernet handoff types (E-Line, E-LAN, E-Tree).
+- Recognize Frame Relay concepts for CCNA familiarity (DLCI, LMI).
+- Compare WAN technologies and choose the correct one for a scenario.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/wan-topologies.png",
+      alt: "WAN topologies: serial, MPLS cloud, Metro Ethernet"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) HDLC (High-Level Data Link Control)
+
+- Cisco-proprietary by default (only works between Cisco devices unless using ISO mode).
+- Simple, low-overhead encapsulation for serial links.
+- No authentication or negotiation.
+
+**Key Notes:**
+- Often the default on Cisco serial interfaces.
+- Limited flexibility — PPP is preferred in modern deployments.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) PPP – Point-to-Point Protocol
+
+PPP enhances serial links with authentication, multilink support, and negotiation.
+
+### PPP Components:
+- **LCP (Link Control Protocol):** establishes, configures, tests link.
+- **NCP (Network Control Protocol):** negotiates Layer 3 parameters (IPCP for IPv4).
+- **CHAP/PAP:** authentication methods.
+
+### Why PPP?
+- Multi-vendor support
+- Authentication
+- Link quality monitoring
+- Supports multiple protocols (IP, IPX historically)
+
+**Common Commands (Cisco-like):**
+\`\`\`
+interface Serial0/0
+ encapsulation ppp
+ ppp authentication chap
+ ppp chap hostname BranchRouter
+ ppp chap password MySecret
+\`\`\`
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/ppp-lcp-ncp-flow.png",
+      alt: "PPP flow: LCP negotiation -> authentication -> NCP (IPCP)"
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) MPLS (Multiprotocol Label Switching)
+
+MPLS is widely used in service provider networks.
+
+### Key Concepts:
+- Traffic forwarded based on **labels**, not IP lookup.
+- Label-Switched Routers (LSRs)
+- Label-Switched Paths (LSPs)
+- Supports QoS, VPNs (L3VPN / L2VPN)
+
+**Use Cases:**
+- Enterprise WAN connectivity between branches
+- Carrier-provided L3VPN services
+- Deterministic latency paths
+
+**Exam Tip:** MPLS itself is not encrypted — encryption requires overlays like DMVPN, IPsec, or SSL VPN.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) Metro Ethernet
+
+Carrier Ethernet delivered to customer premises.
+
+### Service Types:
+- **E-Line:** point-to-point
+- **E-LAN:** multipoint-to-multipoint
+- **E-Tree:** point-to-multipoint
+
+Benefits:
+- High bandwidth (10 Mbps → 10 Gbps)
+- Simple Ethernet handoff
+- Scalable and cost-effective
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Frame Relay (Legacy Concept)
+
+Although mostly obsolete, CCNA still touches on it.
+
+### Key Terms:
+- **DLCI (Data-Link Connection Identifier):** identifies virtual circuit
+- **LMI:** link management interface (keepalive)
+- **PVC:** permanent virtual circuit
+- **NBMA:** non-broadcast multi-access topology
+
+Used in older hub-and-spoke WANs.
+
+**Exam Tip:** Frame Relay maps DLCI → remote site.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 6) Choosing the Right WAN Technology
+
+| Requirement | Best Choice |
+|------------|-------------|
+| Highest bandwidth | Metro Ethernet |
+| Multi-site connectivity over provider cloud | MPLS L3VPN |
+| Legacy low-cost serial link | PPP/HDLC |
+| Need authentication on serial | PPP |
+| Legacy hub–spoke NBMA | Frame Relay (theory only) |
+
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## Summary
+
+WAN technologies connect geographically dispersed sites. PPP provides robust serial encapsulation features, MPLS powers modern service provider networks, and Metro Ethernet delivers scalable high-speed access. Understanding WAN fundamentals helps you design reliable enterprise networks.
+
+Diagrams are provided for quick exam-ready visualization.
+      `
+    }
+  ]
+},
 
 
 ];

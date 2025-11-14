@@ -1,19 +1,17 @@
 import React, { useState, useRef, useEffect } from "react";
 
 /**
- * NATSimulator.jsx
- * - Place at: /src/components/simulations/ccna/NATSimulator.jsx
- * - UI: Tailwind, card layout, logs, animated packet circles
+ * NATSimulator.jsx (updated)
+ * - Adds continuous simulation controls (Start / Stop)
+ * - Mode: S2 (every 3s cycle), Start Mode B2 (auto-add clients every 10s)
+ * - Visual running indicator and NAT/device/client glow
  *
- * Features:
- * - Define inside networks (clients), public pool, and static mappings
- * - Modes: static NAT, dynamic NAT, PAT (overload)
- * - Translation table visualization
- * - Simulate many clients to demonstrate PAT port allocation & exhaustion
- * - Simulate asymmetric routing toggle (return path must go via NAT device)
- * - Export/import snapshot
+ * Place at: /src/components/simulations/ccna/NATSimulator.jsx
  */
 
+/* ---------------------
+   Default data
+   ---------------------*/
 const defaultClients = [
   { id: "C1", name: "Host-1", insideIp: "10.10.10.10", active: false },
   { id: "C2", name: "Host-2", insideIp: "10.10.10.11", active: false },
@@ -23,15 +21,14 @@ const defaultClients = [
 const defaultPublicPool = ["203.0.113.10", "203.0.113.11", "203.0.113.12"];
 
 export default function NATSimulator() {
-  // state: clients, public pool, static mappings, mode
+  /* -------------------------
+   * State & refs (preserve existing behavior)
+   * --------------------------*/
   const [clients, setClients] = useState(defaultClients);
   const [publicPool, setPublicPool] = useState(defaultPublicPool);
-  const [staticMaps, setStaticMaps] = useState([
-    // example: { inside: '10.30.30.10', public: '203.0.113.20' }
-  ]);
-
+  const [staticMaps, setStaticMaps] = useState([]);
   const [mode, setMode] = useState("pat"); // 'static', 'dynamic', 'pat'
-  const [translationTable, setTranslationTable] = useState([]); // entries: { insideIp, insidePort, publicIp, publicPort, proto, expiresAt, type }
+  const [translationTable, setTranslationTable] = useState([]);
   const [logs, setLogs] = useState(["NAT Simulator ready — choose mode and start clients."]);
   const [animPackets, setAnimPackets] = useState([]); // {id, from, to, label, t}
   const nextAnimId = useRef(1);
@@ -41,9 +38,18 @@ export default function NATSimulator() {
   const [asymmetricRouting, setAsymmetricRouting] = useState(false);
   const [portExhaustionAlarm, setPortExhaustionAlarm] = useState(null);
 
-  const pushLog = (msg) => setLogs((s) => [...s.slice(-80), `${new Date().toLocaleTimeString()} — ${msg}`]);
+  // new: simulation control state & refs
+  const [running, setRunning] = useState(false);
+  const simIntervalRef = useRef(null); // main cycle interval (every 3s)
+  const autoAddRef = useRef(null); // auto-add client interval (every 10s)
+  const animCancelRef = useRef(false); // used to cancel in-flight animations
+  const [autoRunNewClients, setAutoRunNewClients] = useState(true); // auto-run behavior checkbox
 
-  // helpers for pool allocation (dynamic NAT)
+  const pushLog = (msg) => setLogs((s) => [...s.slice(-120), `${new Date().toLocaleTimeString()} — ${msg}`]);
+
+  /* -------------------------
+   * Pool helpers
+   * --------------------------*/
   function allocatePublicFromPool() {
     if (publicPool.length === 0) return null;
     const p = [...publicPool];
@@ -55,106 +61,68 @@ export default function NATSimulator() {
     setPublicPool((p) => [ip, ...p]);
   }
 
-  // PAT port allocation map: { publicIp: { port -> insideId } }
-  const patMapRef = useRef({}); // mutable for quick checks
+  const patMapRef = useRef({});
   const updatePatRef = (fn) => {
     patMapRef.current = fn(patMapRef.current);
   };
 
-  // create translation entry (static/dynamic/pat)
+  /* -------------------------
+   * Translation creation (keeps original logic)
+   * --------------------------*/
   function createTranslation({ insideIp, insidePort = null, proto = "tcp", type = "dynamic" }) {
-    // static mapping override
     const staticEntry = staticMaps.find((s) => s.inside === insideIp);
     if (type === "static" && staticEntry) {
-      // use static mapping's public ip (no port translation)
-      const existing = translationTable.find(
-        (t) => t.insideIp === insideIp && t.type === "static"
-      );
+      const existing = translationTable.find((t) => t.insideIp === insideIp && t.type === "static");
       if (existing) return existing;
-      const entry = {
-        insideIp,
-        insidePort: null,
-        publicIp: staticEntry.public,
-        publicPort: null,
-        proto,
-        type: "static",
-        expiresAt: null,
-      };
+      const entry = { insideIp, insidePort: null, publicIp: staticEntry.public, publicPort: null, proto, type: "static", expiresAt: null };
       setTranslationTable((t) => [...t, entry]);
       pushLog(`Static NAT: ${insideIp} -> ${entry.publicIp}`);
       return entry;
     }
 
     if (mode === "dynamic" || type === "dynamic") {
-      // dynamic NAT: assign a public IP from pool one-to-one
       const publicIp = allocatePublicFromPool();
       if (!publicIp) {
         pushLog("Dynamic NAT: pool exhausted — cannot allocate public IP");
         return null;
       }
-      const entry = {
-        insideIp,
-        insidePort: null,
-        publicIp,
-        publicPort: null,
-        proto,
-        type: "dynamic",
-        expiresAt: Date.now() + 60 * 1000, // short TTL for simulation
-      };
+      const entry = { insideIp, insidePort: null, publicIp, publicPort: null, proto, type: "dynamic", expiresAt: Date.now() + 60 * 1000 };
       setTranslationTable((t) => [...t, entry]);
       pushLog(`Dynamic NAT: ${insideIp} -> ${publicIp}`);
       return entry;
     }
 
-    // PAT (overload)
-    // pick a public IP (prefer first pool ip or static mapping)
+    // PAT
     const publicIp = (publicPool.length > 0 ? publicPool[0] : null) || (staticMaps[0] && staticMaps[0].public);
     if (!publicIp) {
       pushLog("PAT: no public IP available to overload on");
       return null;
     }
-
-    // find a free port
     const { start, end } = patPortRange;
     updatePatRef((prev) => ({ ...prev })); // ensure exists
     const usedPorts = patMapRef.current[publicIp] || {};
     let allocatedPort = null;
     for (let p = start; p <= end; p++) {
-      if (!usedPorts[p]) {
-        allocatedPort = p;
-        break;
-      }
-      // safety: limit attempt loops in large ranges
-      if (p - start > 20000) break;
+      if (!usedPorts[p]) { allocatedPort = p; break; }
+      if (p - start > 20000) break; // safety
     }
     if (!allocatedPort) {
       pushLog("PAT: port exhaustion on public IP");
       setPortExhaustionAlarm(publicIp);
       return null;
     }
-    // reserve port
     updatePatRef((prev) => {
       const copy = { ...prev };
       copy[publicIp] = { ...(copy[publicIp] || {}) };
       copy[publicIp][allocatedPort] = { insideIp, insidePort, proto };
       return copy;
     });
-
-    const entry = {
-      insideIp,
-      insidePort,
-      publicIp,
-      publicPort: allocatedPort,
-      proto,
-      type: "pat",
-      expiresAt: Date.now() + 60 * 1000,
-    };
+    const entry = { insideIp, insidePort, publicIp, publicPort: allocatedPort, proto, type: "pat", expiresAt: Date.now() + 60 * 1000 };
     setTranslationTable((t) => [...t, entry]);
     pushLog(`PAT: ${insideIp}:${insidePort || "*"} -> ${entry.publicIp}:${entry.publicPort}`);
     return entry;
   }
 
-  // release PAT allocation
   function releasePatEntry(entry) {
     if (!entry) return;
     if (entry.type === "dynamic") {
@@ -162,9 +130,7 @@ export default function NATSimulator() {
     } else if (entry.type === "pat") {
       updatePatRef((prev) => {
         const copy = { ...prev };
-        if (copy[entry.publicIp]) {
-          delete copy[entry.publicIp][entry.publicPort];
-        }
+        if (copy[entry.publicIp]) delete copy[entry.publicIp][entry.publicPort];
         return copy;
       });
     }
@@ -172,26 +138,24 @@ export default function NATSimulator() {
     pushLog(`Released translation for ${entry.insideIp}`);
   }
 
-  // Simulate a client initiating a connection
+  /* -------------------------
+   * Client flows & animations (preserve, add cancellation hook)
+   * --------------------------*/
   function startClientFlow(clientId) {
     const c = clients.find((x) => x.id === clientId);
     if (!c) return;
     pushLog(`${c.name} (${c.insideIp}) initiating connection to Internet`);
 
-    // if static mapping exists and mode is static, use it
     const staticEntry = staticMaps.find((s) => s.inside === c.insideIp);
     if (staticEntry && mode === "static") {
-      // packet anim: inside -> nat -> outside
       animatePacket(c.id, "nat", "SYN");
       setTimeout(() => {
         pushLog(`Sent from ${c.insideIp} via static ${staticEntry.public}`);
         animatePacket("nat", "internet", "SYN");
       }, 500);
-      // no translation table change needed (static)
       return;
     }
 
-    // create or find existing translation
     let existing = translationTable.find((t) => t.insideIp === c.insideIp);
     if (!existing) {
       const entry = createTranslation({ insideIp: c.insideIp, proto: "tcp", type: mode === "pat" ? "pat" : "dynamic" });
@@ -204,39 +168,33 @@ export default function NATSimulator() {
       pushLog(`${c.name}: using existing translation ${existing.publicIp}${existing.publicPort ? ":" + existing.publicPort : ""}`);
     }
 
-    // animate full flow
+    // animate full flow and set client active for UI glow
+    setClients((prev) => prev.map((x) => (x.id === c.id ? { ...x, active: true } : x)));
     animatePacket(c.id, "nat", "SYN");
     setTimeout(() => animatePacket("nat", "internet", "SYN/ACK"), 400);
 
-    // Simulate asymmetric routing possibility: if asymmetricRouting true, then return may be dropped if not via NAT
     setTimeout(() => {
       if (asymmetricRouting && Math.random() < 0.35) {
         pushLog("Asymmetric routing simulated — return path bypassed NAT device. Connection failed.");
-        // optionally release translation immediately
         releaseTranslationByInside(c.insideIp);
+        setClients((prev) => prev.map((x) => (x.id === c.id ? { ...x, active: false } : x)));
       } else {
         pushLog(`Connection established via ${existing.publicIp}${existing.publicPort ? ":" + existing.publicPort : ""}`);
-        // set expiry timer for translation removal
         scheduleTranslationExpiry(existing);
+        // keep client active briefly to indicate session
+        setTimeout(() => setClients((prev) => prev.map((x) => (x.id === c.id ? { ...x, active: false } : x))), 1500);
       }
     }, 900);
   }
 
-  // schedule expiry for an entry (simulation TTL)
   function scheduleTranslationExpiry(entry) {
     if (!entry || !entry.expiresAt) return;
     const ttl = entry.expiresAt - Date.now();
-    if (ttl <= 0) {
-      releasePatEntry(entry);
-      return;
-    }
+    if (ttl <= 0) { releasePatEntry(entry); return; }
     setTimeout(() => {
-      // verify still exists
       setTranslationTable((t) => {
         const found = t.find((e) => e === entry);
-        if (found) {
-          releasePatEntry(found);
-        }
+        if (found) releasePatEntry(found);
         return t.filter((x) => x !== entry);
       });
     }, ttl + 100);
@@ -247,39 +205,51 @@ export default function NATSimulator() {
     if (entry) releasePatEntry(entry);
   }
 
-  // animate packet helper
+  /* -------------------------
+   * Animation helper (supports cancellation via animCancelRef)
+   * --------------------------*/
   function animatePacket(from, to, label) {
     const id = nextAnimId.current++;
     setAnimPackets((a) => [...a, { id, from, to, label, t: 0 }]);
     const start = performance.now();
     const dur = 700;
+    let stopped = false;
+
     function frame(now) {
+      if (animCancelRef.current) {
+        // cancel animation: remove it
+        setAnimPackets((arr) => arr.filter((x) => x.id !== id));
+        stopped = true;
+        return;
+      }
       const elapsed = now - start;
       const p = Math.min(1, elapsed / dur);
       setAnimPackets((arr) => arr.map((x) => (x.id === id ? { ...x, t: p } : x)));
-      if (p < 1) requestAnimationFrame(frame);
-      else setAnimPackets((arr) => arr.filter((x) => x.id !== id));
+      if (p < 1 && !stopped) requestAnimationFrame(frame);
+      else if (!stopped) setAnimPackets((arr) => arr.filter((x) => x.id !== id));
     }
     requestAnimationFrame(frame);
   }
 
-  // UI helpers
+  /* -------------------------
+   * UI helpers
+   * --------------------------*/
   function addClient() {
     const id = `C${clients.length + 1}`;
-    setClients((c) => [...c, { id, name: `Host-${clients.length + 1}`, insideIp: `10.10.10.${10 + clients.length}`, active: false }]);
+    const newClient = { id, name: `Host-${clients.length + 1}`, insideIp: `10.10.10.${10 + clients.length}`, active: false };
+    setClients((c) => [...c, newClient]);
     pushLog(`Added client ${id}`);
+    return newClient;
   }
 
   function removeClient(id) {
     const found = clients.find((c) => c.id === id);
     if (!found) return;
-    // release translation entries if present
     releaseTranslationByInside(found.insideIp);
     setClients((c) => c.filter((x) => x.id !== id));
     pushLog(`Removed client ${id}`);
   }
 
-  // export/import snapshot
   function exportSnapshot() {
     const payload = { clients, publicPool, staticMaps, mode, translationTable };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -312,9 +282,7 @@ export default function NATSimulator() {
     r.readAsText(f);
   }
 
-  // clear translations
   function clearTranslations() {
-    // release dynamic/pat allocations
     translationTable.forEach((t) => {
       if (t.type === "dynamic" && t.publicIp) releasePublicToPool(t.publicIp);
       if (t.type === "pat" && t.publicIp && t.publicPort) {
@@ -329,22 +297,102 @@ export default function NATSimulator() {
     pushLog("Cleared translation table");
   }
 
-  // small effect: clear portExhaustion alarm after a while
-  useEffect(() => {
-    if (!portExhaustionAlarm) return;
-    const t = setTimeout(() => setPortExhaustionAlarm(null), 5000);
-    return () => clearTimeout(t);
-  }, [portExhaustionAlarm]);
+  /* -------------------------
+   * NEW: Simulation control (Start / Stop)
+   * S2: cycle every 3s
+   * B2: auto-add client every 10s while running
+   * --------------------------*/
+  function runCycleOnce() {
+    // send a flow from every client
+    clients.forEach((c) => {
+      startClientFlow(c.id);
+    });
+  }
 
-  // rendering positions for animation overlay
+  function startSimulation() {
+    if (running) return;
+    animCancelRef.current = false;
+    setRunning(true);
+    pushLog("Simulation started (continuous).");
+    // run immediately, then every 3s
+    runCycleOnce();
+    simIntervalRef.current = setInterval(() => {
+      runCycleOnce();
+    }, 3000); // S2: 3 seconds
+
+    // auto-add new clients every 10s if B2
+    if (autoRunNewClients) {
+      autoAddRef.current = setInterval(() => {
+        const newC = addClient();
+        // start flow immediately for newly added client
+        startClientFlow(newC.id);
+      }, 10000); // B2: 10 seconds
+    }
+  }
+
+  function stopSimulation() {
+    if (!running) return;
+    setRunning(false);
+    pushLog("Simulation stopped.");
+    if (simIntervalRef.current) {
+      clearInterval(simIntervalRef.current);
+      simIntervalRef.current = null;
+    }
+    if (autoAddRef.current) {
+      clearInterval(autoAddRef.current);
+      autoAddRef.current = null;
+    }
+    // cancel in-flight animations by setting flag and clearing animPackets
+    animCancelRef.current = true;
+    setTimeout(() => {
+      animCancelRef.current = false;
+    }, 50);
+    setAnimPackets([]);
+    // set all clients to not active (stop glow)
+    setClients((prev) => prev.map((x) => ({ ...x, active: false })));
+  }
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+      if (autoAddRef.current) clearInterval(autoAddRef.current);
+      animCancelRef.current = true;
+    };
+  }, []);
+
+  /* -------------------------
+   * Render positions for animation overlay
+   * --------------------------*/
   const positions = { nat: { x: 380, y: 180 }, internet: { x: 700, y: 180 } };
   clients.forEach((c, i) => {
     positions[c.id] = { x: 60 + (i % 4) * 140, y: 40 + Math.floor(i / 4) * 140 };
   });
 
+  /* -------------------------
+   * UI: Match your existing style but add Start/Stop & running indicator
+   * --------------------------*/
   return (
     <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl border dark:border-gray-700 shadow-md">
-      <h3 className="text-lg font-semibold text-indigo-600 dark:text-indigo-300 mb-4">🌐 NAT Simulator</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-indigo-600 dark:text-indigo-300">🌐 NAT Simulator</h3>
+
+        {/* Running indicator */}
+        <div className="flex items-center gap-3">
+          {running ? (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+              <div className="text-xs text-gray-600 dark:text-gray-300">Simulation Running</div>
+              <button onClick={stopSimulation} className="ml-3 px-3 py-1 bg-red-600 text-white rounded-md text-xs">Stop</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-600 dark:text-gray-300">Simulation stopped</div>
+              <button onClick={startSimulation} className="ml-3 px-3 py-1 bg-green-600 text-white rounded-md text-xs">Start Simulation</button>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* Controls */}
@@ -378,6 +426,7 @@ export default function NATSimulator() {
           <div className="mt-3 p-3 border rounded bg-gray-50 dark:bg-gray-800 text-xs">
             <div><label className="flex items-center gap-2"><input type="checkbox" checked={asymmetricRouting} onChange={(e) => setAsymmetricRouting(e.target.checked)} /> Simulate Asymmetric Routing</label></div>
             <div className="mt-2">PAT Port Range: <input value={patPortRange.start} onChange={(e)=> setPatPortRange(p=>({...p, start: Number(e.target.value)}))} className="w-20 p-1 mx-1 rounded border text-xs inline" /> - <input value={patPortRange.end} onChange={(e)=> setPatPortRange(p=>({...p, end: Number(e.target.value)}))} className="w-20 p-1 mx-1 rounded border text-xs inline" /></div>
+            <div className="mt-2"><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={autoRunNewClients} onChange={(e)=> setAutoRunNewClients(e.target.checked)} /> Auto-add new clients while running (every 10s)</label></div>
           </div>
         </div>
 
@@ -389,9 +438,9 @@ export default function NATSimulator() {
           </div>
 
           <div style={{ position: "relative", height: 420 }}>
-            {/* NAT device */}
+            {/* NAT device - glow when running */}
             <div style={{ position: "absolute", left: positions.nat.x - 48, top: positions.nat.y - 36 }}>
-              <div className="w-32 h-24 rounded-md border bg-yellow-50 flex items-center justify-center">NAT Device</div>
+              <div className={`w-32 h-24 rounded-md border flex items-center justify-center ${running ? "bg-yellow-100 ring-4 ring-yellow-200 animate-pulse" : "bg-yellow-50"}`}>NAT Device</div>
             </div>
 
             {/* Internet */}
@@ -402,7 +451,7 @@ export default function NATSimulator() {
             {/* Clients */}
             {clients.map((c) => (
               <div key={c.id} style={{ position: "absolute", left: positions[c.id].x - 46, top: positions[c.id].y - 20 }}>
-                <div className={`w-40 p-2 rounded-md border ${c.active ? "bg-green-50" : "bg-white"}`}>
+                <div className={`w-40 p-2 rounded-md border ${c.active ? "bg-green-50 ring-2 ring-green-200" : "bg-white"}`}>
                   <div className="flex items-center justify-between">
                     <div className="font-semibold text-sm">{c.name}</div>
                     <div className="text-xs text-gray-500">{c.insideIp}</div>
@@ -501,7 +550,7 @@ export default function NATSimulator() {
   );
 }
 
-/** Helper component for adding static map */
+/* Helper: StaticMapEditor component */
 function StaticMapEditor({ onAdd }) {
   const [inside, setInside] = useState("10.30.30.10");
   const [publicIp, setPublicIp] = useState("203.0.113.20");
