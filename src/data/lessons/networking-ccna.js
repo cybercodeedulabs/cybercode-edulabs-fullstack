@@ -12,6 +12,7 @@ import VLANTrafficFlowSimulator from "../../components/simulations/ccna/VLANTraf
 import STPSimulator from "../../components/simulations/ccna/STPSimulator";
 import DHCPSimulator from "../../components/simulations/ccna/DHCPSimulator";
 import ACLSimulator from "../../components/simulations/ccna/ACLSimulator";
+import NATSimulator from "../../components/simulations/ccna/NATSimulator";
 
 const networkingCCNA = [
   {
@@ -1921,7 +1922,6 @@ Use the interactive **ACLSimulator** to:
 - Bind ACLs to virtual interfaces (HR, IT, Servers, Internet) and test direction inbound/outbound.
 
 **Component name to include in your lesson:** \`ACLSimulator\`
-(Place component at: /src/components/simulations/ccna/ACLSimulator.jsx)
       `
     },
 
@@ -1943,6 +1943,172 @@ Use the interactive **ACLSimulator** to:
 
 ### ✅ Summary
 ACLs are powerful and lightweight. Use them carefully: always document, test in lab, and monitor counters after deployment.
+      `
+    }
+  ]
+},
+{
+  slug: "nat-pat-intro",
+  title: "NAT & PAT — Network Address Translation and Port Address Translation",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔁 Lesson Overview
+
+Network Address Translation (NAT) allows multiple hosts in a private address space to communicate with external networks using a smaller set of public IP addresses. This lesson explains:
+- Static NAT (one-to-one mapping),
+- Dynamic NAT (pool-based mapping),
+- PAT (Port Address Translation / NAT overload: many-to-one using ports),
+how NAT tables are built and used, common configuration examples, pitfalls (translation exhaustion, asymmetric routing), and debugging techniques.
+
+Includes NAT translation simulator to visualize translation table entries and PAT port allocation behavior.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After this lesson you will be able to:
+- Describe the difference between static NAT, dynamic NAT, and PAT.
+- Configure basic NAT / PAT on a router for IPv4 networks.
+- Read NAT translation tables and diagnose common NAT-related problems.
+- Understand how PAT uses source ports to multiplex many private hosts on one public IP.
+- Explain pitfalls: port exhaustion, NAT + firewall state, and asymmetric routing implications.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/nat-flow-diagram.png",
+      alt: "NAT flow: private -> NAT device -> public (static/dynamic/PAT)"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) NAT types (concise)
+
+- **Static NAT (1:1)** — maps a private IP to a specific public IP. Use for servers that need a stable public address.
+- **Dynamic NAT (pool)** — router assigns an available public IP from a pool when a private host initiates a connection.
+- **PAT / NAT Overload (many-to-1)** — many private hosts share a single public IP; router differentiates sessions by using source ports.
+
+**When to use which:**
+- Use **static** for inbound-accessible servers (web, mail).
+- Use **dynamic** when you have a small set of public addresses, but don't need inbound address stability.
+- Use **PAT** for typical enterprise Internet access where one/few public IPs are shared.
+      `
+    },
+
+    {
+      type: "code",
+      language: "bash",
+      runnable: false,
+      value: `# Examples (Cisco-like)
+
+# 1) Static NAT (map internal web server to public IP)
+ip nat inside source static 10.30.30.10 203.0.113.10
+
+# 2) Dynamic NAT (pool)
+ip nat pool PUB_POOL 203.0.113.11 203.0.113.20 netmask 255.255.255.0
+access-list 10 permit 10.10.10.0 0.0.0.255
+ip nat inside source list 10 pool PUB_POOL
+
+# 3) PAT (many-to-1)
+access-list 20 permit 10.10.10.0 0.0.0.255
+ip nat inside source list 20 interface GigabitEthernet0/0 overload
+
+# Show translations
+show ip nat translations
+show ip nat statistics`
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) NAT translation table & examples
+
+A NAT table entry typically looks like:
+- **static**: InsideLocal -> InsideGlobal (1:1)
+- **dynamic/PAT**: InsideLocal:port -> InsideGlobal:translatedPort
+
+Example PAT entry:
+- 10.10.10.5:54721 -> 203.0.113.5:60245
+
+**Key commands:**
+- \`show ip nat translations\` — current mapping table
+- \`clear ip nat translation\` — remove specific entries
+- \`show ip nat statistics\` — pool usage and counters
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) Common issues & troubleshooting
+
+- **Pool exhaustion**: dynamic pool empty — new translations fail.
+- **Port exhaustion**: PAT uses limited port space (approx 64k), which may be reduced in practice by firewall/stateful tracking.
+- **Asymmetric routing**: traffic returning via a different path will bypass NAT device → connection failure.
+- **Firewall state cleanup**: NAT + firewalls require consistent state; clearing NAT may drop active sessions.
+- **Logging**: enable logging on NAT device and inspect translation table during tests.
+
+Troubleshooting checklist:
+1. Check \`show ip nat translations\` for expected entries.
+2. Verify ACLs used for NAT matches (inside networks).
+3. Confirm NAT applied to correct interfaces (\`ip nat inside/outside\`).
+4. Check for asymmetric routing or missing return route.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/nat-table-diagram.png",
+      alt: "NAT translation table visualization (Inside Local/Global, Outside Local/Global)"
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) Lab / Simulation (recommended)
+
+Use the interactive **NATSimulator** to:
+- Configure static, dynamic, and PAT translations.
+- Observe translation table entries created in real-time.
+- Simulate many clients to see PAT port allocation and exhaustion behavior.
+- Simulate asymmetric routing and observe failed sessions.
+
+**Component name to include in your lesson:** \`NATSimulator\`  
+(Place component at: /src/components/simulations/ccna/NATSimulator.jsx)
+      `
+    },
+
+    {
+      type: "component",
+      value: NATSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Practical checklist (pre-deployment)
+
+- Document which hosts require inbound static NAT and reserve public IPs accordingly.
+- Monitor translation table and pool usage; set alerts for exhaustion.
+- Consider using multiple PAT addresses or load-balancers to spread port usage.
+- Validate routing paths to avoid asymmetric routing — ensure return path traverses NAT device.
+- Test failover scenarios (NAT device reboot, IP pool changes) in lab before production.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## Summary
+
+NAT and PAT are essential tools to conserve IPv4 addresses and control inbound/outbound connectivity. Know when to use static vs dynamic vs PAT, monitor translation tables closely, and account for pitfalls (exhaustion and asymmetric routing). Use the NATSimulator to practice and validate designs before deployment.
       `
     }
   ]
