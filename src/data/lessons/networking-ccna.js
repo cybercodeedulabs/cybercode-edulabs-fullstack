@@ -13,6 +13,7 @@ import STPSimulator from "../../components/simulations/ccna/STPSimulator";
 import DHCPSimulator from "../../components/simulations/ccna/DHCPSimulator";
 import ACLSimulator from "../../components/simulations/ccna/ACLSimulator";
 import NATSimulator from "../../components/simulations/ccna/NATSimulator";
+import SecurityEventSimulator from "../../components/simulations/ccna/SecurityEventSimulator";
 
 const networkingCCNA = [
   {
@@ -2291,6 +2292,210 @@ Used in older hub-and-spoke WANs.
 WAN technologies connect geographically dispersed sites. PPP provides robust serial encapsulation features, MPLS powers modern service provider networks, and Metro Ethernet delivers scalable high-speed access. Understanding WAN fundamentals helps you design reliable enterprise networks.
 
 Diagrams are provided for quick exam-ready visualization.
+      `
+    }
+  ]
+},
+{
+  slug: "network-security-essentials",
+  title: "Network Security Essentials — Firewalls, IDS/IPS, AAA & Port Security",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔒 Lesson Overview
+
+This lesson covers core network security concepts you must know as an engineer: perimeter and host firewalls, intrusion detection/prevention (IDS/IPS), Layer-2 security controls (port security, DHCP snooping, Dynamic ARP Inspection), and AAA (RADIUS/TACACS+) for device authentication and authorization.
+
+We'll examine common attacks (MAC flooding, ARP spoofing, DHCP spoofing, BPDU attacks), how to detect and mitigate them, CLI configuration examples, and hands-on practice with a Security Event Simulator to test defenses and observe log/alert behavior.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After this lesson you will be able to:
+- Explain the role and differences between firewalls, IDS, and IPS.
+- Configure basic Layer-2 protections: port security, DHCP snooping, Dynamic ARP Inspection (DAI).
+- Describe common attacks on switching and how to mitigate them.
+- Configure AAA (RADIUS/TACACS+) basics for device login and command authorization.
+- Use the Security Event Simulator to trigger attacks and observe detection/mitigation.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/firewall-ids-ips-overview.png",
+      alt: "Firewall, IDS and IPS relationship overview"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) Firewall vs IDS vs IPS — quick comparison
+
+- **Firewall:** enforces policy at network boundaries (packet/port/application). Can be stateful (tracks connections) or stateless.
+- **IDS (Intrusion Detection System):** passive — monitors traffic and raises alerts.
+- **IPS (Intrusion Prevention System):** inline — can block/drop malicious traffic in real time.
+
+**Design tip:** Use firewall + IDS/IPS together: firewall for broad filtering and IPS for deep protocol/behavioral detection.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) Layer-2 security: Port Security, DHCP Snooping, DAI
+
+**Port Security**
+- Limits MAC addresses on an access port.
+- Modes: secure (sticky), protect (drop offending frames), restrict (drop + log + counter).
+**CLI (Cisco-like):**
+\`\`\`text
+interface FastEthernet0/5
+ switchport mode access
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security violation restrict
+ switchport port-security mac-address sticky
+\`\`\`
+
+**DHCP Snooping**
+- Validates DHCP messages, builds binding database, prevents rogue DHCP servers.
+- Mark trusted ports (uplinks) and untrusted ports (access).
+**Dynamic ARP Inspection (DAI)**
+- Uses DHCP snooping DB to validate ARP messages and prevent ARP spoofing.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) Common switching attacks & mitigations
+
+- **MAC Flooding** — overwhelms CAM table causing switch to flood: mitigate with port security.
+- **ARP Spoofing / ARP Poisoning** — use DAI and port security.
+- **DHCP Spoofing** — enable DHCP Snooping and mark uplinks as trusted.
+- **BPDU Attacks** — enable BPDU Guard on edge ports and use Root Guard on distribution links.
+- **STP Manipulation** — root guard / consistent root configuration.
+
+**Operational checklist**
+1. Apply PortFast on access ports and BPDU Guard for host-facing ports.
+2. Enable DHCP Snooping and DAI where DHCP is used.
+3. Document and secure trunk/native VLAN settings.
+4. Monitor logs and set alerts for port-security violations and DHCP anomalies.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/aaa-auth-flow.png",
+      alt: "AAA authentication and authorization flow (TACACS+/RADIUS)"
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) AAA — Authentication, Authorization, Accounting
+
+- **Authentication:** verify identity (local, RADIUS, TACACS+).
+- **Authorization:** what commands or access levels a user can execute.
+- **Accounting:** logging who did what and when.
+
+**TACACS+ vs RADIUS**
+- TACACS+ separates AAA functions and is preferred for device administration (command authorization).
+- RADIUS is commonly used for network access (802.1X), integrates with NAS devices.
+
+**Example TACACS+ config (Cisco-like):**
+\`\`\`text
+tacacs server TAC1
+ address ipv4 198.51.100.10
+ key MySecretKey
+
+aaa new-model
+aaa authentication login default group tacacs+ local
+aaa authorization exec default group tacacs+ local
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Firewall basics & rule hygiene
+
+- Prefer least-privilege rules; place specific permit rules above general ones.
+- Use stateful inspection for TCP flows; allow established/related return traffic.
+- Log denied flows for troubleshooting and anomaly detection.
+- Segment management plane (separate management VLAN, ACLs for SSH/HTTPS).
+
+**Simple firewall example (pseudocode):**
+\`\`\`text
+permit tcp 10.10.10.0/24 any eq 80
+permit tcp 10.10.10.0/24 any eq 443
+deny ip any any log
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 6) Monitoring & incident response
+
+- Collect logs centrally (syslog/ELK/SIEM); configure alerting for port-security violations, DHCP anomalies, and IPS detections.
+- Run periodic attack simulations in lab (using Security Event Simulator) to validate rules and detection.
+- Maintain playbooks for common incidents (isolate port, disable user, gather PCAP).
+
+**Helpful commands**
+\`\`\`text
+show port-security interface FastEthernet0/5
+show ip dhcp snooping binding
+show logging
+show ip access-lists
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 7) Lab / Simulation (recommended)
+
+Use the interactive **SecurityEventSimulator** to:
+- Trigger MAC flood and observe port-security actions.
+- Simulate DHCP spoofing and verify DHCP snooping blocks rogue servers.
+- Simulate ARP poisoning and confirm DAI stops poisoning.
+- Test BPDU Guard by emulating a switch on an access port.
+
+**Component name to include in your lesson:** \`SecurityEventSimulator\`  
+      `
+    },
+
+    {
+      type: "component",
+      value: SecurityEventSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 8) Practical checklist (pre-deployment)
+
+- [ ] Enable PortFast & BPDU Guard on host ports.
+- [ ] Deploy DHCP Snooping and DAI on access switches.
+- [ ] Configure Port Security with appropriate violation mode.
+- [ ] Implement TACACS+/RADIUS for device access; test failover/auth fallback.
+- [ ] Centralize logs and create SIEM alerts for critical events.
+- [ ] Validate defenses with scheduled lab tests.
+
+---
+
+### ✅ Summary
+
+Network security requires layered defenses: correct Layer-2 protections, careful ACL/firewall rules, strong AAA, and active monitoring. Use the SecurityEventSimulator to practice detection and response before deploying changes in production.
       `
     }
   ]
