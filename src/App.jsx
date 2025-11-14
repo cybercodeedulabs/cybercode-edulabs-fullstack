@@ -248,14 +248,14 @@ function App() {
                   “The simulators and hands-on labs changed everything. This is the most practical
                   training I have ever taken.”
                 </p>
-                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Student A</p>
+                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Vivek ram</p>
               </div>
 
               <div className="p-6 rounded-lg shadow bg-gray-50 dark:bg-gray-800">
                 <p className="text-gray-700 dark:text-gray-300 text-lg">
                   “Cybercode’s teaching style helped me move from beginner to job-ready in months.”
                 </p>
-                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Student B</p>
+                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Prakash senha</p>
               </div>
             </div>
           </div>
