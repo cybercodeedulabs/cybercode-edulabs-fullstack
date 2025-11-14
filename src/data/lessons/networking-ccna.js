@@ -11,6 +11,7 @@ import DynamicRoutingSimulator from "../../components/simulations/ccna/DynamicRo
 import VLANTrafficFlowSimulator from "../../components/simulations/ccna/VLANTrafficFlowSimulator";
 import STPSimulator from "../../components/simulations/ccna/STPSimulator";
 import DHCPSimulator from "../../components/simulations/ccna/DHCPSimulator";
+import ACLSimulator from "../../components/simulations/ccna/ACLSimulator";
 
 const networkingCCNA = [
   {
@@ -1824,6 +1825,124 @@ Use the interactive **DHCPSimulator** to:
 - Use reservations for critical devices.
 - Monitor DHCP logs and pool utilization.
 - Keep DNS servers properly delegated and monitor caching behavior.
+      `
+    }
+  ]
+},
+{
+  slug: "acl-access-control-lists",
+  title: "Access Control Lists (ACLs) — Filtering & Policy Enforcement",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔐 Lesson Overview
+
+Access Control Lists (ACLs) are fundamental to controlling traffic in IP networks. ACLs filter packets based on fields such as source/destination IP, protocol, and ports. This lesson explains standard and extended ACLs, how routers apply ACLs (inbound vs outbound), ordering and implicit deny, and common deployment patterns for inter-VLAN filtering, server protection, and Internet egress control.
+
+You'll get hands-on practice with an interactive ACL simulator that visualizes rule matching, counters, and hit/miss debugging.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After this lesson you will be able to:
+- Distinguish standard vs extended ACLs and their use-cases.
+- Write ACLs to permit/deny traffic using protocol/port and IP match criteria.
+- Understand rule order, first-match semantics, and implicit deny.
+- Apply ACLs inbound/outbound and interpret counters for troubleshooting.
+- Use ACLs to protect servers and limit inter-VLAN access.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/acl-standard-vs-extended.png",
+      alt: "Standard vs Extended ACLs — quick comparison"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) Standard vs Extended ACLs
+
+**Standard ACLs** (Cisco classic): match only source IP (or network). Useful for broad access control near destination (e.g., permit/deny subnets).
+
+**Extended ACLs**: match source, destination, protocol (tcp/udp/icmp), and ports (e.g., eq 80). Use near source for precise filtering (prevent unwanted traffic from entering network domain).
+
+**Example (Cisco-like):**
+- Standard: \`access-list 10 permit 10.10.10.0 0.0.0.255\`
+- Extended: \`access-list 101 permit tcp 10.20.20.0 0.0.0.255 any eq 22\`
+
+**Important:** ACLs are processed top-to-bottom; the first match wins. There is an **implicit deny all** at the end of every ACL.
+      `
+    },
+
+    {
+      type: "code",
+      language: "bash",
+      runnable: false,
+      value: `# Apply extended ACL (example)
+configure terminal
+ip access-list extended BLOCK_SSH
+ permit tcp 10.20.20.0 0.0.0.255 any eq 22
+ deny ip any 10.30.30.0 0.0.0.255
+interface GigabitEthernet0/1
+ ip access-group BLOCK_SSH in
+end
+write memory`
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) Troubleshooting checklist
+
+- show access-lists — view rules and counters
+- Check interface binding and direction (in/out)
+- Remember first-match semantics; ensure specific rules precede general ones
+- Use hit counters to identify matching rules
+- Beware of implicit deny at end of ACL
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) Lab / Simulator (recommended)
+
+Use the interactive **ACLSimulator** to:
+- Create standard and extended ACLs.
+- Reorder rules and observe first-match behavior.
+- Simulate test packets (src IP, dst IP, proto, dst port) and watch rule matching visualization.
+- Bind ACLs to virtual interfaces (HR, IT, Servers, Internet) and test direction inbound/outbound.
+
+**Component name to include in your lesson:** \`ACLSimulator\`
+(Place component at: /src/components/simulations/ccna/ACLSimulator.jsx)
+      `
+    },
+
+    {
+      type: "component",
+      value: ACLSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) Practical Examples
+
+- Block SSH from Internet to Servers but allow HTTP/HTTPS.
+- Only allow HR subnet to access a subset of servers.
+- Rate-limit or drop ICMP from external networks (use policing for production).
+
+---
+
+### ✅ Summary
+ACLs are powerful and lightweight. Use them carefully: always document, test in lab, and monitor counters after deployment.
       `
     }
   ]
