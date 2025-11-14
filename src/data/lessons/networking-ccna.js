@@ -9,6 +9,7 @@ import VLANIsolationSimulator from "../../components/simulations/ccna/VLANIsolat
 import StaticRouteSimulator from "../../components/simulations/ccna/StaticRouteSimulator";
 import DynamicRoutingSimulator from "../../components/simulations/ccna/DynamicRoutingSimulator";
 import VLANTrafficFlowSimulator from "../../components/simulations/ccna/VLANTrafficFlowSimulator";
+import STPSimulator from "../../components/simulations/ccna/STPSimulator";
 
 const networkingCCNA = [
   {
@@ -1413,6 +1414,266 @@ When a new VLAN is created on one switch (VTP Server mode), it can automatically
 - Trunks carry traffic between switches using tags.  
 - VTP automates VLAN propagation across the network.  
 - VLANs are foundational for scalable, segmented, and secure networks.
+      `
+    }
+  ]
+},
+{
+  slug: "stp-introduction-and-operations",
+  title: "Spanning Tree Protocol (STP) — Introduction & Operations",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔗 Lesson Overview
+
+In switched Ethernet networks with redundant links, frames can loop and cause broadcast storms, MAC table instability, and full network outage. The **Spanning Tree Protocol (STP)** creates a loop-free Layer 2 topology by electing a single active spanning tree and blocking redundant links.  
+
+This lesson gives a practical, engineer-focused explanation of STP internals, how decisions are made (root election, path cost, port roles), timers and convergence behavior, modern RSTP/MST variants, configuration examples, common operational pitfalls, and a hands-on simulation pointer to practice root election and link failures.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After completing this lesson you will be able to:
+- Explain why STP is required and what problems it prevents.
+- Describe the Bridge ID, how the Root Bridge is elected, and how path costs are used.
+- Identify STP port roles (Root, Designated, Blocked) and port states (Blocking, Listening, Learning, Forwarding).
+- Understand key STP timers and their effect on convergence.
+- Compare classic STP (802.1D) with RSTP (802.1w) and MST.
+- Apply basic STP configuration (priority, PortFast, BPDU Guard, Root Guard) and troubleshoot common issues.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/stp-overview-diagram.png",
+      alt: "Spanning Tree topology with root, designated and blocked ports"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) Why STP exists — the problem statement
+
+- Switches forward frames based on MAC learning and do **not** decrement TTL. When redundant physical links exist for resiliency, frames (especially broadcasts and unknown unicasts) can traverse loops indefinitely.  
+- Consequences: broadcast storms, overwhelming CPU on switches, MAC table instability (flapping), and eventual network collapse.
+
+**STP's purpose:** discover a loop-free subset of links (a tree). It chooses one switch as the **Root Bridge** and disables (blocks) selected redundant ports so there is exactly one forwarding path between any two switches.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) Bridge ID & Root Bridge Election (step-by-step)
+
+**Bridge ID = Priority : MAC-address**
+
+- Default priority is typically 32768 (platform-specific). Lower Bridge ID wins.
+- Root election algorithm:
+  1. All switches advertise themselves as potential root by sending BPDUs (Bridge Protocol Data Units).
+  2. Switches compare root IDs in received BPDUs. The switch advertising the lowest root ID becomes the Root Bridge.
+  3. Tie-breaker: lower MAC address.
+
+**Engineering tip:** Set a low priority on the intended core switch to force it to be root (e.g., 4096). Configure your backup root with a slightly higher priority.
+      `
+    },
+
+    {
+      type: "code",
+      language: "bash",
+      runnable: false,
+      value: `# Example (Cisco IOS) — set switch to be root for VLAN 1
+enable
+configure terminal
+spanning-tree vlan 1 priority 4096
+end
+write memory`
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) Path Cost — selecting best path to root
+
+- STP uses an additive **path cost** metric per link. The switch chooses the path to the root with the **lowest total cost**.
+- Historically common cost values (consult vendor docs for exact defaults):
+  - 10 Mbps → 100
+  - 100 Mbps → 19
+  - 1 Gbps → 4
+  - 10 Gbps → 2
+
+If two paths have equal cost, STP breaks ties using bridge IDs and port IDs. You can manually set interface cost to influence path selection.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) Port Roles & States (what each port means)
+
+**Port roles**
+- **Root Port (RP):** On non-root switches, the port with the best path to the root (one RP per non-root switch).
+- **Designated Port (DP):** For each LAN segment, the port that forwards frames towards the root (one DP per segment).
+- **Blocked Port:** Ports that would cause loops; kept in blocking so they do not forward frames.
+
+**Port states in classic 802.1D**
+- **Blocking** — only listens for BPDUs.
+- **Listening** — preparing to forward; not learning MACs.
+- **Learning** — learning MAC addresses; not forwarding.
+- **Forwarding** — normal data forwarding and MAC learning.
+- **Disabled** — administratively down.
+
+RSTP simplifies states and achieves faster transitions (discarding → learning → forwarding). RSTP introduces edge ports and proposal/agreement handshake for quick convergence.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Timers & Convergence
+
+**Classic STP (802.1D) timers**
+- **Hello Time:** interval between BPDUs (default 2s)
+- **Forward Delay:** time spent in listening/learning (default 15s)
+- **Max Age:** BPDU lifetime (default 20s)
+
+Classic STP reconvergence can take 30–50 seconds. **RSTP (802.1w)** reduces convergence using faster handshakes and edge-port optimizations.
+
+**When to tune:** Only tune timers with caution — test in a lab. Prefer RSTP/MST for faster, safer convergence in production.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 6) RSTP (802.1w) & MST Overview
+
+- **RSTP (802.1w):** Faster convergence than classic STP; replaces listening/learning with discarding/learning and uses handshake (proposal/agree) to rapidly bring point-to-point links to forwarding.
+- **MST (Multiple Spanning Tree):** Groups VLANs into instances to allow load sharing and fewer STP instances across the network (better scale than per-VLAN STP).
+
+**Recommendation:** Use RSTP or MST for modern networks. PVST/PVST+ (Cisco) runs per-VLAN STP and has its own tradeoffs.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/stp-timers-diagram.png",
+      alt: "STP timers and convergence illustration"
+    },
+
+    {
+      type: "text",
+      value: `
+## 7) Common Operational Issues & Troubleshooting Checklist
+
+**Common issues**
+- Wrong root placement → suboptimal traffic or asymmetric paths.
+- Unintended blocked interfaces due to incorrect priorities.
+- Link flapping causing repeated topology recalculations.
+- Edge devices (like rogue switches) injecting BPDUs causing instability.
+
+**Troubleshooting steps**
+1. \`show spanning-tree\` — verify root bridge for each VLAN and this bridge ID.
+2. Confirm root bridge matches your design (priority/MAC).
+3. Check port roles & states to see which ports are blocking unexpectedly.
+4. Inspect interface speeds and STP costs if path selection is wrong.
+5. Look for frequent topology changes (BPDU storms or flapping).
+6. Validate trunk native VLANs and BPDU settings (BPDU guard, BPDU filter).
+7. Use PortFast + BPDU Guard on access ports attached to end hosts to prevent accidental topology changes.
+
+**Helpful CLI checks**
+\`\`\`text
+show spanning-tree
+show spanning-tree interface GigabitEthernet0/1 detail
+show logging
+show interfaces status
+\`\`\`
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 8) Configuration Best Practices (practical rules)
+
+- **Decide root(s) explicitly:** configure the designated core/distribution switches with low priorities (root and secondary root).
+- **Enable RSTP/MST** where supported — avoid relying on slow classic STP.
+- **PortFast** on access ports connected to end hosts:
+  - Avoids unnecessary STP delay for host ports.
+  - Always enable **BPDU Guard** on PortFast ports to protect against rogue switches.
+- **Root Guard** on ports where you expect the root not to appear (protects topology).
+- Keep STP mode consistent across devices in the domain (RSTP vs PVST etc).
+- Document STP design and verify in staged lab before production changes.
+      `
+    },
+
+    {
+      type: "code",
+      language: "bash",
+      runnable: false,
+      value: `# Examples (Cisco-like)
+# 1) Force a switch to be root for VLAN 1
+configure terminal
+spanning-tree vlan 1 priority 4096
+end
+write memory
+
+# 2) Enable PortFast and BPDU Guard on an access interface
+interface FastEthernet0/24
+switchport mode access
+spanning-tree portfast
+spanning-tree bpduguard enable
+exit
+
+# 3) Set an interface cost (rarely needed)
+interface GigabitEthernet0/1
+spanning-tree cost 4
+exit`
+    },
+
+    {
+      type: "text",
+      value: `
+## 9) Lab / Simulation (recommended)
+
+Use the interactive STP simulator to:
+- Force different switches to become root by changing priorities.
+- Disable/enable links to observe which ports move from blocked → forwarding.
+- Toggle between STP and RSTP and compare convergence time in the simulator logs.
+- Validate PortFast + BPDU Guard by connecting a simulated rogue switch.
+
+**Component name to include in your lesson:** \`STPSimulator\`  
+(Place component at: /src/components/simulations/ccna/STPSimulator.jsx)
+      `
+    },
+
+    {
+      type: "component",
+      value: STPSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 10) Practical Checklist (pre-deployment)
+
+- [ ] Identify and configure the intended Root Bridge and Backup Root (set priorities).
+- [ ] Use RSTP/MST if fast convergence is required.
+- [ ] Configure PortFast on access ports and enable BPDU Guard.
+- [ ] Apply Root Guard where appropriate on distribution/access boundaries to prevent root takeover.
+- [ ] Test failover scenarios in a lab (link down/up, switch reboot).
+- [ ] Monitor logs for frequent topology changes and investigate flapping interfaces.
+
+---
+
+### ✅ Summary
+
+STP is a core protocol to protect switched networks from loops. Knowing how to manipulate priorities, interpret BPDU information, and apply protection features (PortFast, BPDU Guard, Root Guard) will keep network topologies stable and predictable. Use RSTP/MST for faster convergence and scale, and always validate changes in a staged environment before rolling into production.
       `
     }
   ]
