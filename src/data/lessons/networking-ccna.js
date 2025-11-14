@@ -10,6 +10,7 @@ import StaticRouteSimulator from "../../components/simulations/ccna/StaticRouteS
 import DynamicRoutingSimulator from "../../components/simulations/ccna/DynamicRoutingSimulator";
 import VLANTrafficFlowSimulator from "../../components/simulations/ccna/VLANTrafficFlowSimulator";
 import STPSimulator from "../../components/simulations/ccna/STPSimulator";
+import DHCPSimulator from "../../components/simulations/ccna/DHCPSimulator";
 
 const networkingCCNA = [
   {
@@ -1678,6 +1679,156 @@ STP is a core protocol to protect switched networks from loops. Knowing how to m
     }
   ]
 },
+{
+  slug: "dhcp-dns-intro",
+  title: "DHCP & DNS in Enterprise Networks",
+  content: [
+    {
+      type: "text",
+      value: `
+### 🔁 Lesson Overview
+
+This lesson covers Dynamic Host Configuration Protocol (DHCP) and Domain Name System (DNS) as used in enterprise networks. You'll learn DHCP address allocation types (automatic, dynamic, static/reservations), how leases and scopes work, and the DHCP message flow (Discover → Offer → Request → Acknowledge). For DNS, we'll cover name resolution, common record types (A, AAAA, CNAME, PTR, NS), recursive vs iterative queries, forwarders, and caching.
+
+The lesson includes a hands-on DHCP simulator to visualize the 4-stage DHCP handshake, a short lease lifecycle (T1/T2) for demonstrations, plus diagrams for DHCP message flow and DNS resolution.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+### 🎯 Learning Objectives
+
+After this lesson you will be able to:
+- Explain DHCP operation modes: automatic, dynamic, and static binding / reservations.
+- Configure a DHCP scope and understand lease parameters (lease time, T1 renewal, T2 rebinding).
+- Describe the 4-message DHCP exchange and what information is carried in each message.
+- Explain DNS architecture, record types and the difference between recursive and iterative resolution.
+- Diagnose common DHCP/DNS issues (no lease, exhausted pool, DNS misconfigurations).
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/dhcp-process-diagram.png",
+      alt: "DHCP message flow: Discover, Offer, Request, ACK"
+    },
+
+    {
+      type: "text",
+      value: `
+## 1) DHCP fundamentals
+
+- **Scope (pool):** the address range and parameters (default gateway, DNS servers, lease time).
+- **Lease:** time-limited allocation; client must renew before expiry.
+- **Allocation types:**
+  - **Automatic:** handed out permanently (rare).
+  - **Dynamic:** assigned for a lease period.
+  - **Static reservation:** a specific MAC gets a fixed IP.
+- **Essential messages:**
+  - **DHCPDISCOVER** — client broadcasts to locate DHCP servers.
+  - **DHCPOFFER** — server offers an IP and options.
+  - **DHCPREQUEST** — client requests the offered IP.
+  - **DHCPACK** — server acknowledges & finalizes the lease.
+      `
+    },
+
+    {
+      type: "code",
+      language: "bash",
+      runnable: false,
+      value: `# Example: configure DHCP pool (Cisco-like)
+ip dhcp pool LAB
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8
+ lease 7`
+    },
+
+    {
+      type: "text",
+      value: `
+## 2) Lease lifecycle & timers (T1 / T2)
+
+- **Lease Time** — how long a client may use the IP (examples: minutes → days).
+- **T1 (Renewal):** client unicasts a DHCPREQUEST to the server at 50% of lease time.
+- **T2 (Rebind):** client broadcasts a DHCPREQUEST at 87.5% of lease time if renewal fails.
+- **When lease expires:** client must start the DHCPDISCOVER flow again.
+
+In the simulator we use a short default lease (e.g., 30s) so you can observe renewal/rebind behavior quickly.
+      `
+    },
+
+    {
+      type: "image",
+      value: "/lessonimages/ccna/dns-resolution-diagram.png",
+      alt: "DNS resolution flow: recursive & iterative queries"
+    },
+
+    {
+      type: "text",
+      value: `
+## 3) DNS basics
+
+- **Authoritative server:** holds records for a domain.
+- **Recursive resolver:** resolves names on behalf of clients (may use forwarders).
+- **Common records:** A, AAAA, CNAME, MX, PTR, NS, TXT.
+- **Recursive vs Iterative:** recursive resolver queries root/TLD/authoritative servers; iterative responses return referrals.
+
+**Troubleshooting tips:** use \`dig\`/\`nslookup\`, check TTL, inspect forwarders and caching, verify glue records for public domains.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 4) DHCP / DNS Operational Checklist & Troubleshooting
+
+- Ensure DHCP relay (ip helper) configured on routers for cross-subnet clients.
+- Monitor lease pool utilization (avoid exhaustion).
+- Use static reservations for servers and infrastructure.
+- Enable dynamic DNS updates carefully (security & ACLs).
+- Verify DNS resolution path and caches; check TTLs and zone configuration.
+- Use packet captures to trace the DHCP 4-message flow and DNS queries.
+      `
+    },
+
+    {
+      type: "text",
+      value: `
+## 5) Lab / Simulation (recommended)
+
+Use the interactive **DHCPSimulator** to:
+- Create a scope, adjust lease and pool size.
+- Add clients and observe DHCPDISCOVER → DHCPOFFER → DHCPREQUEST → DHCPACK.
+- Observe T1 (renew) and T2 (rebind) when leases are active.
+- Simulate pool exhaustion and server NAK behavior.
+- Export/import topology/pool for repeatable labs.
+
+**Component name to include in your lesson:** \`DHCPSimulator\`
+(Place component at: /src/components/simulations/ccna/DHCPSimulator.jsx)
+      `
+    },
+
+    {
+      type: "component",
+      value: DHCPSimulator
+    },
+
+    {
+      type: "text",
+      value: `
+## 6) Summary & Practical Tips
+
+- Choose conservative lease times for stable hosts; short leases for guest/mobile networks.
+- Use reservations for critical devices.
+- Monitor DHCP logs and pool utilization.
+- Keep DNS servers properly delegated and monitor caching behavior.
+      `
+    }
+  ]
+},
+
 
 ];
 
