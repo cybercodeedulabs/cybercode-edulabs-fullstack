@@ -14,6 +14,7 @@ import DHCPSimulator from "../../components/simulations/ccna/DHCPSimulator";
 import ACLSimulator from "../../components/simulations/ccna/ACLSimulator";
 import NATSimulator from "../../components/simulations/ccna/NATSimulator";
 import SecurityEventSimulator from "../../components/simulations/ccna/SecurityEventSimulator";
+import AutomationSimulator from "../../components/simulations/ccna/AutomationSimulator";
 
 const networkingCCNA = [
   {
