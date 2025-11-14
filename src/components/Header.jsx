@@ -57,7 +57,7 @@ function Header({ darkMode, setDarkMode }) {
       }`}
     >
       {/* Vision Strip */}
-      <div className="bg-indigo-600 text-white text-sm py-2 overflow-hidden">
+      <div className="bg-indigo-600 text-white text-xs md:text-sm py-1.5 md:py-2 overflow-hidden">
         <p className="animate-marquee font-medium tracking-wide">
           ☁️ Cybercode Cloud — India's Own Developer Cloud Platform • 
           ⚡ EduLabs — Real-Time IT Courses, Simulators & Hands-On Labs • 
@@ -66,16 +66,16 @@ function Header({ darkMode, setDarkMode }) {
       </div>
 
       {/* Main Header */}
-      <div className="p-4 flex justify-between items-center max-w-7xl mx-auto">
+      <div className="p-3 md:p-4 flex justify-between items-center max-w-7xl mx-auto">
 
         {/* Brand Logo */}
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate("/")}>
-          <img src={logo} alt="Cybercode Logo" className="h-11 w-auto" />
+          <img src={logo} alt="Cybercode Logo" className="h-9 w-auto md:h-11 transition-all"/>
           <div>
             <div className="text-xl font-extrabold tracking-wide text-gray-900 dark:text-gray-100">
               Cybercode Suite
             </div>
-            <div className="text-xs text-indigo-600 dark:text-indigo-400 transition-opacity duration-500">
+            <div className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 transition-opacity duration-500 leading-tight">
               {taglines[taglineIndex]}
             </div>
           </div>
