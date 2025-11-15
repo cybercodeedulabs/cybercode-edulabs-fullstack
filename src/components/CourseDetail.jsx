@@ -4,6 +4,8 @@ import { useParams, Link } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
 import { useUser } from "../contexts/UserContext";
+import CertificatePreview from "../components/CertificatePreview";
+
 
 export default function CourseDetail() {
   const { courseSlug } = useParams();
@@ -156,6 +158,12 @@ export default function CourseDetail() {
         </section>
 
       </div>
+      <CertificatePreview
+       certificate={course.certificate}
+       isEnrolled={isEnrolled}
+       isCompleted={progressData.completedLessons.length === lessons.length && lessons.length > 0}
+      />
+
 
       {/* ==============================
               LESSONS SECTION (untouched)
