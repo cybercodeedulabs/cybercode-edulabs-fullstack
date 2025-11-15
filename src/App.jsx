@@ -33,6 +33,7 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
+import CloudDashboard from "./pages/CloudDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import RefundPolicy from "./pages/RefundPolicy";
