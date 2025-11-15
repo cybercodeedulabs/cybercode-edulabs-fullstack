@@ -104,7 +104,7 @@ function Footer() {
       {/* Bottom Line */}
       <div className="border-t border-gray-200 dark:border-gray-700 py-4 text-center text-sm text-gray-600 dark:text-gray-400">
         <p>© {new Date().getFullYear()} Cybercode Suite — All rights reserved.</p>
-        <p className="mt-1 text-xs opacity-80">Built with ❤️ in India</p>
+        <p className="mt-1 text-xs opacity-80">Powered by Indian Innovation</p>
       </div>
     </footer>
   );
