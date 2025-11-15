@@ -283,6 +283,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/cloud" element={<CybercodeCloud />} />
+            <Route path="/cloud/console" element={<CloudDashboard />} />
             <Route path="/admin/waitlist" element={<AdminWaitlist />} />
             <Route path="/legal" element={<LegalIndex />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
