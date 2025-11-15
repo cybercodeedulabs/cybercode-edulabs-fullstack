@@ -5,9 +5,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { motion } from "framer-motion";
+import { PERSONAS_LIST } from "../utils/personaEngine";
 
 export default function Dashboard() {
-  const { user, setUser } = useUser();
+  const { user, setUser, personaScores, getTopPersona } = useUser();
   const navigate = useNavigate();
 
   const {
@@ -16,6 +17,8 @@ export default function Dashboard() {
     hasCertificationAccess = false,
     hasServerAccess = false,
   } = useUserData() || {};
+
+  const topPersona = getTopPersona();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -67,8 +70,7 @@ export default function Dashboard() {
           Welcome, {user.name || "User"}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Manage your learning progress, access your real-time projects, and
-          unlock exclusive certifications.
+          Manage your learning progress, access real-time projects, and unlock certifications.
         </p>
       </motion.div>
 
@@ -80,7 +82,7 @@ export default function Dashboard() {
         transition={{ delay: 0.3 }}
       >
         <img
-          src={user.photo || "/images/default-avatar.png"} // fallback if photo is missing
+          src={user.photo || "/images/default-avatar.png"}
           alt="User Avatar"
           className="w-24 h-24 rounded-full shadow-lg border-4 border-indigo-500 dark:border-indigo-400"
         />
@@ -89,9 +91,63 @@ export default function Dashboard() {
         </p>
       </motion.div>
 
+      {/* 🎯 PERSONA DETECTION CARD */}
+      <motion.div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg mb-12"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <h2 className="text-xl font-semibold mb-3 text-indigo-600 dark:text-indigo-400">
+          🧠 Your Learning Persona
+        </h2>
+
+        {!topPersona ? (
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Start exploring courses — your persona will be detected automatically.
+          </p>
+        ) : (
+          <>
+            {/* Top Persona */}
+            <div className="mb-4">
+              <span className="text-lg font-bold text-indigo-700 dark:text-indigo-300">
+                {PERSONAS_LIST[topPersona.persona] || topPersona.persona}
+              </span>
+              <span className="ml-2 px-3 py-1 text-xs font-semibold bg-yellow-300 text-yellow-800 rounded-full">
+                ⭐ Top Persona
+              </span>
+            </div>
+
+            {/* Persona Scores */}
+            <div className="space-y-2 mt-4">
+              {topPersona.all.map(([p, score]) => (
+                <div key={p} className="flex justify-between text-sm">
+                  <span className="capitalize text-gray-700 dark:text-gray-300">
+                    {PERSONAS_LIST[p] || p}
+                  </span>
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                    {score}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Recommendations CTA */}
+            <div className="mt-5">
+              <Link
+                to="/courses"
+                className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm shadow transition"
+              >
+                Explore Recommended Courses →
+              </Link>
+            </div>
+          </>
+        )}
+      </motion.div>
+
       {/* COURSES & PROJECTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {[
+        {[ 
           {
             title: "📚 My Courses",
             items: enrolledCourses,
@@ -101,8 +157,7 @@ export default function Dashboard() {
           {
             title: "📁 My Projects",
             items: projects,
-            emptyText:
-              "Your project progress will appear here once you start learning.",
+            emptyText: "Your project progress will appear here once you start learning.",
             linkPrefix: "/projects/",
           },
         ].map((section, index) => (
@@ -120,7 +175,7 @@ export default function Dashboard() {
                   <li key={item}>
                     <Link
                       to={`${section.linkPrefix}${item}`}
-                      className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                      className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400"
                     >
                       {item}
                     </Link>
@@ -128,9 +183,7 @@ export default function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-600 dark:text-gray-400">
-                {section.emptyText}
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">{section.emptyText}</p>
             )}
           </motion.div>
         ))}
@@ -146,9 +199,7 @@ export default function Dashboard() {
             🎓 Certification Access
           </h2>
           {hasCertificationAccess ? (
-            <p className="text-green-600 dark:text-green-400">
-              You have access to certification exams.
-            </p>
+            <p className="text-green-600 dark:text-green-400">Access granted.</p>
           ) : (
             <Link
               to="/payment?type=certification"
@@ -167,9 +218,7 @@ export default function Dashboard() {
             🖥️ 1-Year Server Access
           </h2>
           {hasServerAccess ? (
-            <p className="text-green-600 dark:text-green-400">
-              Server access active.
-            </p>
+            <p className="text-green-600 dark:text-green-400">Server Access Active.</p>
           ) : (
             <Link
               to="/payment?type=server"
@@ -188,7 +237,7 @@ export default function Dashboard() {
             ☁️ Cybercode Cloud Console
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
-            Launch your AI, Cloud, or IoT projects instantly.
+            Launch AI, Cloud, or IoT projects instantly.
           </p>
           <Link
             to="/cloud"
@@ -199,7 +248,7 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* LOGOUT BUTTON */}
+      {/* LOGOUT */}
       <motion.div
         className="text-center"
         whileHover={{ scale: 1.05 }}

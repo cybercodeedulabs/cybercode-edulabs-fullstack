@@ -5,6 +5,9 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import lessonsData from "../data/lessonsData";
 
 const UserContext = createContext();
+// add near other imports
+const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
+
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -62,6 +65,46 @@ export const UserProvider = ({ children }) => {
     });
   };
 
+  // Persona scores object: { developer: 42, devops: 58, security: 12 }
+const [personaScores, setPersonaScores] = useState(() => {
+  try {
+    const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+});
+
+// increase persona scores (accepts object or single update)
+const updatePersonaScore = (personaOrObj, delta = 0) => {
+  setPersonaScores((prev) => {
+    const next = { ...(prev || {}) };
+    if (typeof personaOrObj === "string") {
+      next[personaOrObj] = (next[personaOrObj] || 0) + delta;
+    } else if (typeof personaOrObj === "object") {
+      // personaOrObj = { developer: 3, devops: 5 }
+      Object.entries(personaOrObj).forEach(([p, v]) => {
+        next[p] = (next[p] || 0) + (v || 0);
+      });
+    }
+    try {
+      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+    } catch (e) {
+      // ignore storage errors
+    }
+    return next;
+  });
+};
+
+const getTopPersona = () => {
+  const entries = Object.entries(personaScores || {});
+  if (entries.length === 0) return null;
+  entries.sort((a, b) => b[1] - a[1]);
+  return { persona: entries[0][0], score: entries[0][1], all: entries };
+};
+
+
+
   // ✅ Sequential lesson completion
   const completeLesson = (courseSlug, lessonSlug) => {
     const lessons = lessonsData[courseSlug] || [];
@@ -104,6 +147,9 @@ export const UserProvider = ({ children }) => {
         loading,
         courseProgress,
         completeLesson,
+        updatePersonaScore,
+        getTopPersona,
+        personaScores,
       }}
     >
       {children}

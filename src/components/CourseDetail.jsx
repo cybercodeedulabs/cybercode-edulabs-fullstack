@@ -1,10 +1,11 @@
 // src/pages/CourseDetail.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
 import { useUser } from "../contexts/UserContext";
 import CertificatePreview from "../components/CertificatePreview";
+import { quickCoursePersonaDelta } from "../utils/personaEngine";
 
 export default function CourseDetail() {
   const { courseSlug } = useParams();
@@ -12,7 +13,17 @@ export default function CourseDetail() {
 
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
-  const { user, enrolledCourses, enrollInCourse, courseProgress } = useUser();
+  const { user, enrolledCourses, enrollInCourse, courseProgress, updatePersonaScore } = useUser();
+  useEffect(() => {
+  // score users when they view the course page (small boost)
+  if (!user || !course) return;
+  const deltas = quickCoursePersonaDelta(course);
+  if (Object.keys(deltas).length) {
+    updatePersonaScore(deltas); // merges the deltas
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [courseSlug, user]);
+
 
   const isEnrolled = user && enrolledCourses.includes(courseSlug);
   const progressData =

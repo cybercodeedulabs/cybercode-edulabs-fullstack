@@ -10,6 +10,8 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
+import { quickLessonPersonaDelta } from "../utils/personaEngine";
+
 
 
 export default function LessonDetail() {
@@ -30,7 +32,7 @@ const showToast = (msg) => {
 };
 
 
-  const { user, enrolledCourses, courseProgress, completeLesson } = useUser();
+  const { user, enrolledCourses, courseProgress, completeLesson, updatePersonaScore } = useUser();
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains("dark"));
@@ -77,6 +79,20 @@ useEffect(() => {
       </div>
     );
   }
+
+  useEffect(() => {
+  if (!user || !lesson) return;
+  const deltas = quickLessonPersonaDelta(lesson);
+  if (Object.keys(deltas).length) {
+    // small view score (half of lesson completion score)
+    const halfDeltas = Object.fromEntries(
+      Object.entries(deltas).map(([k, v]) => [k, Math.max(1, Math.round(v / 2))])
+    );
+    updatePersonaScore(halfDeltas);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [lessonSlug, user]);
+
 
   // 🔹 Code Runner Logic (same as before)
   const handleRunCode = async (idx, language, defaultCode) => {
@@ -309,10 +325,21 @@ useEffect(() => {
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   };
-  const handleComplete = () => {
-    if (user && isNextLesson && enrolledCourses.includes(courseSlug))
-      completeLesson(courseSlug, lessonSlug);
-  };
+const handleComplete = () => {
+  if (user && isNextLesson && enrolledCourses.includes(courseSlug)) {
+    completeLesson(courseSlug, lessonSlug);
+    // award persona points for completing this lesson
+    const deltas = quickLessonPersonaDelta(lesson);
+    if (Object.keys(deltas).length) {
+      updatePersonaScore(deltas);
+    }
+  } else {
+    // user tried to complete a locked lesson
+    // (you already have toast handling in CourseDetail; for LessonDetail you said you added toast state)
+    // show toast if you have a showToast available, otherwise no-op
+  }
+};
+
 
   const SimulationLoader = () => (
     <div className="animate-pulse bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800 shadow-md">
