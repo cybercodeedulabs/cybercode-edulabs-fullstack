@@ -158,16 +158,6 @@ export default function CourseDetail() {
         </section>
 
       </div>
-      <CertificatePreview
-       certificate={{
-  image: "/images/certificate-default.png",
-  previewUrl: `/certificate/${courseSlug}`,
-  ...(course.certificate || {})
-}}
-
-       isEnrolled={isEnrolled}
-       isCompleted={progressData.completedLessons.length === lessons.length && lessons.length > 0}
-      />
 
 
       {/* ==============================
@@ -208,6 +198,7 @@ export default function CourseDetail() {
             })}
           </ul>
         )}
+        
 
         {/* CTA */}
         <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -238,6 +229,20 @@ export default function CourseDetail() {
             ← Back to Courses
           </Link>
         </div>
+          <CertificatePreview
+            certificate={{
+              image: "/images/certificate-default.png",
+              previewUrl: `/certificate/${courseSlug}`,
+              ...(course.certificate || {})
+            }}
+            isEnrolled={isEnrolled}
+            isCompleted={progressData.completedLessons.length === lessons.length && lessons.length > 0}
+            progressPercent={Math.round(
+              (progressData.completedLessons.length / lessons.length) * 100
+            )}
+          />
+
+
       </div>
     </div>
   );
