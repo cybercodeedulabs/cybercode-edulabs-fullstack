@@ -159,7 +159,12 @@ export default function CourseDetail() {
 
       </div>
       <CertificatePreview
-       certificate={course.certificate}
+       certificate={{
+  image: "/images/certificate-default.png",
+  previewUrl: `/certificate/${courseSlug}`,
+  ...(course.certificate || {})
+}}
+
        isEnrolled={isEnrolled}
        isCompleted={progressData.completedLessons.length === lessons.length && lessons.length > 0}
       />

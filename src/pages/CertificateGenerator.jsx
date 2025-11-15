@@ -11,6 +11,10 @@ export default function CertificateGenerator() {
   const { user } = useUser();
 
   const course = courseData.find((c) => c.slug === courseSlug);
+  const certificate = {
+  image: "/images/certificate-default.png",
+  ...(course?.certificate || {})
+};
   const studentName = user?.name || "Student";
   const completionDate = new Date().toLocaleDateString("en-IN");
   const certificateId = `${courseSlug.toUpperCase()}-${Date.now()}`;
@@ -46,7 +50,7 @@ export default function CertificateGenerator() {
           ref={certificateRef}
           className="w-[900px] h-[600px] bg-white border-[8px] border-indigo-700 rounded-xl shadow-2xl p-10 text-center relative overflow-hidden"
           style={{
-            backgroundImage: "url('/images/certificate-default.png')",
+            backgroundImage: `url('${certificate.image}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
