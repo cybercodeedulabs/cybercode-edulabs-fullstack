@@ -22,6 +22,13 @@ export default function LessonDetail() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
+  const [toast, setToast] = useState(null);
+
+const showToast = (msg) => {
+  setToast(msg);
+  setTimeout(() => setToast(null), 2500);
+};
+
 
   const { user, enrolledCourses, courseProgress, completeLesson } = useUser();
 
@@ -46,6 +53,12 @@ useEffect(() => {
     navigate(`/courses/${courseSlug}`, { replace: true });
   }
 }, [lessonIndex, progress, courseSlug, navigate]);
+
+{toast && (
+  <div className="fixed top-5 right-5 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce">
+    {toast}
+  </div>
+)}
 
 
   if (!lesson) {

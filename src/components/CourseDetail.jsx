@@ -1,39 +1,45 @@
 // src/pages/CourseDetail.jsx
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
 import { useUser } from "../contexts/UserContext";
 import CertificatePreview from "../components/CertificatePreview";
 
-
 export default function CourseDetail() {
   const { courseSlug } = useParams();
+  const navigate = useNavigate();
+
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
   const { user, enrolledCourses, enrollInCourse, courseProgress } = useUser();
 
   const isEnrolled = user && enrolledCourses.includes(courseSlug);
-  const progressData = courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+  const progressData =
+    courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
-  const [showToast, setShowToast] = useState(false);
+  const progressPercent = Math.round(
+    (progressData.completedLessons.length / lessons.length) * 100
+  );
+
+  const [toast, setToast] = useState(null);
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const handleEnroll = () => {
     enrollInCourse(courseSlug);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    showToast(`Successfully enrolled in "${course.title}"`);
   };
 
   if (!course) {
     return (
       <div className="text-center py-20 text-red-600">
         <h2 className="text-3xl font-bold">Course not found</h2>
-        <p className="mt-4 text-gray-700 dark:text-gray-300">
-          The course you're looking for doesn't exist.{" "}
-          <Link to="/" className="text-indigo-600 underline hover:text-indigo-500">
-            Go back home
-          </Link>
-        </p>
+        <Link to="/" className="text-indigo-600 underline">
+          Back Home
+        </Link>
       </div>
     );
   }
@@ -41,27 +47,29 @@ export default function CourseDetail() {
   return (
     <div className="text-left relative">
 
-      {/* Toast */}
-      {showToast && (
-        <div className="fixed top-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in">
-          🎉 Successfully enrolled in "{course.title}"!
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-5 right-5 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+          {toast}
         </div>
       )}
 
       {/* Banner */}
       <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-700 text-white py-20 px-4 shadow-md rounded-xl mx-auto max-w-6xl mb-12">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">{course.title}</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+            {course.title}
+          </h1>
           <p className="text-lg md:text-xl text-indigo-100">{course.description}</p>
         </div>
       </div>
 
-      {/* ==============================
-              COURSE OVERVIEW SECTION
-         ============================== */}
+      {/* ============================== */}
+      {/* COURSE OVERVIEW SECTION */}
+      {/* ============================== */}
       <div className="max-w-4xl mx-auto px-4 pb-10">
 
-        {/* 1. Course Highlights */}
+        {/* Highlights & Includes */}
         <section className="mb-10 grid sm:grid-cols-2 gap-6">
           <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
             <h3 className="text-xl font-bold mb-2">📌 Course Highlights</h3>
@@ -74,7 +82,6 @@ export default function CourseDetail() {
             </ul>
           </div>
 
-          {/* 2. This Course Includes */}
           <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
             <h3 className="text-xl font-bold mb-2">🎁 This Course Includes</h3>
             <ul className="text-sm space-y-1">
@@ -85,7 +92,7 @@ export default function CourseDetail() {
           </div>
         </section>
 
-        {/* 3. Skills You Will Learn */}
+        {/* Skills */}
         <section className="mb-10">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-3">
             🧠 Skills You Will Learn
@@ -102,7 +109,7 @@ export default function CourseDetail() {
           </div>
         </section>
 
-        {/* 4. Projects Included */}
+        {/* Projects */}
         <section className="mb-10">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-3">
             🛠️ Projects Included
@@ -114,7 +121,7 @@ export default function CourseDetail() {
           </ul>
         </section>
 
-        {/* 5. Tools & Technologies */}
+        {/* Tools */}
         <section className="mb-10">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-3">
             🔧 Tools & Technologies Covered
@@ -131,18 +138,18 @@ export default function CourseDetail() {
           </div>
         </section>
 
-        {/* 6. Why This Course */}
+        {/* Why This Course */}
         <section className="mb-10">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-3">
             ⭐ Why This Course?
           </h3>
           <p className="leading-relaxed text-gray-700 dark:text-gray-300">
             {course.why ||
-              "This course is built with real-world use cases, hands-on scenarios, industry workflows, job preparation, and practical knowledge that directly maps to production environments."}
+              "This course is built with real-world use cases, hands-on scenarios, industry workflows, job preparation, and production-level knowledge."}
           </p>
         </section>
 
-        {/* 7. FAQ */}
+        {/* FAQ */}
         <section className="mb-12">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
             ❓ Frequently Asked Questions
@@ -159,88 +166,123 @@ export default function CourseDetail() {
 
       </div>
 
-
-      {/* ==============================
-              LESSONS SECTION (untouched)
-         ============================== */}
+      {/* ============================== */}
+      {/* LESSONS + CERTIFICATE SECTION */}
+      {/* ============================== */}
       <div className="max-w-4xl mx-auto px-4 pb-16">
+
         <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-4">
           Lessons ({lessons.length})
         </h2>
 
-        {lessons.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No lessons available yet.</p>
-        ) : (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
-            {lessons.map((lesson, index) => {
-              const completed = progressData.completedLessons.includes(lesson.slug);
-              const isNext = index === progressData.currentLessonIndex;
+        {/* Lessons */}
+        <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+          {lessons.map((lesson, index) => {
+            const completed = progressData.completedLessons.includes(lesson.slug);
+            const isNext = index === progressData.currentLessonIndex;
 
-              return (
-                <li key={lesson.slug}>
-                  <Link
-                    to={`/courses/${courseSlug}/lessons/${lesson.slug}`}
-                    className={`block px-6 py-4 transition-colors duration-200 rounded ${
-                      completed
-                        ? "bg-green-50 dark:bg-green-900"
-                        : isNext
-                        ? "bg-yellow-50 dark:bg-yellow-900"
-                        : "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
-                    }`}
-                  >
-                    <span className="text-lg font-medium text-indigo-800 dark:text-indigo-200">
-                      {index + 1}. {lesson.title}{" "}
-                      {completed ? "✅" : isNext ? "🟡" : "🔒"}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        
+            const handleLessonClick = () => {
+              if (!isEnrolled) {
+                showToast("Please enroll to access lessons.");
+                return;
+              }
+              if (!completed && !isNext) {
+                showToast("Complete previous lessons to unlock this one.");
+                return;
+              }
+              navigate(`/courses/${courseSlug}/lessons/${lesson.slug}`);
+            };
 
-        {/* CTA */}
-        <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          {!user ? (
-            <Link
-              to="/register"
-              className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200"
-            >
-              🔒 Sign in to Enroll
-            </Link>
-          ) : !isEnrolled ? (
-            <button
-              onClick={handleEnroll}
-              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors duration-200"
-            >
-              ✅ Enroll in this Course
-            </button>
-          ) : (
-            <span className="inline-block px-6 py-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg">
-              🎉 You are enrolled in this course
-            </span>
-          )}
+            return (
+              <li
+                key={lesson.slug}
+                onClick={handleLessonClick}
+                className={`block px-6 py-4 cursor-pointer transition-colors duration-200 ${
+                  completed
+                    ? "bg-green-50 dark:bg-green-900"
+                    : isNext
+                    ? "bg-yellow-50 dark:bg-yellow-900"
+                    : "bg-gray-100 dark:bg-gray-800 opacity-50"
+                }`}
+              >
+                <span className="text-lg font-medium">
+                  {index + 1}. {lesson.title}{" "}
+                  {completed ? "✅" : isNext ? "🟡" : "🔒"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
 
-          <Link
-            to="/courses"
-            className="text-sm text-gray-600 dark:text-gray-400 underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
-          >
-            ← Back to Courses
-          </Link>
-        </div>
-          <CertificatePreview
-            certificate={{
-              image: "/images/certificate-default.png",
-              previewUrl: `/certificate/${courseSlug}`,
-              ...(course.certificate || {})
-            }}
-            isEnrolled={isEnrolled}
-            isCompleted={progressData.completedLessons.length === lessons.length && lessons.length > 0}
-            progressPercent={Math.round(
-              (progressData.completedLessons.length / lessons.length) * 100
-            )}
-          />
+        {/* Certificate Preview */}
+        <CertificatePreview
+          certificate={{
+            image: "/images/certificate-default.png",
+            previewUrl: `/certificate/${courseSlug}`,
+            ...(course.certificate || {})
+          }}
+          isEnrolled={isEnrolled}
+          isCompleted={
+            progressData.completedLessons.length === lessons.length &&
+            lessons.length > 0
+          }
+          progressPercent={progressPercent}
+        />
+        {/* ============================== */}
+{/* RECOMMENDED COURSES SECTION */}
+{/* ============================== */}
+<section className="mt-16">
+  <h2 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
+    🎯 Recommended For You
+  </h2>
+
+  <div className="grid sm:grid-cols-2 gap-6">
+    {/* 1. Based on current course category */}
+    <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 
+                    dark:from-gray-800 dark:to-gray-900 shadow border border-indigo-100 dark:border-gray-700">
+      <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+        Based on your interest in {course.category}
+      </h3>
+      <ul className="space-y-2 text-sm">
+        {courseData
+          .filter(c => c.category === course.category && c.slug !== courseSlug)
+          .slice(0, 3)
+          .map((c) => (
+            <li key={c.slug}>
+              <Link
+                to={`/courses/${c.slug}`}
+                className="text-indigo-600 dark:text-indigo-300 hover:underline"
+              >
+                → {c.title}
+              </Link>
+            </li>
+        ))}
+      </ul>
+    </div>
+
+    {/* 2. Trending Courses */}
+    <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 
+                    dark:from-gray-800 dark:to-gray-900 shadow border border-purple-100 dark:border-gray-700">
+      <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">
+        📈 Trending Courses
+      </h3>
+      <ul className="space-y-2 text-sm">
+        {courseData
+          .slice(0, 3)
+          .map((c) => (
+            <li key={c.slug}>
+              <Link
+                to={`/courses/${c.slug}`}
+                className="text-purple-600 dark:text-purple-300 hover:underline"
+              >
+                → {c.title}
+              </Link>
+            </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
 
 
       </div>
