@@ -5,7 +5,7 @@ import { Linkedin, Youtube, Cloud } from "lucide-react";
 function Footer() {
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-20">
-      <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 text-gray-700 dark:text-gray-300">
+      <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10 text-gray-700 dark:text-gray-300">
 
         {/* A. Brand / Description */}
         <div>
@@ -52,7 +52,20 @@ function Footer() {
           </ul>
         </div>
 
-        {/* C. Cloud Platform */}
+        {/* NEW — C. Community (Added without disturbing any existing alignment) */}
+        <div>
+          <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+            Community
+          </h3>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/podcast" className="hover:text-indigo-500">Prime Techies Podcast</Link></li>
+            <li><Link to="/community" className="hover:text-indigo-500">Community Hub</Link></li>
+            <li><Link to="/student-projects" className="hover:text-indigo-500">Student Projects</Link></li>
+            <li><Link to="/blog" className="hover:text-indigo-500">Blog</Link></li>
+          </ul>
+        </div>
+
+        {/* D. Cloud Platform */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
             Cybercode Cloud
@@ -74,7 +87,7 @@ function Footer() {
           </ul>
         </div>
 
-        {/* D. Resources */}
+        {/* E. Resources */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
             Resources
@@ -86,7 +99,7 @@ function Footer() {
           </ul>
         </div>
 
-        {/* E. Legal */}
+        {/* F. Legal */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
             Legal & Policies

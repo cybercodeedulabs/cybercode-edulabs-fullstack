@@ -44,6 +44,11 @@ import Payment from "./pages/Payment";
 
 import { useUser } from "./contexts/UserContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Podcast from "./pages/Podcast";
+import Community from "./pages/Community";
+import StudentProjects from "./pages/StudentProjects";
+import PodcastEpisode from "./pages/PodcastEpisode";
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -283,6 +288,10 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/demo" element={<DemoClass />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/podcast" element={<Podcast />} />
+            <Route path="/podcast/:id" element={<PodcastEpisode />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/student-projects" element={<StudentProjects />} />
 
             {/* ✅ Protect individual courses and lessons */}
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
