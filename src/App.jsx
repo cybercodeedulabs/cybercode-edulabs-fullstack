@@ -33,7 +33,6 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
-import CloudDashboard from "./pages/CloudDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -284,7 +283,6 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/cloud" element={<CybercodeCloud />} />
-            <Route path="/cloud/console" element={<CloudDashboard />} />
             <Route path="/admin/waitlist" element={<AdminWaitlist />} />
             <Route path="/legal" element={<LegalIndex />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
