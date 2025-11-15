@@ -40,6 +40,13 @@ useEffect(() => {
 }, [lessonSlug]);
   const progress = courseProgress[courseSlug]?.currentLessonIndex || 0;
   const isNextLesson = lessonIndex === progress;
+  // 🚫 Block navigation to locked lessons
+useEffect(() => {
+  if (lessonIndex > progress) {
+    navigate(`/courses/${courseSlug}`, { replace: true });
+  }
+}, [lessonIndex, progress, courseSlug, navigate]);
+
 
   if (!lesson) {
     return (
