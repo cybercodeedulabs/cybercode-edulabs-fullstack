@@ -187,7 +187,7 @@ export default function CourseDetail() {
                 return;
               }
               if (!completed && !isNext) {
-                showToast("Complete previous lessons to unlock this one.");
+                showToast("Complete previous lessons and click on 'Mark lesson as complete' to unlock this one.");
                 return;
               }
               navigate(`/courses/${courseSlug}/lessons/${lesson.slug}`);
