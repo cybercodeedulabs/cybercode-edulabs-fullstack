@@ -48,6 +48,7 @@ import Podcast from "./pages/Podcast";
 import Community from "./pages/Community";
 import StudentProjects from "./pages/StudentProjects";
 import PodcastEpisode from "./pages/PodcastEpisode";
+import Testimonials from "./components/Testimonials";
 
 
 function App() {
@@ -241,30 +242,7 @@ function App() {
         {/* =======================
             TESTIMONIALS
         ==========================*/}
-        <section className="py-20 bg-white dark:bg-gray-950 px-6">
-          <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-12">
-              Student Success Stories
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-10">
-              <div className="p-6 rounded-lg shadow bg-gray-50 dark:bg-gray-800">
-                <p className="text-gray-700 dark:text-gray-300 text-lg">
-                  “The simulators and hands-on labs changed everything. This is the most practical
-                  training I have ever taken.”
-                </p>
-                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Vivek ram</p>
-              </div>
-
-              <div className="p-6 rounded-lg shadow bg-gray-50 dark:bg-gray-800">
-                <p className="text-gray-700 dark:text-gray-300 text-lg">
-                  “Cybercode’s teaching style helped me move from beginner to job-ready in months.”
-                </p>
-                <p className="mt-4 font-semibold text-indigo-600 dark:text-indigo-400">— Prakash senha</p>
-              </div>
-            </div>
-          </div>
-        </section>
+        <Testimonials />
 
         {/* =======================
             REGISTRATION CTA
