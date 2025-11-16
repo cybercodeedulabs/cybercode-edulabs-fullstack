@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "../../contexts/UserContext"; // <-- use your existing user context
-import lessonsData from "../../data/lessonsData";
+import { useUser } from "../contexts/UserContext"; // <-- use your existing user context
+import lessonsData from "../data/lessonsData";
 
 /**
  * Default category → course mapping (kept for UI consistency).
