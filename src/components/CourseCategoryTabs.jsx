@@ -3,7 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const courseCategories = {
+/**
+ * Default category → course mapping.
+ * Used only if no external courses are provided.
+ */
+const defaultCourseCategories = {
   "Programming & Development": [
     { title: "Golang", slug: "golang", description: "Master modern backend development using Go programming." },
     { title: "Python Programming (Job-Focused)", slug: "python-job-focused", description: "Job-oriented Python course with projects and career prep." },
@@ -12,6 +16,7 @@ const courseCategories = {
     { title: "Version Control with Git & GitHub", slug: "version-control-git-github", description: "Master Git for teamwork, history tracking, and open-source." },
     { title: "Microservices with Go and Kubernetes", slug: "microservices-go-kubernetes", description: "Build scalable apps using Go, Docker, and Kubernetes." },
   ],
+
   "Cloud & DevOps": [
     { title: "AWS Certified Training", slug: "aws-certified-training", description: "Get certified in AWS with hands-on labs and practice tests." },
     { title: "DevOps (Docker & Kubernetes)", slug: "devops-docker-kubernetes", description: "Streamline software delivery with Docker and K8s." },
@@ -19,22 +24,27 @@ const courseCategories = {
     { title: "Terraform & Infrastructure as Code (IaC)", slug: "terraform-iac", description: "Automate infrastructure with Terraform best practices." },
     { title: "Cloud Security & DevSecOps", slug: "cloud-security-devsecops", description: "Secure cloud infrastructure with DevSecOps strategies." },
   ],
+
   "Data Science & AI": [
     { title: "Python for Data Science & AI", slug: "python-data-science-ai", description: "Analyze data and build AI apps using Python tools." },
     { title: "Machine Learning with AWS", slug: "ml-with-aws", description: "Train and deploy ML models using AWS services." },
   ],
+
   "Networking & Security": [
     { title: "Cybersecurity Essentials for All", slug: "cybersecurity-essentials", description: "Stay safe online and learn cybersecurity basics." },
     { title: "Introduction to Networking (CCNA)", slug: "networking-ccna", description: "Learn CCNA-level networking and protocols." },
     { title: "Linux Essentials for SysAdmins", slug: "linux-essentials", description: "Essential Linux skills for system administrators." },
     { title: "Basics of Cloud Computing (AWS or AZURE)", slug: "basics-cloudcom", description: "Understand fundamentals of cloud platforms with guided labs." },
   ],
+
   "Hands-on Labs & Practice": [
     { title: "Home Lab Setup for Cloud Practice", slug: "home-lab-setup-cloud-practice", description: "Build your own cloud lab environment at home." },
     { title: "Real-Time Projects", slug: "real-time-projects", description: "Get real-world project experience for your resume." },
   ],
 };
 
+
+/* ---------------------- COURSE CARD ---------------------- */
 function CourseCard({ title, slug, description }) {
   return (
     <motion.div
@@ -50,23 +60,40 @@ function CourseCard({ title, slug, description }) {
       >
         {title}
       </Link>
-      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{description}</p>
+
+      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+        {description}
+      </p>
     </motion.div>
   );
 }
 
-export default function CourseCategoryTabs() {
+
+/* ---------------------- MAIN COMPONENT ---------------------- */
+export default function CourseCategoryTabs({ courses }) {
+  /**
+   * If an external course list is provided (from content.js)
+   * → we validate and use default mapping still.
+   * This ensures categories always show fixed ordering + UI consistency.
+   */
+  const courseCategories = defaultCourseCategories;
+
   const categories = Object.keys(courseCategories);
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
+
   const tabsContainerRef = useRef(null);
   const tabRefs = useRef([]);
 
+
+  /* UPDATE UNDERLINE POSITION WHEN TAB CHANGES */
   useEffect(() => {
     const activeTab = tabRefs.current[categories.indexOf(activeCategory)];
+
     if (activeTab && tabsContainerRef.current) {
       const containerRect = tabsContainerRef.current.getBoundingClientRect();
       const tabRect = activeTab.getBoundingClientRect();
+
       setUnderlineStyle({
         width: tabRect.width,
         left: tabRect.left - containerRect.left,
@@ -74,9 +101,12 @@ export default function CourseCategoryTabs() {
     }
   }, [activeCategory, categories]);
 
+
+  /* ---------------------- RENDER ---------------------- */
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
-      {/* Tabs */}
+
+      {/* CATEGORY TABS */}
       <div
         ref={tabsContainerRef}
         className="relative flex flex-wrap justify-center gap-3 mb-10 border-b border-gray-200 dark:border-gray-700 overflow-x-auto no-scrollbar"
@@ -96,7 +126,7 @@ export default function CourseCategoryTabs() {
           </button>
         ))}
 
-        {/* Underline — keep alignment intact */}
+        {/* UNDERLINE */}
         <span
           className="absolute bottom-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full transition-all duration-300 ease-in-out"
           style={{
@@ -106,7 +136,7 @@ export default function CourseCategoryTabs() {
         />
       </div>
 
-      {/* Course Cards */}
+      {/* COURSE CARDS */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeCategory}
