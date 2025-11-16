@@ -1,11 +1,13 @@
 // src/components/ui/CourseCategoryTabs.jsx
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "../../contexts/UserContext"; // <-- use your existing user context
+import lessonsData from "../../data/lessonsData";
 
 /**
- * Default category → course mapping.
- * Used only if no external courses are provided.
+ * Default category → course mapping (kept for UI consistency).
+ * If you later want fully dynamic source, we can populate from courseData.
  */
 const defaultCourseCategories = {
   "Programming & Development": [
@@ -45,7 +47,7 @@ const defaultCourseCategories = {
 
 
 /* ---------------------- COURSE CARD ---------------------- */
-function CourseCard({ title, slug, description }) {
+function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -54,16 +56,40 @@ function CourseCard({ title, slug, description }) {
       transition={{ duration: 0.3 }}
       className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all p-6 flex flex-col justify-between h-full"
     >
-      <Link
-        to={`/courses/${slug}`}
-        className="text-indigo-600 dark:text-indigo-400 text-lg font-semibold hover:underline"
-      >
-        {title}
-      </Link>
+      <div>
+        <Link
+          to={`/courses/${slug}`}
+          className="text-indigo-600 dark:text-indigo-400 text-lg font-semibold hover:underline"
+        >
+          {title}
+        </Link>
 
-      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-        {description}
-      </p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+          {description}
+        </p>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        {isEnrolled ? (
+          <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+            Enrolled ✓
+          </span>
+        ) : (
+          <button
+            onClick={() => onEnroll(slug)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm shadow"
+          >
+            Enroll
+          </button>
+        )}
+
+        <Link
+          to={`/courses/${slug}`}
+          className="text-xs text-gray-600 dark:text-gray-300 underline hover:text-indigo-600"
+        >
+          View details →
+        </Link>
+      </div>
     </motion.div>
   );
 }
@@ -71,13 +97,7 @@ function CourseCard({ title, slug, description }) {
 
 /* ---------------------- MAIN COMPONENT ---------------------- */
 export default function CourseCategoryTabs({ courses }) {
-  /**
-   * If an external course list is provided (from content.js)
-   * → we validate and use default mapping still.
-   * This ensures categories always show fixed ordering + UI consistency.
-   */
-  const courseCategories = defaultCourseCategories;
-
+  const courseCategories = defaultCourseCategories; // keep same categories as before
   const categories = Object.keys(courseCategories);
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
@@ -85,15 +105,14 @@ export default function CourseCategoryTabs({ courses }) {
   const tabsContainerRef = useRef(null);
   const tabRefs = useRef([]);
 
+  const { user, enrolledCourses = [], enrollInCourse } = useUser();
+  const navigate = useNavigate();
 
-  /* UPDATE UNDERLINE POSITION WHEN TAB CHANGES */
   useEffect(() => {
     const activeTab = tabRefs.current[categories.indexOf(activeCategory)];
-
     if (activeTab && tabsContainerRef.current) {
       const containerRect = tabsContainerRef.current.getBoundingClientRect();
       const tabRect = activeTab.getBoundingClientRect();
-
       setUnderlineStyle({
         width: tabRect.width,
         left: tabRect.left - containerRect.left,
@@ -101,11 +120,30 @@ export default function CourseCategoryTabs({ courses }) {
     }
   }, [activeCategory, categories]);
 
+  // Enroll handler: if not logged in -> go to register; otherwise enroll and redirect to first lesson if exists
+  const handleEnroll = (slug) => {
+    if (!user) {
+      navigate("/register");
+      return;
+    }
 
-  /* ---------------------- RENDER ---------------------- */
+    // call context enroll function (should persist in user state)
+    enrollInCourse(slug);
+
+    // find first lesson for the course (if lessonsData present)
+    const courseLessons = (lessonsData && lessonsData[slug]) || [];
+    const firstLessonSlug = courseLessons.length > 0 ? courseLessons[0].slug : null;
+
+    if (firstLessonSlug) {
+      navigate(`/courses/${slug}/lessons/${firstLessonSlug}`);
+    } else {
+      // fallback to course page
+      navigate(`/courses/${slug}`);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
-
       {/* CATEGORY TABS */}
       <div
         ref={tabsContainerRef}
@@ -147,7 +185,12 @@ export default function CourseCategoryTabs({ courses }) {
           transition={{ duration: 0.4 }}
         >
           {courseCategories[activeCategory].map((course) => (
-            <CourseCard key={course.slug} {...course} />
+            <CourseCard
+              key={course.slug}
+              {...course}
+              isEnrolled={enrolledCourses.includes(course.slug)}
+              onEnroll={handleEnroll}
+            />
           ))}
         </motion.div>
       </AnimatePresence>
