@@ -5,68 +5,106 @@ import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
 
 export default function useUserData() {
-  const { user, enrolledCourses, setEnrolledCourses } = useUser();
+  const { user, enrolledCourses, setEnrolledCourses, activatePremium } = useUser();
+
   const [userData, setUserData] = useState({
     enrolledCourses: enrolledCourses || [],
     projects: [],
     hasCertificationAccess: false,
     hasServerAccess: false,
+    isPremium: false, // NEW
   });
 
-  // Sync Firestore data with local state
+  // ============================================================
+  // 🔥 Sync Firestore user doc with React state
+  // ============================================================
   useEffect(() => {
     if (!user) return;
 
-    const userDocRef = doc(db, "users", user.uid);
+    const ref = doc(db, "users", user.uid);
 
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+    const unsubscribe = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+
         setUserData({
           enrolledCourses: data.enrolledCourses || [],
           projects: data.projects || [],
           hasCertificationAccess: data.hasCertificationAccess || false,
           hasServerAccess: data.hasServerAccess || false,
+          isPremium: data.isPremium || false, // sync premium status
         });
 
-        // Also sync with context
+        // Also sync with context store
+        if (data.isPremium) {
+          activatePremium(); // keep UserContext always in sync
+        }
+
         setEnrolledCourses(data.enrolledCourses || []);
       }
     });
 
     return () => unsubscribe();
-  }, [user, setEnrolledCourses]);
+  }, [user, setEnrolledCourses, activatePremium]);
 
-  // 🟩 Enroll the user in a new course (updates context + Firestore)
+  // ============================================================
+  // 🟩 Enroll In Course
+  // ============================================================
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
-    // Update context state
     if (!enrolledCourses.includes(courseSlug)) {
       setEnrolledCourses([...enrolledCourses, courseSlug]);
     }
 
-    // Update Firestore
-    const userRef = doc(db, "users", user.uid);
+    const ref = doc(db, "users", user.uid);
     await setDoc(
-      userRef,
+      ref,
       { enrolledCourses: arrayUnion(courseSlug) },
       { merge: true }
     );
   };
 
-  // 🟨 Grant certification access (after payment)
+  // ============================================================
+  // 🟨 Grant Certification Access
+  // ============================================================
   const grantCertificationAccess = async () => {
     if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, { hasCertificationAccess: true });
+
+    const ref = doc(db, "users", user.uid);
+    await updateDoc(ref, { hasCertificationAccess: true, isPremium: true });
+
+    // Also update local premium flag
+    activatePremium();
   };
 
-  // 🟦 Grant 1-year server access (after payment)
+  // ============================================================
+  // 🟦 Grant Server Access
+  // ============================================================
   const grantServerAccess = async () => {
     if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, { hasServerAccess: true });
+
+    const ref = doc(db, "users", user.uid);
+    await updateDoc(ref, { hasServerAccess: true, isPremium: true });
+
+    // Keep context premium consistent
+    activatePremium();
+  };
+
+  // ============================================================
+  // ⭐ NEW — Grant Full Premium Access
+  // ============================================================
+  const grantFullPremium = async () => {
+    if (!user) return;
+
+    const ref = doc(db, "users", user.uid);
+    await updateDoc(ref, {
+      isPremium: true,
+      hasCertificationAccess: true,
+      hasServerAccess: true,
+    });
+
+    activatePremium();
   };
 
   return {
@@ -75,5 +113,6 @@ export default function useUserData() {
     enrollInCourse,
     grantCertificationAccess,
     grantServerAccess,
+    grantFullPremium, // NEW
   };
 }

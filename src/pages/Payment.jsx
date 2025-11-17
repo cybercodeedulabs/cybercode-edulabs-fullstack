@@ -1,37 +1,11 @@
 // src/pages/Payment.jsx
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
-import useUserData from "../hooks/useUserData";
 import { motion } from "framer-motion";
 
 export default function Payment() {
-  const { user } = useUser();
-  const { grantCertificationAccess, grantServerAccess } = useUserData();
-  const [searchParams] = useSearchParams();
+  const { user, activatePremium } = useUser();
   const navigate = useNavigate();
-
-  const paymentType = searchParams.get("type"); // "certification" or "server"
-
-  const handlePaymentSuccess = async () => {
-    if (!user) return;
-
-    try {
-      if (paymentType === "certification") {
-        await grantCertificationAccess();
-        alert("✅ Certification access unlocked!");
-      } else if (paymentType === "server") {
-        await grantServerAccess();
-        alert("✅ Server access activated!");
-      } else {
-        alert("❌ Unknown payment type.");
-      }
-
-      navigate("/dashboard"); // Redirect to dashboard
-    } catch (err) {
-      console.error(err);
-      alert("❌ Payment processing failed. Try again.");
-    }
-  };
 
   if (!user) {
     return (
@@ -48,6 +22,13 @@ export default function Payment() {
     );
   }
 
+  const handleFakeRazorpayPayment = () => {
+    // 🔥 TEST MODE: No money, no real Razorpay needed
+    alert("🧪 Simulated Razorpay Test Payment Successful!");
+    activatePremium(); // ⭐ unlock premium
+    navigate("/dashboard");
+  };
+
   return (
     <motion.div
       className="max-w-3xl mx-auto px-6 py-20 text-center"
@@ -55,25 +36,25 @@ export default function Payment() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <h1 className="text-4xl font-bold mb-6 text-indigo-600">
-        {paymentType === "certification"
-          ? "Certification Payment"
-          : "Server Access Payment"}
-      </h1>
-      <p className="text-gray-700 dark:text-gray-300 mb-8">
-        Click below to simulate a successful payment for{" "}
-        <strong>
-          {paymentType === "certification"
-            ? "Certification Access"
-            : "1-Year Server Access"}
-        </strong>.
+      <h1 className="text-4xl font-bold mb-6 text-indigo-600">Premium Upgrade</h1>
+
+      <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
+        Upgrade to <strong>Premium</strong> and unlock certificates, cloud labs,
+        server access, and exclusive project resources.
       </p>
 
+      <div className="p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
+        <h2 className="text-2xl font-semibold mb-3">₹499 / One-Time</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          (This is a test payment page — no money will be deducted)
+        </p>
+      </div>
+
       <button
-        onClick={handlePaymentSuccess}
-        className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow transition"
+        onClick={handleFakeRazorpayPayment}
+        className="px-10 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg transition"
       >
-        ✅ Complete Payment
+        🚀 Simulate Razorpay Payment
       </button>
     </motion.div>
   );

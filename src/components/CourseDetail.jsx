@@ -13,21 +13,29 @@ export default function CourseDetail() {
 
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
-  const { user, enrolledCourses, enrollInCourse, courseProgress, updatePersonaScore } = useUser();
-  useEffect(() => {
-  // score users when they view the course page (small boost)
-  if (!user || !course) return;
-  const deltas = quickCoursePersonaDelta(course);
-  if (Object.keys(deltas).length) {
-    updatePersonaScore(deltas); // merges the deltas
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [courseSlug, user]);
 
+  const {
+    user,
+    enrolledCourses,
+    enrollInCourse,
+    courseProgress,
+    updatePersonaScore
+  } = useUser();
+
+  // Persona scoring
+  useEffect(() => {
+    if (!user || !course) return;
+    const deltas = quickCoursePersonaDelta(course);
+    if (Object.keys(deltas).length) updatePersonaScore(deltas);
+  }, [courseSlug, user]);
 
   const isEnrolled = user && enrolledCourses.includes(courseSlug);
+
   const progressData =
-    courseProgress[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+    courseProgress[courseSlug] || {
+      completedLessons: [],
+      currentLessonIndex: 0
+    };
 
   const progressPercent = Math.round(
     (progressData.completedLessons.length / lessons.length) * 100
@@ -57,8 +65,7 @@ export default function CourseDetail() {
 
   return (
     <div className="text-left relative">
-
-      {/* Toast Notification */}
+      {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
           {toast}
@@ -75,12 +82,9 @@ export default function CourseDetail() {
         </div>
       </div>
 
-      {/* ============================== */}
-      {/* COURSE OVERVIEW SECTION */}
-      {/* ============================== */}
+      {/* Course Overview */}
       <div className="max-w-4xl mx-auto px-4 pb-10">
-
-        {/* Highlights & Includes */}
+        {/* Highlights */}
         <section className="mb-10 grid sm:grid-cols-2 gap-6">
           <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
             <h3 className="text-xl font-bold mb-2">📌 Course Highlights</h3>
@@ -174,19 +178,14 @@ export default function CourseDetail() {
             ))}
           </div>
         </section>
-
       </div>
 
-      {/* ============================== */}
-      {/* LESSONS + CERTIFICATE SECTION */}
-      {/* ============================== */}
+      {/* Lessons + Certificate */}
       <div className="max-w-4xl mx-auto px-4 pb-16">
-
         <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-4">
           Lessons ({lessons.length})
         </h2>
 
-        {/* Lessons */}
         <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
           {lessons.map((lesson, index) => {
             const completed = progressData.completedLessons.includes(lesson.slug);
@@ -198,7 +197,7 @@ export default function CourseDetail() {
                 return;
               }
               if (!completed && !isNext) {
-                showToast("Complete previous lessons and click on 'Mark lesson as complete' to unlock this one.");
+                showToast("Complete previous lessons to unlock this one.");
                 return;
               }
               navigate(`/courses/${courseSlug}/lessons/${lesson.slug}`);
@@ -227,104 +226,89 @@ export default function CourseDetail() {
 
         {/* Certificate Preview */}
         <CertificatePreview
-  certificate={{
-    image: "/images/certificate-default.png",
-    previewUrl: `/certificate/${courseSlug}`,
+          certificate={{
+            image: "/images/certificate-default.png",
+            previewUrl: `/certificate/${courseSlug}`,
 
-    // ------------------------
-    // 🔥 Dynamic Certificate Data
-    // ------------------------
-    studentName: user?.name || "",
-    studentPhoto: user?.photo || "",
-    courseName: course?.title || "",
-    courseSlug,
-    certificateId:
-      progressData?.certificateId ||
-      `CERT-${courseSlug.toUpperCase()}-${user?.uid?.slice(-6) || "000000"}`,
-    completionDate:
-      progressData?.completedLessons.length === lessons.length
-        ? new Date().toISOString().split("T")[0]
-        : "",
+            studentName: user?.name || "",
+            studentPhoto: user?.photo || "",
+            courseName: course?.title || "",
+            courseSlug,
 
-    // ------------------------
-    // 🔥 Premium Requirement (IMPORTANT)
-    // ------------------------
-    isPremium: user?.isPremium ?? false,
+            certificateId:
+              progressData?.certificateId ||
+              `CERT-${courseSlug.toUpperCase()}-${user?.uid?.slice(-6) || "000000"}`,
 
-    // ------------------------
-    // Allow any additional static course.certificate overrides
-    // ------------------------
-    ...(course.certificate || {})
-  }}
+            completionDate:
+              progressData.completedLessons.length === lessons.length
+                ? new Date().toISOString().split("T")[0]
+                : "",
 
-  // ------------------------
-  // Existing props
-  // ------------------------
-  isEnrolled={isEnrolled}
-  isCompleted={
-    progressData.completedLessons.length === lessons.length &&
-    lessons.length > 0
-  }
-  progressPercent={progressPercent}
-/>
+            // ⭐ Added for full certificate JSON
+            completedLessons: progressData.completedLessons,
+            totalLessons: lessons.length,
 
-        {/* ============================== */}
-{/* RECOMMENDED COURSES SECTION */}
-{/* ============================== */}
-<section className="mt-16">
-  <h2 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
-    🎯 Recommended For You
-  </h2>
+            isPremium: user?.isPremium ?? false,
 
-  <div className="grid sm:grid-cols-2 gap-6">
-    {/* 1. Based on current course category */}
-    <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 
-                    dark:from-gray-800 dark:to-gray-900 shadow border border-indigo-100 dark:border-gray-700">
-      <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
-        Based on your interest in {course.category}
-      </h3>
-      <ul className="space-y-2 text-sm">
-        {courseData
-          .filter(c => c.category === course.category && c.slug !== courseSlug)
-          .slice(0, 3)
-          .map((c) => (
-            <li key={c.slug}>
-              <Link
-                to={`/courses/${c.slug}`}
-                className="text-indigo-600 dark:text-indigo-300 hover:underline"
-              >
-                → {c.title}
-              </Link>
-            </li>
-        ))}
-      </ul>
-    </div>
+            ...(course.certificate || {})
+          }}
+          isEnrolled={isEnrolled}
+          isCompleted={
+            progressData.completedLessons.length === lessons.length &&
+            lessons.length > 0
+          }
+          progressPercent={progressPercent}
+        />
 
-    {/* 2. Trending Courses */}
-    <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 
-                    dark:from-gray-800 dark:to-gray-900 shadow border border-purple-100 dark:border-gray-700">
-      <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">
-        📈 Trending Courses
-      </h3>
-      <ul className="space-y-2 text-sm">
-        {courseData
-          .slice(0, 3)
-          .map((c) => (
-            <li key={c.slug}>
-              <Link
-                to={`/courses/${c.slug}`}
-                className="text-purple-600 dark:text-purple-300 hover:underline"
-              >
-                → {c.title}
-              </Link>
-            </li>
-        ))}
-      </ul>
-    </div>
-  </div>
-</section>
+        {/* Recommendations */}
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
+            🎯 Recommended For You
+          </h2>
 
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Based on category */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 shadow border border-indigo-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+                Based on your interest in {course.category}
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {courseData
+                  .filter((c) => c.category === course.category && c.slug !== courseSlug)
+                  .slice(0, 3)
+                  .map((c) => (
+                    <li key={c.slug}>
+                      <Link
+                        to={`/courses/${c.slug}`}
+                        className="text-indigo-600 dark:text-indigo-300 hover:underline"
+                      >
+                        → {c.title}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+            </div>
 
+            {/* Trending */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 shadow border border-purple-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-2">
+                📈 Trending Courses
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {courseData.slice(0, 3).map((c) => (
+                  <li key={c.slug}>
+                    <Link
+                      to={`/courses/${c.slug}`}
+                      className="text-purple-600 dark:text-purple-300 hover:underline"
+                    >
+                      → {c.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

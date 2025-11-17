@@ -5,9 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import lessonsData from "../data/lessonsData";
 
 const UserContext = createContext();
-// add near other imports
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
-
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -27,16 +25,24 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // Firebase auth listener
+  // ================================
+  // 🔥 Firebase Auth Listener
+  // ================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
+        const storedUser = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
+
         const userData = {
           name: firebaseUser.displayName,
           email: firebaseUser.email,
           photo: firebaseUser.photoURL,
           uid: firebaseUser.uid,
+
+          // ⭐ Maintain Premium status
+          isPremium: storedUser.isPremium || false
         };
+
         setUser(userData);
         localStorage.setItem("cybercodeUser", JSON.stringify(userData));
       } else {
@@ -48,16 +54,20 @@ export const UserProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Persist all data to localStorage
+  // ================================
+  // Persist Local Storage
+  // ================================
   useEffect(() => {
     if (user) localStorage.setItem("cybercodeUser", JSON.stringify(user));
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
     localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
   }, [user, enrolledCourses, courseProgress]);
 
-  // ✅ Enroll in a specific course
+  // ================================
+  // Course Enrollment
+  // ================================
   const enrollInCourse = (courseSlug) => {
-    if (!user) return; // must be logged in
+    if (!user) return;
     setEnrolledCourses((prev) => {
       const updated = prev.includes(courseSlug) ? prev : [...prev, courseSlug];
       localStorage.setItem("enrolledCourses", JSON.stringify(updated));
@@ -65,47 +75,45 @@ export const UserProvider = ({ children }) => {
     });
   };
 
-  // Persona scores object: { developer: 42, devops: 58, security: 12 }
-const [personaScores, setPersonaScores] = useState(() => {
-  try {
-    const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-});
-
-// increase persona scores (accepts object or single update)
-const updatePersonaScore = (personaOrObj, delta = 0) => {
-  setPersonaScores((prev) => {
-    const next = { ...(prev || {}) };
-    if (typeof personaOrObj === "string") {
-      next[personaOrObj] = (next[personaOrObj] || 0) + delta;
-    } else if (typeof personaOrObj === "object") {
-      // personaOrObj = { developer: 3, devops: 5 }
-      Object.entries(personaOrObj).forEach(([p, v]) => {
-        next[p] = (next[p] || 0) + (v || 0);
-      });
-    }
+  // ================================
+  // Persona Engine
+  // ================================
+  const [personaScores, setPersonaScores] = useState(() => {
     try {
-      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
-    } catch (e) {
-      // ignore storage errors
+      const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
     }
-    return next;
   });
-};
 
-const getTopPersona = () => {
-  const entries = Object.entries(personaScores || {});
-  if (entries.length === 0) return null;
-  entries.sort((a, b) => b[1] - a[1]);
-  return { persona: entries[0][0], score: entries[0][1], all: entries };
-};
+  const updatePersonaScore = (personaOrObj, delta = 0) => {
+    setPersonaScores((prev) => {
+      const next = { ...(prev || {}) };
 
+      if (typeof personaOrObj === "string") {
+        next[personaOrObj] = (next[personaOrObj] || 0) + delta;
+      } else if (typeof personaOrObj === "object") {
+        Object.entries(personaOrObj).forEach(([p, v]) => {
+          next[p] = (next[p] || 0) + (v || 0);
+        });
+      }
 
+      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
-  // ✅ Sequential lesson completion
+  const getTopPersona = () => {
+    const entries = Object.entries(personaScores || {});
+    if (entries.length === 0) return null;
+    entries.sort((a, b) => b[1] - a[1]);
+    return { persona: entries[0][0], score: entries[0][1], all: entries };
+  };
+
+  // ================================
+  // Lesson Completion
+  // ================================
   const completeLesson = (courseSlug, lessonSlug) => {
     const lessons = lessonsData[courseSlug] || [];
     const courseData = courseProgress[courseSlug] || {
@@ -122,11 +130,25 @@ const getTopPersona = () => {
         currentLessonIndex: courseData.currentLessonIndex + 1,
       },
     };
+
     setCourseProgress(updatedProgress);
     localStorage.setItem("courseProgress", JSON.stringify(updatedProgress));
   };
 
-  // ✅ Logout cleanup
+  // ================================
+  // ⭐ Make User Premium
+  // ================================
+  const activatePremium = () => {
+    setUser((prev) => {
+      const updated = { ...prev, isPremium: true };
+      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // ================================
+  // Logout
+  // ================================
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -150,6 +172,9 @@ const getTopPersona = () => {
         updatePersonaScore,
         getTopPersona,
         personaScores,
+
+        // ⭐ Added
+        activatePremium,
       }}
     >
       {children}

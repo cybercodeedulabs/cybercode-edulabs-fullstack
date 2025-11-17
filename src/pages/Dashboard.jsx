@@ -69,6 +69,12 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">
           Welcome, {user.name || "User"}
         </h1>
+        {user.isPremium && (
+          <span className="inline-block mt-2 px-3 py-1 bg-yellow-300 text-yellow-900 rounded-full text-sm font-semibold shadow">
+          ⭐ Premium Member
+          </span>
+        )}
+
         <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
           Manage your learning progress, access real-time projects, and unlock certifications.
         </p>
