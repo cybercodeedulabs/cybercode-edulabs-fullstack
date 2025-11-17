@@ -1,5 +1,5 @@
 // src/pages/CertificatePage.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 import courseData from "../data/courseData";
@@ -11,9 +11,15 @@ export default function CertificatePage() {
   const navigate = useNavigate();
   const { user, courseProgress } = useUser();
 
+  // ------------------------------
+  // Load Course Data
+  // ------------------------------
   const course = courseData.find((c) => c.slug === courseSlug);
   const lessons = lessonsData[courseSlug] || [];
 
+  // ------------------------------
+  // Redirect if invalid course
+  // ------------------------------
   if (!course) {
     return (
       <div className="p-10 text-center text-red-600">
@@ -28,40 +34,50 @@ export default function CertificatePage() {
     );
   }
 
+  // ------------------------------
+  // Not Logged In?
+  // ------------------------------
+  useEffect(() => {
+    if (!user) navigate("/register");
+  }, [user, navigate]);
+
+  if (!user) return null;
+
+  // ------------------------------
+  // Check Progress / Completion
+  // ------------------------------
   const progress = courseProgress[courseSlug] || {
     completedLessons: [],
     currentLessonIndex: 0,
   };
 
   const isCompleted =
-    progress.completedLessons.length === lessons.length && lessons.length > 0;
+    progress.completedLessons.length === lessons.length &&
+    lessons.length > 0;
 
+  // ------------------------------
+  // Strict Premium Requirement
+  // ------------------------------
   const isPremium = user?.isPremium === true;
 
-  // ❌ If not logged in
-  if (!user) {
-    navigate("/register");
-    return null;
-  }
+  useEffect(() => {
+    if (!isPremium || !isCompleted) {
+      navigate(`/courses/${courseSlug}`);
+    }
+  }, [isPremium, isCompleted, navigate, courseSlug]);
 
-  // ❌ If not premium
-  if (!isPremium) {
-    navigate(`/courses/${courseSlug}`); // redirect back to course
-    return null;
-  }
+  if (!isPremium || !isCompleted) return null;
 
-  // ❌ If not completed
-  if (!isCompleted) {
-    navigate(`/courses/${courseSlug}`);
-    return null;
-  }
-
-  // Certificate dynamic data
+  // ------------------------------
+  // Dynamic Certificate Metadata
+  // ------------------------------
   const certificateId =
     progress.certificateId ||
     `CERT-${courseSlug.toUpperCase()}-${user.uid.slice(-6)}`;
 
-  const completionDate = new Date().toISOString().split("T")[0];
+  const completionDate =
+    progress.completionDate ||
+    new Date().toISOString().split("T")[0];
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">

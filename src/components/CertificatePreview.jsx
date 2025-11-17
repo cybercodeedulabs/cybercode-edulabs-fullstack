@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Lock, Award, CheckCircle, Linkedin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// NEW
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -12,59 +10,62 @@ export default function CertificatePreview({
   isCompleted,
   progressPercent = 0,
 }) {
+  const navigate = useNavigate();
+  const { user } = useUser();
+
   if (!certificate) return null;
 
-  const { user } = useUser();
-  const navigate = useNavigate();
-
-  // ------------------------------
-  // Certificate Lock Logic
-  // ------------------------------
+  // ================================
+  // 🔒 Certificate Lock Logic
+  // ================================
   const locked =
     !isEnrolled ||
     !isCompleted ||
-    !user?.isPremium || // premium required
+    !user?.isPremium || // strict premium requirement (OPTION B)
     !certificate?.studentName ||
     !certificate?.courseName ||
     !certificate?.completionDate ||
     !certificate?.certificateId;
 
+  // Unlock animation
   const [unlockedAnimation, setUnlockedAnimation] = useState(false);
 
   useEffect(() => {
     if (!locked) {
       setUnlockedAnimation(true);
-      setTimeout(() => setUnlockedAnimation(false), 2000);
+      const t = setTimeout(() => setUnlockedAnimation(false), 2000);
+      return () => clearTimeout(t);
     }
   }, [locked]);
 
-  // ------------------------------
-  // Smart Redirect for Premium
-  // ------------------------------
+  // ================================
+  // ⭐ Smart Premium Redirect
+  // ================================
   const handlePremiumClick = () => {
     if (!user) {
       navigate("/register");
       return;
     }
-
-    navigate("/payment?type=certification");
+    navigate("/payment?upgrade=certificate");
   };
 
-  // ------------------------------
-  // Certificate Viewer Redirect
-  // ------------------------------
+  // ================================
+  // ⭐ View Certificate (only unlocked)
+  // ================================
   const handleViewCertificate = () => {
+    if (locked) return;
     navigate(certificate.previewUrl);
   };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-8 my-14 border border-gray-200 dark:border-gray-700 max-w-5xl mx-auto">
-      {/* Header */}
+      
+      {/* Title */}
       <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mb-6 flex items-center gap-3">
         🎓 Certificate Preview
       </h3>
 
-      {/* Progress Bar */}
+      {/* Progress Bar (Shown only if locked) */}
       {locked && (
         <div className="mb-8 p-5 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
           <h4 className="text-lg font-semibold mb-3">🎯 Your Progress</h4>
@@ -73,7 +74,7 @@ export default function CertificatePreview({
             <div
               className="bg-indigo-600 h-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
-            ></div>
+            />
           </div>
 
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
@@ -83,13 +84,14 @@ export default function CertificatePreview({
           <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <li>✔ Complete all lessons</li>
             <li>✔ Finish required labs</li>
-            <li>✔ Upgrade to Premium</li>
+            <li>✔ Become Premium</li>
           </ul>
         </div>
       )}
 
-      {/* Certificate Section */}
+      {/* Certificate + Actions */}
       <div className="flex flex-col md:flex-row items-center gap-8">
+
         {/* Certificate Image */}
         <div className="relative">
           <img
@@ -100,9 +102,10 @@ export default function CertificatePreview({
             `}
           />
 
+          {/* Locked Overlay */}
           {locked && (
             <>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 to-purple-600/10 blur-md"></div>
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 to-purple-600/10 blur-md" />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <Lock className="text-white w-10 h-10 drop-shadow-lg mb-1" />
                 <p className="text-white text-sm font-medium drop-shadow">
@@ -112,6 +115,7 @@ export default function CertificatePreview({
             </>
           )}
 
+          {/* Unlock Animation */}
           <AnimatePresence>
             {!locked && unlockedAnimation && (
               <motion.div
@@ -126,12 +130,12 @@ export default function CertificatePreview({
           </AnimatePresence>
         </div>
 
-        {/* ACTIONS */}
+        {/* Right Sidebar Actions */}
         <div className="flex-1">
           {locked ? (
             <>
               <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                Complete the course and upgrade to premium to unlock your
+                Complete the course and upgrade to Premium to unlock your
                 verifiable certificate.
               </p>
 
