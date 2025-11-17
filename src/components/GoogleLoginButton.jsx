@@ -53,12 +53,11 @@ export default function GoogleLoginButton() {
                  transition-all duration-200"
     >
       <img
-        src="/src/assets/google.svg"
+        src="/images/google.svg"
         alt="Google"
         className="w-5 h-5"
       />
       <span className="text-sm md:text-base font-medium">
-        <img src="/images/google.svg" className="w-5 h-5" />
         Sign in with Google
       </span>
     </motion.button>
