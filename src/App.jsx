@@ -126,13 +126,13 @@ function App() {
                     to="/courses"
                     className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
                   >
-                    🚀 Explore Courses
+                     Explore Courses
                   </Link>
                   <Link
                     to="/demo"
                     className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg"
                   >
-                    🎯 Free Demo Class
+                     Free Demo Class
                   </Link>
                   <Link
                     to="/register"
@@ -166,7 +166,7 @@ function App() {
                   to="/cloud"
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow"
                 >
-                  🔥 Explore Cloud Platform
+                   Explore Cloud Platform
                 </Link>
                 <Link
                   to="/cloud"

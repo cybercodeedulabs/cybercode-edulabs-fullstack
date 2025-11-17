@@ -58,6 +58,7 @@ export default function GoogleLoginButton() {
         className="w-5 h-5"
       />
       <span className="text-sm md:text-base font-medium">
+        <img src="/images/google.svg" className="w-5 h-5" />
         Sign in with Google
       </span>
     </motion.button>
