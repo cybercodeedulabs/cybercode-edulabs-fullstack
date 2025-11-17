@@ -66,7 +66,7 @@ function Header({ darkMode, setDarkMode }) {
       </div>
 
       {/* Main Header */}
-      <div className="p-3 md:p-4 flex justify-between items-center max-w-7xl mx-auto">
+      <div className="px-3 py-2 md:px-6 md:py-3 flex justify-between items-center w-full max-w-[1280px] mx-auto">
 
         {/* Brand Logo */}
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate("/")}>
