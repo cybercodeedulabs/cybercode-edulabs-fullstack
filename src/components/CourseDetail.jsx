@@ -227,18 +227,47 @@ export default function CourseDetail() {
 
         {/* Certificate Preview */}
         <CertificatePreview
-          certificate={{
-            image: "/images/certificate-default.png",
-            previewUrl: `/certificate/${courseSlug}`,
-            ...(course.certificate || {})
-          }}
-          isEnrolled={isEnrolled}
-          isCompleted={
-            progressData.completedLessons.length === lessons.length &&
-            lessons.length > 0
-          }
-          progressPercent={progressPercent}
-        />
+  certificate={{
+    image: "/images/certificate-default.png",
+    previewUrl: `/certificate/${courseSlug}`,
+
+    // ------------------------
+    // 🔥 Dynamic Certificate Data
+    // ------------------------
+    studentName: user?.name || "",
+    studentPhoto: user?.photo || "",
+    courseName: course?.title || "",
+    courseSlug,
+    certificateId:
+      progressData?.certificateId ||
+      `CERT-${courseSlug.toUpperCase()}-${user?.uid?.slice(-6) || "000000"}`,
+    completionDate:
+      progressData?.completedLessons.length === lessons.length
+        ? new Date().toISOString().split("T")[0]
+        : "",
+
+    // ------------------------
+    // 🔥 Premium Requirement (IMPORTANT)
+    // ------------------------
+    isPremium: user?.isPremium ?? false,
+
+    // ------------------------
+    // Allow any additional static course.certificate overrides
+    // ------------------------
+    ...(course.certificate || {})
+  }}
+
+  // ------------------------
+  // Existing props
+  // ------------------------
+  isEnrolled={isEnrolled}
+  isCompleted={
+    progressData.completedLessons.length === lessons.length &&
+    lessons.length > 0
+  }
+  progressPercent={progressPercent}
+/>
+
         {/* ============================== */}
 {/* RECOMMENDED COURSES SECTION */}
 {/* ============================== */}

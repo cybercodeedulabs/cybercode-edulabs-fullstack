@@ -10,7 +10,16 @@ export default function CertificatePreview({
 }) {
   if (!certificate) return null;
 
-  const locked = !isEnrolled || !isCompleted;
+const locked =
+  !isEnrolled ||
+  !isCompleted ||
+  !certificate?.isPremium ||            // ❗ require premium
+  !certificate?.studentName ||          // dynamic data missing
+  !certificate?.courseName ||           
+  !certificate?.completionDate ||
+  !certificate?.certificateId;
+
+
   const [unlockedAnimation, setUnlockedAnimation] = useState(false);
 
   useEffect(() => {
