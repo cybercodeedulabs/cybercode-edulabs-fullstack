@@ -5,6 +5,11 @@
 /* =========================================
    🧭 Base Global Styles (Consistent UI)
    ========================================= */
+html {
+  font-size: 100%;
+  touch-action: manipulation; /* Prevent mobile zoom jitter */
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.6;
@@ -181,10 +186,13 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-/* ⏸️ Pause on Hover */
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* =========================================
+   🎞 Smooth Slide in Animations
+   ========================================= */
 @keyframes slide-in {
   0% {
     transform: translateY(-20px);
@@ -198,4 +206,12 @@ button:focus-visible {
 
 .animate-slide-in {
   animation: slide-in 0.4s ease-out forwards;
+}
+
+/* =========================================
+   🧾 Certificate Container Fix
+   ========================================= */
+.certificate-container {
+  position: relative;
+  overflow: hidden; /* Prevent blurred highlight overflow */
 }

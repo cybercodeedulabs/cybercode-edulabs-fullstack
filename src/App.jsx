@@ -49,6 +49,8 @@ import Community from "./pages/Community";
 import StudentProjects from "./pages/StudentProjects";
 import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
+import CertificatePage from "./pages/CertificatePage";
+
 
 
 function App() {
@@ -274,6 +276,7 @@ function App() {
             {/* ✅ Protect individual courses and lessons */}
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
+            <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
 
             <Route path="/register" element={<Register />} />
             <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />

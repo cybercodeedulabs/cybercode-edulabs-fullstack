@@ -1,6 +1,12 @@
 // src/hooks/useUserData.js
 import { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
 
@@ -12,35 +18,51 @@ export default function useUserData() {
     projects: [],
     hasCertificationAccess: false,
     hasServerAccess: false,
-    isPremium: false, // NEW
+    isPremium: false,
   });
 
   // ============================================================
-  // 🔥 Sync Firestore user doc with React state
+  // 🔥 Sync Firestore → React State → UserContext
   // ============================================================
   useEffect(() => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
 
-    const unsubscribe = onSnapshot(ref, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
+    const unsubscribe = onSnapshot(ref, async (snap) => {
+      // ⭐ Auto-create Firestore document for first-time users
+      if (!snap.exists()) {
+        await setDoc(
+          ref,
+          {
+            enrolledCourses: [],
+            projects: [],
+            hasCertificationAccess: false,
+            hasServerAccess: false,
+            isPremium: false,
+          },
+          { merge: true }
+        );
+        return; // wait for next snapshot
+      }
 
-        setUserData({
-          enrolledCourses: data.enrolledCourses || [],
-          projects: data.projects || [],
-          hasCertificationAccess: data.hasCertificationAccess || false,
-          hasServerAccess: data.hasServerAccess || false,
-          isPremium: data.isPremium || false, // sync premium status
-        });
+      const data = snap.data();
 
-        // Also sync with context store
-        if (data.isPremium) {
-          activatePremium(); // keep UserContext always in sync
-        }
+      // Update local userData state
+      setUserData({
+        enrolledCourses: data.enrolledCourses || [],
+        projects: data.projects || [],
+        hasCertificationAccess: data.hasCertificationAccess || false,
+        hasServerAccess: data.hasServerAccess || false,
+        isPremium: data.isPremium || false,
+      });
 
-        setEnrolledCourses(data.enrolledCourses || []);
+      // Sync enrolledCourses into UserContext
+      setEnrolledCourses(data.enrolledCourses || []);
+
+      // Sync premium flag only to context (NO FIRESTORE WRITE)
+      if (data.isPremium) {
+        activatePremium();
       }
     });
 
@@ -53,51 +75,59 @@ export default function useUserData() {
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
-    if (!enrolledCourses.includes(courseSlug)) {
-      setEnrolledCourses([...enrolledCourses, courseSlug]);
-    }
-
     const ref = doc(db, "users", user.uid);
+
     await setDoc(
       ref,
       { enrolledCourses: arrayUnion(courseSlug) },
       { merge: true }
     );
+
+    if (!enrolledCourses.includes(courseSlug)) {
+      setEnrolledCourses((prev) => [...prev, courseSlug]);
+    }
   };
 
   // ============================================================
-  // 🟨 Grant Certification Access
+  // 🟨 Grant Certification Access → also make Premium
   // ============================================================
   const grantCertificationAccess = async () => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
-    await updateDoc(ref, { hasCertificationAccess: true, isPremium: true });
 
-    // Also update local premium flag
+    await updateDoc(ref, {
+      hasCertificationAccess: true,
+      isPremium: true,
+    });
+
     activatePremium();
   };
 
   // ============================================================
-  // 🟦 Grant Server Access
+  // 🟦 Grant Server Access → also make Premium
   // ============================================================
   const grantServerAccess = async () => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
-    await updateDoc(ref, { hasServerAccess: true, isPremium: true });
 
-    // Keep context premium consistent
+    await updateDoc(ref, {
+      hasServerAccess: true,
+      isPremium: true,
+    });
+
     activatePremium();
   };
 
   // ============================================================
-  // ⭐ NEW — Grant Full Premium Access
+  // ⭐ Full Premium Access (Certification + Server)
   // ============================================================
   const grantFullPremium = async () => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
+
     await updateDoc(ref, {
       isPremium: true,
       hasCertificationAccess: true,
@@ -113,6 +143,6 @@ export default function useUserData() {
     enrollInCourse,
     grantCertificationAccess,
     grantServerAccess,
-    grantFullPremium, // NEW
+    grantFullPremium,
   };
 }

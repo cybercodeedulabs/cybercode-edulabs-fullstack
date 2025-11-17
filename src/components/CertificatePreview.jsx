@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Lock, Award, CheckCircle, Linkedin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ✅ NEW imports for smart redirect
+// NEW
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -14,14 +14,16 @@ export default function CertificatePreview({
 }) {
   if (!certificate) return null;
 
-  // ✅ Access user + navigation
   const { user } = useUser();
   const navigate = useNavigate();
 
+  // ------------------------------
+  // Certificate Lock Logic
+  // ------------------------------
   const locked =
     !isEnrolled ||
     !isCompleted ||
-    !certificate?.isPremium ||
+    !user?.isPremium || // premium required
     !certificate?.studentName ||
     !certificate?.courseName ||
     !certificate?.completionDate ||
@@ -36,26 +38,36 @@ export default function CertificatePreview({
     }
   }, [locked]);
 
-  // ==========================================
-  // 🚀 Smart Redirect Logic
-  // ==========================================
+  // ------------------------------
+  // Smart Redirect for Premium
+  // ------------------------------
   const handlePremiumClick = () => {
-    if (user) navigate("/payment"); // logged-in -> upgrade page
-    else navigate("/register");     // not logged-in -> register
+    if (!user) {
+      navigate("/register");
+      return;
+    }
+
+    navigate("/payment?type=certification");
+  };
+
+  // ------------------------------
+  // Certificate Viewer Redirect
+  // ------------------------------
+  const handleViewCertificate = () => {
+    navigate(certificate.previewUrl);
   };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-8 my-14 border border-gray-200 dark:border-gray-700 max-w-5xl mx-auto">
-
       {/* Header */}
       <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mb-6 flex items-center gap-3">
         🎓 Certificate Preview
       </h3>
 
-      {/* Progress */}
+      {/* Progress Bar */}
       {locked && (
         <div className="mb-8 p-5 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
-          <h4 className="text-lg font-semibold mb-3">🎯 Your Progress Towards Certificate</h4>
+          <h4 className="text-lg font-semibold mb-3">🎯 Your Progress</h4>
 
           <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
             <div
@@ -65,23 +77,21 @@ export default function CertificatePreview({
           </div>
 
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            {progressPercent}% completed — finish all lessons to unlock certificate.
+            {progressPercent}% completed — finish the course to unlock.
           </p>
 
           <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <li>✔ Complete all lessons</li>
-            <li>✔ Finish required labs or projects</li>
-            <li>✔ Become a premium learner (if required)</li>
+            <li>✔ Finish required labs</li>
+            <li>✔ Upgrade to Premium</li>
           </ul>
         </div>
       )}
 
       {/* Certificate Section */}
       <div className="flex flex-col md:flex-row items-center gap-8">
-        
-        {/* Left: Certificate Image */}
+        {/* Certificate Image */}
         <div className="relative">
-
           <img
             src={certificate.image}
             alt="Certificate Preview"
@@ -92,11 +102,12 @@ export default function CertificatePreview({
 
           {locked && (
             <>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 to-purple-600/10 pointer-events-none blur-md"></div>
-
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 to-purple-600/10 blur-md"></div>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <Lock className="text-white w-10 h-10 drop-shadow-lg mb-1" />
-                <p className="text-white text-sm font-medium drop-shadow">Certificate Locked</p>
+                <p className="text-white text-sm font-medium drop-shadow">
+                  Certificate Locked
+                </p>
               </div>
             </>
           )}
@@ -115,15 +126,15 @@ export default function CertificatePreview({
           </AnimatePresence>
         </div>
 
-        {/* Right: Actions */}
+        {/* ACTIONS */}
         <div className="flex-1">
           {locked ? (
             <>
               <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                Complete the course and upgrade to premium to unlock your verifiable certificate.
+                Complete the course and upgrade to premium to unlock your
+                verifiable certificate.
               </p>
 
-              {/* ⭐ Updated Smart Button */}
               <button
                 onClick={handlePremiumClick}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition"
@@ -136,17 +147,18 @@ export default function CertificatePreview({
             <>
               <div className="flex items-center gap-2 mb-4 text-green-600 dark:text-green-400">
                 <CheckCircle className="w-6 h-6" />
-                <span className="text-lg font-semibold">Certificate Unlocked!</span>
+                <span className="text-lg font-semibold">
+                  Certificate Unlocked!
+                </span>
               </div>
 
-              <a
-                href={certificate.previewUrl}
-                target="_blank"
+              <button
+                onClick={handleViewCertificate}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition mb-3"
               >
                 <Sparkles size={18} />
                 View Certificate
-              </a>
+              </button>
 
               <a
                 href="https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME"

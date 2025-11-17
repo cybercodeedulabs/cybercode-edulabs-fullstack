@@ -8,9 +8,12 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 
 export const UserProvider = ({ children }) => {
+  // ------------------------------------
+  // USER + PREMIUM STATE
+  // ------------------------------------
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("cybercodeUser");
-    return storedUser ? JSON.parse(storedUser) : null;
+    const stored = localStorage.getItem("cybercodeUser");
+    return stored ? JSON.parse(stored) : null;
   });
 
   const [enrolledCourses, setEnrolledCourses] = useState(() => {
@@ -19,28 +22,29 @@ export const UserProvider = ({ children }) => {
   });
 
   const [courseProgress, setCourseProgress] = useState(() => {
-    const storedProgress = localStorage.getItem("courseProgress");
-    return storedProgress ? JSON.parse(storedProgress) : {};
+    const stored = localStorage.getItem("courseProgress");
+    return stored ? JSON.parse(stored) : {};
   });
 
   const [loading, setLoading] = useState(true);
 
-  // ================================
-  // 🔥 Firebase Auth Listener
-  // ================================
+  // ====================================================
+  // 🔥 AUTH LISTENER — Sync Firebase User → Local State
+  // ====================================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const storedUser = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
+        // Keep previous premium status from local storage
+        const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
         const userData = {
+          uid: firebaseUser.uid,
           name: firebaseUser.displayName,
           email: firebaseUser.email,
           photo: firebaseUser.photoURL,
-          uid: firebaseUser.uid,
 
-          // ⭐ Maintain Premium status
-          isPremium: storedUser.isPremium || false
+          // ⭐ No auto-premium — only respect stored
+          isPremium: stored.isPremium || false,
         };
 
         setUser(userData);
@@ -49,25 +53,28 @@ export const UserProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem("cybercodeUser");
       }
+
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // ================================
-  // Persist Local Storage
-  // ================================
+  // ====================================================
+  // 🔄 Persist State
+  // ====================================================
   useEffect(() => {
     if (user) localStorage.setItem("cybercodeUser", JSON.stringify(user));
     localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
     localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
   }, [user, enrolledCourses, courseProgress]);
 
-  // ================================
-  // Course Enrollment
-  // ================================
+  // ====================================================
+  // 🟩 LOCAL Enroll in Course (Firestore updates happen in useUserData)
+  // ====================================================
   const enrollInCourse = (courseSlug) => {
     if (!user) return;
+
     setEnrolledCourses((prev) => {
       const updated = prev.includes(courseSlug) ? prev : [...prev, courseSlug];
       localStorage.setItem("enrolledCourses", JSON.stringify(updated));
@@ -75,9 +82,9 @@ export const UserProvider = ({ children }) => {
     });
   };
 
-  // ================================
-  // Persona Engine
-  // ================================
+  // ====================================================
+  // 🧠 Persona Engine
+  // ====================================================
   const [personaScores, setPersonaScores] = useState(() => {
     try {
       const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
@@ -111,19 +118,20 @@ export const UserProvider = ({ children }) => {
     return { persona: entries[0][0], score: entries[0][1], all: entries };
   };
 
-  // ================================
-  // Lesson Completion
-  // ================================
+  // ====================================================
+  // 📘 Lesson Completion
+  // ====================================================
   const completeLesson = (courseSlug, lessonSlug) => {
     const lessons = lessonsData[courseSlug] || [];
     const courseData = courseProgress[courseSlug] || {
       completedLessons: [],
       currentLessonIndex: 0,
     };
+
     const nextLesson = lessons[courseData.completedLessons.length];
     if (nextLesson?.slug !== lessonSlug) return;
 
-    const updatedProgress = {
+    const updated = {
       ...courseProgress,
       [courseSlug]: {
         completedLessons: [...courseData.completedLessons, lessonSlug],
@@ -131,26 +139,29 @@ export const UserProvider = ({ children }) => {
       },
     };
 
-    setCourseProgress(updatedProgress);
-    localStorage.setItem("courseProgress", JSON.stringify(updatedProgress));
+    setCourseProgress(updated);
+    localStorage.setItem("courseProgress", JSON.stringify(updated));
   };
 
-  // ================================
-  // ⭐ Make User Premium
-  // ================================
+  // ====================================================
+  // ⭐ PREMIUM ACTIVATION (LOCAL ONLY)
+  // ====================================================
   const activatePremium = () => {
     setUser((prev) => {
+      if (!prev) return prev; // safety
+
       const updated = { ...prev, isPremium: true };
       localStorage.setItem("cybercodeUser", JSON.stringify(updated));
       return updated;
     });
   };
 
-  // ================================
-  // Logout
-  // ================================
+  // ====================================================
+  // 🔴 Logout
+  // ====================================================
   const logout = async () => {
     await signOut(auth);
+
     setUser(null);
     setEnrolledCourses([]);
     localStorage.removeItem("cybercodeUser");
@@ -164,16 +175,20 @@ export const UserProvider = ({ children }) => {
         user,
         setUser,
         logout,
+
         enrolledCourses,
         enrollInCourse,
-        loading,
+
         courseProgress,
         completeLesson,
+
+        personaScores,
         updatePersonaScore,
         getTopPersona,
-        personaScores,
 
-        // ⭐ Added
+        loading,
+
+        // ⭐ premium now stable
         activatePremium,
       }}
     >

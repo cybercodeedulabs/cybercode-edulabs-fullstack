@@ -1,10 +1,10 @@
-// src/pages/CourseDetail.jsx
+// src/components/CourseDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
 import { useUser } from "../contexts/UserContext";
-import CertificatePreview from "../components/CertificatePreview";
+import CertificatePreview from "./CertificatePreview";
 import { quickCoursePersonaDelta } from "../utils/personaEngine";
 
 export default function CourseDetail() {
@@ -19,14 +19,16 @@ export default function CourseDetail() {
     enrolledCourses,
     enrollInCourse,
     courseProgress,
-    updatePersonaScore
+    updatePersonaScore,
   } = useUser();
 
-  // Persona scoring
+  // Auto-score persona
   useEffect(() => {
     if (!user || !course) return;
     const deltas = quickCoursePersonaDelta(course);
-    if (Object.keys(deltas).length) updatePersonaScore(deltas);
+    if (Object.keys(deltas).length > 0) {
+      updatePersonaScore(deltas);
+    }
   }, [courseSlug, user]);
 
   const isEnrolled = user && enrolledCourses.includes(courseSlug);
@@ -34,7 +36,7 @@ export default function CourseDetail() {
   const progressData =
     courseProgress[courseSlug] || {
       completedLessons: [],
-      currentLessonIndex: 0
+      currentLessonIndex: 0,
     };
 
   const progressPercent = Math.round(
@@ -78,22 +80,34 @@ export default function CourseDetail() {
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
             {course.title}
           </h1>
-          <p className="text-lg md:text-xl text-indigo-100">{course.description}</p>
+          <p className="text-lg md:text-xl text-indigo-100">
+            {course.description}
+          </p>
         </div>
       </div>
 
-      {/* Course Overview */}
+      {/* ===== COURSE DETAILS ===== */}
       <div className="max-w-4xl mx-auto px-4 pb-10">
-        {/* Highlights */}
+        {/* Highlight Boxes */}
         <section className="mb-10 grid sm:grid-cols-2 gap-6">
           <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
             <h3 className="text-xl font-bold mb-2">📌 Course Highlights</h3>
             <ul className="text-sm space-y-1">
-              <li><strong>Duration:</strong> {course.duration || "Self-paced"}</li>
-              <li><strong>Level:</strong> {course.level || "Beginner Friendly"}</li>
-              <li><strong>Mode:</strong> {course.mode || "Self-paced + Labs"}</li>
-              <li><strong>Language:</strong> {course.language || "English"}</li>
-              <li><strong>Last Updated:</strong> {course.lastUpdated || "2025"}</li>
+              <li>
+                <strong>Duration:</strong> {course.duration || "Self-paced"}
+              </li>
+              <li>
+                <strong>Level:</strong> {course.level || "Beginner Friendly"}
+              </li>
+              <li>
+                <strong>Mode:</strong> {course.mode || "Self-paced + Labs"}
+              </li>
+              <li>
+                <strong>Language:</strong> {course.language || "English"}
+              </li>
+              <li>
+                <strong>Last Updated:</strong> {course.lastUpdated || "2025"}
+              </li>
             </ul>
           </div>
 
@@ -153,34 +167,39 @@ export default function CourseDetail() {
           </div>
         </section>
 
-        {/* Why This Course */}
+        {/* Why */}
         <section className="mb-10">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-3">
             ⭐ Why This Course?
           </h3>
           <p className="leading-relaxed text-gray-700 dark:text-gray-300">
             {course.why ||
-              "This course is built with real-world use cases, hands-on scenarios, industry workflows, job preparation, and production-level knowledge."}
+              "This course is built with real-world use cases and hands-on scenarios."}
           </p>
         </section>
 
         {/* FAQ */}
         <section className="mb-12">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
-            ❓ Frequently Asked Questions
+            ❓ FAQ
           </h3>
           <div className="space-y-4">
             {(course.faqs || []).map((f, i) => (
-              <details key={i} className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow">
+              <details
+                key={i}
+                className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow"
+              >
                 <summary className="font-semibold cursor-pointer">{f.q}</summary>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{f.a}</p>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  {f.a}
+                </p>
               </details>
             ))}
           </div>
         </section>
       </div>
 
-      {/* Lessons + Certificate */}
+      {/* ===== LESSONS SECTION ===== */}
       <div className="max-w-4xl mx-auto px-4 pb-16">
         <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-4">
           Lessons ({lessons.length})
@@ -197,7 +216,9 @@ export default function CourseDetail() {
                 return;
               }
               if (!completed && !isNext) {
-                showToast("Complete previous lessons to unlock this one.");
+                showToast(
+                  "Complete previous lessons and click 'Mark lesson as complete' to unlock this."
+                );
                 return;
               }
               navigate(`/courses/${courseSlug}/lessons/${lesson.slug}`);
@@ -224,33 +245,31 @@ export default function CourseDetail() {
           })}
         </ul>
 
-        {/* Certificate Preview */}
+        {/* ===== CERTIFICATE PREVIEW ===== */}
+
         <CertificatePreview
           certificate={{
             image: "/images/certificate-default.png",
+
+            // NEW certificate viewer route
             previewUrl: `/certificate/${courseSlug}`,
 
+            // Dynamic data
             studentName: user?.name || "",
             studentPhoto: user?.photo || "",
             courseName: course?.title || "",
             courseSlug,
-
             certificateId:
               progressData?.certificateId ||
               `CERT-${courseSlug.toUpperCase()}-${user?.uid?.slice(-6) || "000000"}`,
-
             completionDate:
-              progressData.completedLessons.length === lessons.length
+              progressData?.completedLessons.length === lessons.length
                 ? new Date().toISOString().split("T")[0]
                 : "",
 
-            // ⭐ Added for full certificate JSON
-            completedLessons: progressData.completedLessons,
-            totalLessons: lessons.length,
-
             isPremium: user?.isPremium ?? false,
 
-            ...(course.certificate || {})
+            ...(course.certificate || {}),
           }}
           isEnrolled={isEnrolled}
           isCompleted={
@@ -260,7 +279,7 @@ export default function CourseDetail() {
           progressPercent={progressPercent}
         />
 
-        {/* Recommendations */}
+        {/* ===== RECOMMENDED COURSES ===== */}
         <section className="mt-16">
           <h2 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
             🎯 Recommended For You
@@ -274,7 +293,9 @@ export default function CourseDetail() {
               </h3>
               <ul className="space-y-2 text-sm">
                 {courseData
-                  .filter((c) => c.category === course.category && c.slug !== courseSlug)
+                  .filter(
+                    (c) => c.category === course.category && c.slug !== courseSlug
+                  )
                   .slice(0, 3)
                   .map((c) => (
                     <li key={c.slug}>
