@@ -18,32 +18,38 @@ function NeonHeroBackground() {
   return (
     <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
 
-      {/* Deep dark gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black opacity-95" />
+      {/* Base dark gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0a0f1f] to-black" />
 
-      {/* Top-left cyan glow */}
+      {/* Floating Cyan Blob */}
       <motion.div
-        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.15, 1] }}
-        transition={{ duration: 8, repeat: Infinity }}
-        className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-600/10 blur-3xl"
-      />
-
-      {/* Bottom-right indigo glow */}
-      <motion.div
-        animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.2, 1] }}
-        transition={{ duration: 10, repeat: Infinity }}
-        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-3xl"
-      />
-
-      {/* Moving soft streak */}
-      <motion.div
-        animate={{ x: ["0%", "100%"], opacity: [0.1, 0.3, 0.1] }}
+        animate={{ scale: [1, 1.25, 1], opacity: [0.15, 0.3, 0.15] }}
         transition={{ duration: 12, repeat: Infinity }}
-        className="absolute top-0 h-full w-[220px] bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent blur-xl"
+        className="absolute top-[-350px] left-[-250px] w-[900px] h-[900px] rounded-full bg-cyan-500/20 blur-[120px]"
       />
+
+      {/* Floating Indigo Blob */}
+      <motion.div
+        animate={{ scale: [1.1, 1.35, 1.1], opacity: [0.1, 0.25, 0.1] }}
+        transition={{ duration: 14, repeat: Infinity }}
+        className="absolute bottom-[-350px] right-[-250px] w-[900px] h-[900px] rounded-full bg-indigo-500/20 blur-[140px]"
+      />
+
+      {/* Animated grid overlay */}
+      <div className="absolute inset-0 opacity-[0.05] bg-[url('/images/hero-grid.png')] 
+                      bg-repeat animate-[gridMove_60s_linear_infinite]" />
+
+      <style>{`
+        @keyframes gridMove {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-1000px); }
+        }
+      `}</style>
+
     </div>
   );
 }
+
 
 // ===============================
 // 3D Cube — C3 Logo Hero Element
@@ -51,32 +57,30 @@ function NeonHeroBackground() {
 function C3Cube({ size = 260 }) {
   return (
     <motion.div
-      initial={{ scale: 0.96, rotateY: -8 }}
-      animate={{ scale: 1, rotateY: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        rotateY: [0, 6, -6, 0],
+        y: [0, -10, 0],
+      }}
+      transition={{
+        duration: 6,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
       className="mx-auto lg:mx-0"
       style={{ width: size, height: size }}
     >
-      <div className="relative w-full h-full">
-        <img
-          src="/images/c3-logo.png"
-          alt="C3 Cube"
-          className="w-full h-full object-contain drop-shadow-[0_20px_60px_rgba(14,165,233,0.12)]"
-          loading="lazy"
-        />
-
-        {/* subtle cyan glow */}
-        <div
-          className="absolute inset-0 rounded-xl pointer-events-none"
-          style={{
-            boxShadow:
-              "0 30px 80px rgba(14,165,233,0.08), 0 8px 30px rgba(99,102,241,0.04)",
-          }}
-        />
-      </div>
+      <img
+        src="/images/c3-logo.png"
+        alt="C3 Logo"
+        className="w-full h-full object-contain drop-shadow-[0_25px_60px_rgba(56,189,248,0.35)]"
+      />
     </motion.div>
   );
 }
+
 
 // ===============================
 // LANDING SECTION (New C3 Design)
@@ -108,9 +112,15 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </div>
 
           {/* Hero Title */}
-          <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight text-white">
-            C3 Cloud — India’s Education-First Developer Cloud
-          </h1>
+          <motion.h1
+  initial={{ opacity: 0, y: 20, letterSpacing: "-0.02em" }}
+  animate={{ opacity: 1, y: 0, letterSpacing: "0em" }}
+  transition={{ duration: 0.9, ease: "easeOut" }}
+  className="text-4xl sm:text-5xl font-extrabold leading-tight text-white drop-shadow-xl"
+>
+  C3 Cloud — India’s Education-First Developer Cloud
+</motion.h1>
+
 
           {/* Description */}
           <p className="mt-4 max-w-2xl text-lg text-slate-300">
