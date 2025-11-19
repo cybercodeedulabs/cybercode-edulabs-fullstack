@@ -290,19 +290,11 @@ function CloudConsole({ onCreate }) {
     fetchInstances();
   }, []);
 
-  async function fetchInstances() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/cloud/instances");
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setInstances(data.instances || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
+async function fetchInstances() {
+  setLoading(false);
+  setInstances([]);  // empty list = no errors
+}
+
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-16">
@@ -376,23 +368,19 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
     e.preventDefault();
     setCreating(true);
 
-    try {
-      const res = await fetch("/api/cloud/instances", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gitUrl, plan }),
-      });
+    // ⭐ MOCK success process — no API calls
+    setTimeout(() => {
+      // return mock instance object if needed later
+      onSuccess &&
+        onSuccess({
+          id: "mock-" + Date.now(),
+          name: "C3 Workspace",
+          plan,
+          url: "#",
+        });
 
-      if (!res.ok) throw new Error("Create failed");
-      const data = await res.json();
-      onSuccess && onSuccess(data.instance);
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create workspace.");
-    } finally {
       setCreating(false);
-    }
+    }, 900); // smooth fake processing
   }
 
   return (
@@ -451,18 +439,21 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
 }
 
 
+
 // =============================
 // USAGE SECTION (Redesigned Neon, Consistent With Landing)
 // =============================
 function CloudUsage() {
   const [usage, setUsage] = useState(null);
 
-  useEffect(() => {
-    fetch("/api/cloud/usage")
-      .then((r) => r.json())
-      .then((d) => setUsage(d))
-      .catch(console.error);
-  }, []);
+useEffect(() => {
+  setUsage({
+    cpuUsed: 0,
+    cpuQuota: 2,
+    storageUsed: 0,
+    storageQuota: 10
+  });
+}, []);
 
   return (
     <section className="max-w-5xl mx-auto px-6 pb-20 pt-4">
