@@ -14,22 +14,50 @@ const api = {
 };
 
 // ---------- Small decorative components ----------
+// function NeonHeroBackground() {
+//   // simple animated gradient + subtle grid using CSS
+//   return (
+//     <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+//       <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black opacity-95"></div>
+//       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(56,189,248,0.03) 0%, rgba(124,58,237,0.03) 50%, rgba(99,102,241,0.02) 100%)] mix-blend-overlay pointer-events-none" />
+//       <div className="absolute inset-0 bg-[url('/images/hero-grid.png')] bg-repeat opacity-5 animate-[gridPan_60s_linear_infinite]" />
+//       <style>{`
+//         @keyframes gridPan {
+//           from { background-position: 0 0; }
+//           to { background-position: 1000px 0; }
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
 function NeonHeroBackground() {
-  // simple animated gradient + subtle grid using CSS
   return (
     <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black opacity-95"></div>
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(56,189,248,0.03) 0%, rgba(124,58,237,0.03) 50%, rgba(99,102,241,0.02) 100%)] mix-blend-overlay pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('/images/hero-grid.png')] bg-repeat opacity-5 animate-[gridPan_60s_linear_infinite]" />
-      <style>{`
-        @keyframes gridPan {
-          from { background-position: 0 0; }
-          to { background-position: 1000px 0; }
-        }
-      `}</style>
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-black opacity-95" />
+
+      {/* Animated radial glow */}
+      <motion.div
+        animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.15, 1] }}
+        transition={{ duration: 8, repeat: Infinity }}
+        className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-600/10 blur-3xl"
+      />
+
+      <motion.div
+        animate={{ opacity: [0.3, 0.5, 0.3], scale: [1, 1.2, 1] }}
+        transition={{ duration: 10, repeat: Infinity }}
+        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-indigo-600/10 blur-3xl"
+      />
+
+      {/* Moving light streaks */}
+      <motion.div
+        animate={{ x: ["0%", "100%"], opacity: [0.1, 0.3, 0.1] }}
+        transition={{ duration: 12, repeat: Infinity }}
+        className="absolute top-0 h-full w-[220px] bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent blur-xl"
+      />
     </div>
   );
 }
+
 
 // ---------- Hero Cube component ----------
 function C3Cube({ size = 220 }) {
