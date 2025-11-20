@@ -67,9 +67,9 @@ export default function Pricing() {
       name: "Enterprise",
       price: "Talk to us",
       priceSub: "custom for institutes & teams",
-      badge: "For colleges & teams",
+      badge: "Campus & Enterprise",
       description:
-        "Tailored C3 Cloud environments for colleges, training companies, and startups.",
+        "Designed for universities, startups, and corporate engineering teams needing secure, scalable cloud workspaces with custom configurations, team management, audit logs, and dedicated support.",
       features: [
         "Custom vCPU & RAM limits",
         "Larger storage quotas",
