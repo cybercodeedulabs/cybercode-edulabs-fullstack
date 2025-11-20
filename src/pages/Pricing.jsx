@@ -64,7 +64,7 @@ export default function Pricing() {
       highlight: true,
     },
     {
-      name: "Startup / Campus",
+      name: "Enterprise",
       price: "Talk to us",
       priceSub: "custom for institutes & teams",
       badge: "For colleges & teams",
@@ -221,7 +221,7 @@ export default function Pricing() {
                     Edu+
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-100">
-                    Startup / Campus
+                    Enterprise
                   </th>
                 </tr>
               </thead>
