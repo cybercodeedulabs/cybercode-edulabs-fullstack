@@ -21,6 +21,7 @@ import {
   C3GitDeploySimulator,
   C3IAMSimulator,
   C3LiveTerminal,
+  C3DemoZone,
 } from "../components/simulations/c3";
 
 /* ===========================================================================
@@ -489,6 +490,9 @@ function CloudUsage() {
 /* ===========================================================================
    MAIN EXPORT
    =========================================================================== */
+/* ===========================================================================
+   MAIN EXPORT
+   =========================================================================== */
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [selectedPlan, setSelectedPlan] = useState("student");
@@ -523,7 +527,11 @@ export default function CybercodeCloudModule() {
         )}
       </motion.div>
 
+      {/* Demo zone only on landing */}
+      {view === "landing" && <C3DemoZone />}
+
       <CloudUsage />
     </div>
   );
 }
+
