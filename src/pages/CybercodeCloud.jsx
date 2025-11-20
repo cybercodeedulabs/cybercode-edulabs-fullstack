@@ -54,7 +54,7 @@ function C3Cube({ size = 260 }) {
       style={{ width: size, height: size }}
     >
       <img
-        src="/images/c3-logo-premium.png"
+        src="/images/c3-cube-premium.png"
         alt="C3 Rotating Cube"
         className="w-full h-full object-contain drop-shadow-[0_25px_60px_rgba(56,189,248,0.35)]"
       />
