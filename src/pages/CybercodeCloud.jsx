@@ -73,69 +73,69 @@ function C3Cube({ size = 240 }) {
 /* ===========================================================================
    INTERACTIVE DEMO ZONE
    =========================================================================== */
-function C3DemoZone() {
-  const [tab, setTab] = useState("sandboxes");
+// function C3DemoZone() {
+//   const [tab, setTab] = useState("sandboxes");
 
-  const tabs = [
-    { id: "sandboxes", label: "Safe Sandboxes" },
-    { id: "git", label: "Git Auto-Deploy" },
-    { id: "iam", label: "IAM Roles" },
-    { id: "terminal", label: "Live Terminal" },
-  ];
+//   const tabs = [
+//     { id: "sandboxes", label: "Safe Sandboxes" },
+//     { id: "git", label: "Git Auto-Deploy" },
+//     { id: "iam", label: "IAM Roles" },
+//     { id: "terminal", label: "Live Terminal" },
+//   ];
 
-  const renderActive = () => {
-    switch (tab) {
-      case "git":
-        return <C3GitDeploySimulator />;
-      case "iam":
-        return <C3IAMSimulator />;
-      case "terminal":
-        return <C3LiveTerminal />;
-      case "sandboxes":
-      default:
-        return <C3SandboxSimulator />;
-    }
-  };
+//   const renderActive = () => {
+//     switch (tab) {
+//       case "git":
+//         return <C3GitDeploySimulator />;
+//       case "iam":
+//         return <C3IAMSimulator />;
+//       case "terminal":
+//         return <C3LiveTerminal />;
+//       case "sandboxes":
+//       default:
+//         return <C3SandboxSimulator />;
+//     }
+//   };
 
-  return (
-    <section className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-      <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">
-            Explore C3 Cloud in 60 seconds
-          </h2>
-          <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-            Switch between tabs to see how C3 Cloud provisions sandboxes, deploys
-            from Git, controls IAM roles and exposes a secure shell — all from a
-            single education-first platform.
-          </p>
-        </div>
-      </div>
+//   return (
+//     <section className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+//       <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+//         <div>
+//           <h2 className="text-2xl md:text-3xl font-bold text-white">
+//             Explore C3 Cloud in 60 seconds
+//           </h2>
+//           <p className="mt-2 text-sm text-slate-300 max-w-2xl">
+//             Switch between tabs to see how C3 Cloud provisions sandboxes, deploys
+//             from Git, controls IAM roles and exposes a secure shell — all from a
+//             single education-first platform.
+//           </p>
+//         </div>
+//       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {tabs.map((t) => (
-          <Button
-            key={t.id}
-            size="sm"
-            variant={tab === t.id ? "default" : "outline"}
-            className={
-              tab === t.id
-                ? "bg-cyan-500 text-white"
-                : "border-slate-700 text-slate-200"
-            }
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </Button>
-        ))}
-      </div>
+//       {/* Tabs */}
+//       <div className="flex flex-wrap gap-2 mb-4">
+//         {tabs.map((t) => (
+//           <Button
+//             key={t.id}
+//             size="sm"
+//             variant={tab === t.id ? "default" : "outline"}
+//             className={
+//               tab === t.id
+//                 ? "bg-cyan-500 text-white"
+//                 : "border-slate-700 text-slate-200"
+//             }
+//             onClick={() => setTab(t.id)}
+//           >
+//             {t.label}
+//           </Button>
+//         ))}
+//       </div>
 
-      {/* Active simulator */}
-      {renderActive()}
-    </section>
-  );
-}
+//       {/* Active simulator */}
+//       {renderActive()}
+//     </section>
+//   );
+// }
 
 /* ===========================================================================
    PREMIUM HERO LAYOUT — Option C (BEST ENTERPRISE LOOK)
