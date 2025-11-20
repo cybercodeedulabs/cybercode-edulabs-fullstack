@@ -1,12 +1,11 @@
-// src/components/simulations/c3/C3DemoZone.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const TOP_TABS = [
   { id: "safe", label: "Safe Sandboxes" },
   { id: "git", label: "Git Auto-Deploy" },
   { id: "iam", label: "IAM Roles" },
-  { id: "terminal", label: "Live Terminal", disabled: true },
+  { id: "terminal", label: "Live Terminal" }, // ENABLED NOW
 ];
 
 const LAB_TABS = [
@@ -17,42 +16,79 @@ const LAB_TABS = [
 ];
 
 const LOGS_BY_SCENARIO = {
-  safe: `Provisioning "Kubernetes Cluster"...
-• Allocating 2 vCPU • 4GB RAM
-• Attaching student policy
-• Opening secure web IDE
+  safe: [
+    `Provisioning "Kubernetes Cluster"...`,
+    `• Allocating 2 vCPU • 4GB RAM`,
+    `• Attaching student policy`,
+    `• Opening secure web IDE`,
+    ``,
+    `Sandbox ready ✅  (per-student, auto-cleanup in 90 mins)`
+  ],
 
-Sandbox ready ✅  (per-student, auto-cleanup in 90 mins)`,
-  git: `Deploying from Git repo "c3-sample-app"...
-• Cloning main branch
-• Building container image
-• Running smoke tests
-• Rolling out to student sandbox
+  git: [
+    `Deploying from Git repo "c3-sample-app"...`,
+    `• Cloning main branch`,
+    `• Building container image`,
+    `• Running smoke tests`,
+    `• Rolling out to student sandbox`,
+    ``,
+    `Git auto-deploy completed ✅`,
+  ],
 
-Git auto-deploy completed ✅`,
-  iam: `Configuring IAM roles for "Cloud Security Lab"...
-• Creating student role with least-privilege
-• Attaching read-only S3 & CloudWatch policies
-• Issuing temporary credentials
+  iam: [
+    `Configuring IAM roles for "Cloud Security Lab"...`,
+    `• Creating student role with least-privilege`,
+    `• Attaching read-only S3 & CloudWatch policies`,
+    `• Issuing temporary credentials`,
+    ``,
+    `IAM configuration applied ✅`,
+  ],
 
-IAM configuration applied ✅`,
-  terminal: `Connecting to live terminal...
-• Allocating ephemeral pod
-• Mounting home directory
-• Streaming logs to browser
-
-This is a demo view — real terminal coming in the next phase.`,
+  terminal: [
+    `Connecting to live terminal...`,
+    `• Allocating ephemeral pod`,
+    `• Mounting home directory`,
+    `• Streaming logs to browser`,
+    ``,
+    `Live terminal session active ✔`,
+  ],
 };
 
 export default function C3DemoZone() {
   const [topTab, setTopTab] = useState("safe");
   const [labTab, setLabTab] = useState("k8s");
 
-  const currentLog = LOGS_BY_SCENARIO[topTab];
+  const [animatedLog, setAnimatedLog] = useState("");
+  const [lineIndex, setLineIndex] = useState(0);
+
+  const scenarioLines = LOGS_BY_SCENARIO[topTab];
+
+  /** 
+   * Reset animation when changing tabs 
+   */
+  useEffect(() => {
+    setAnimatedLog("");
+    setLineIndex(0);
+  }, [topTab]);
+
+  /**
+   * Animate logs line by line
+   */
+  useEffect(() => {
+    if (lineIndex >= scenarioLines.length) return;
+
+    const timer = setTimeout(() => {
+      setAnimatedLog((prev) => prev + scenarioLines[lineIndex] + "\n");
+      setLineIndex((i) => i + 1);
+    }, 600); // line speed
+
+    return () => clearTimeout(timer);
+  }, [lineIndex, scenarioLines]);
 
   return (
     <section className="bg-neutral-900 px-6 pb-20 pt-4">
       <div className="max-w-7xl mx-auto">
+
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-white">
@@ -65,22 +101,20 @@ export default function C3DemoZone() {
           </p>
         </div>
 
-        {/* Card */}
+        {/* Outer Card */}
         <div className="rounded-3xl border border-slate-800 bg-slate-950/90 shadow-2xl overflow-hidden">
-          {/* Top tabs */}
+
+          {/* Top Tabs */}
           <div className="flex flex-wrap gap-2 border-b border-slate-800 bg-slate-950/80 px-4 pt-4 pb-3">
             {TOP_TABS.map((tab) => {
               const active = tab.id === topTab;
               return (
                 <button
                   key={tab.id}
-                  disabled={tab.disabled}
-                  onClick={() => !tab.disabled && setTopTab(tab.id)}
+                  onClick={() => setTopTab(tab.id)}
                   className={[
                     "px-4 py-2 rounded-full text-sm font-medium transition",
-                    tab.disabled
-                      ? "bg-slate-900 text-slate-600 cursor-not-allowed"
-                      : active
+                    active
                       ? "bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.55)]"
                       : "bg-slate-900 text-slate-200 hover:bg-slate-800",
                   ].join(" ")}
@@ -91,7 +125,7 @@ export default function C3DemoZone() {
             })}
           </div>
 
-          {/* Lab tabs */}
+          {/* Lab Tabs */}
           <div className="flex flex-wrap gap-2 px-4 pt-4 pb-3 border-b border-slate-900/80">
             {LAB_TABS.map((tab) => {
               const active = tab.id === labTab;
@@ -112,7 +146,7 @@ export default function C3DemoZone() {
             })}
           </div>
 
-          {/* Neon terminal */}
+          {/* Neon Terminal */}
           <div className="px-4 pt-4 pb-5">
             <motion.div
               initial={{ opacity: 0, y: 6 }}
@@ -123,12 +157,12 @@ export default function C3DemoZone() {
               {/* Terminal header */}
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-cyan-500/20 bg-[#020617]/80">
                 <div className="flex items-center gap-2 text-xs text-cyan-100/80">
-                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
                   <span className="font-mono uppercase tracking-wide">
-                    {labTab === "k8s" && "Kubernetes Cluster Sandbox"}
-                    {labTab === "python" && "Python Lab Sandbox"}
-                    {labTab === "devops" && "DevOps Lab Sandbox"}
-                    {labTab === "golang" && "Golang API Lab Sandbox"}
+                    {labTab === "k8s" && "KUBERNETES CLUSTER SANDBOX"}
+                    {labTab === "python" && "PYTHON LAB SANDBOX"}
+                    {labTab === "devops" && "DEVOPS LAB SANDBOX"}
+                    {labTab === "golang" && "GOLANG API LAB SANDBOX"}
                   </span>
                 </div>
                 <span className="text-[10px] px-2 py-1 rounded-full bg-slate-900 text-slate-300 font-medium">
@@ -136,10 +170,10 @@ export default function C3DemoZone() {
                 </span>
               </div>
 
-              {/* Terminal body */}
+              {/* Terminal Body */}
               <div className="px-4 py-3">
                 <pre className="font-mono text-[13px] leading-relaxed text-cyan-100/95 whitespace-pre-wrap">
-{currentLog}
+{animatedLog}
                 </pre>
               </div>
             </motion.div>
