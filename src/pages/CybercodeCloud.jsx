@@ -16,7 +16,7 @@ import { Select, SelectItem } from "../components/ui/select";
 import CloudWaitlist from "../components/CloudWaitlist";
 
 // C3 Cloud Interactive Demo Zone
-import C3DemoZone from "../components/simulations/c3/C3CloudDemoZone";
+import C3DemoZone from "../components/simulations/c3/C3DemoZone";
 
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
@@ -317,7 +317,7 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
           plan,
           url: "#",
         });
-        
+
       setCreating(false);
     }, 900);
   }
