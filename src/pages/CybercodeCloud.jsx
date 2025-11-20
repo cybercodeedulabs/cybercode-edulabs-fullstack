@@ -1,6 +1,6 @@
 // ============================================================================
 // src/pages/CybercodeCloud.jsx
-// Premium Enterprise Hero Layout (Option C) — FINAL VERSION
+// Premium Enterprise Hero Layout (Option C) — with Interactive Demo Zone
 // ============================================================================
 
 import React, { useEffect, useState } from "react";
@@ -14,6 +14,14 @@ import { Select, SelectItem } from "../components/ui/select";
 
 // Cloud Waitlist
 import CloudWaitlist from "../components/CloudWaitlist";
+
+// C3 simulators
+import {
+  C3SandboxSimulator,
+  C3GitDeploySimulator,
+  C3IAMSimulator,
+  C3LiveTerminal,
+} from "../components/simulations/c3";
 
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
@@ -62,6 +70,73 @@ function C3Cube({ size = 240 }) {
 }
 
 /* ===========================================================================
+   INTERACTIVE DEMO ZONE
+   =========================================================================== */
+function C3DemoZone() {
+  const [tab, setTab] = useState("sandboxes");
+
+  const tabs = [
+    { id: "sandboxes", label: "Safe Sandboxes" },
+    { id: "git", label: "Git Auto-Deploy" },
+    { id: "iam", label: "IAM Roles" },
+    { id: "terminal", label: "Live Terminal" },
+  ];
+
+  const renderActive = () => {
+    switch (tab) {
+      case "git":
+        return <C3GitDeploySimulator />;
+      case "iam":
+        return <C3IAMSimulator />;
+      case "terminal":
+        return <C3LiveTerminal />;
+      case "sandboxes":
+      default:
+        return <C3SandboxSimulator />;
+    }
+  };
+
+  return (
+    <section className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+      <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Explore C3 Cloud in 60 seconds
+          </h2>
+          <p className="mt-2 text-sm text-slate-300 max-w-2xl">
+            Switch between tabs to see how C3 Cloud provisions sandboxes, deploys
+            from Git, controls IAM roles and exposes a secure shell — all from a
+            single education-first platform.
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {tabs.map((t) => (
+          <Button
+            key={t.id}
+            size="sm"
+            variant={tab === t.id ? "default" : "outline"}
+            className={
+              tab === t.id
+                ? "bg-cyan-500 text-white"
+                : "border-slate-700 text-slate-200"
+            }
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Active simulator */}
+      {renderActive()}
+    </section>
+  );
+}
+
+/* ===========================================================================
    PREMIUM HERO LAYOUT — Option C (BEST ENTERPRISE LOOK)
    =========================================================================== */
 function CloudLanding({ onLaunch, onSelectPlan }) {
@@ -82,7 +157,6 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       >
         {/* LEFT — TEXT */}
         <div className="flex-1 text-left">
-
           {/* Brand Row */}
           <div className="inline-flex items-center gap-3 mb-6">
             <img
@@ -91,8 +165,12 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
               alt="C3 Icon"
             />
             <div className="text-sm text-slate-300">
-              <div className="font-semibold text-white text-base tracking-wide">C3 Cloud</div>
-              <div className="text-xs opacity-80">Cybercode EduLabs • India • Secure Cloud</div>
+              <div className="font-semibold text-white text-base tracking-wide">
+                C3 Cloud
+              </div>
+              <div className="text-xs opacity-80">
+                Cybercode EduLabs • India • Secure Cloud
+              </div>
             </div>
           </div>
 
@@ -113,11 +191,12 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
             </span>
           </motion.h1>
 
-          {/* DESCRIPTION — softer color for enterprise feel */}
+          {/* DESCRIPTION */}
           <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-slate-300/90">
-            Deploy learning labs, launch isolated environments, run student workspaces,
-            enable Git auto-deploy, secure sandboxes & role-based IAM — built for universities,
-            training institutes and modern startups.
+            Deploy learning labs, launch isolated environments, run student
+            workspaces, enable Git auto-deploy, secure sandboxes & role-based
+            IAM — built for universities, training institutes and modern
+            startups.
           </p>
 
           {/* BUTTONS */}
@@ -148,11 +227,13 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
 
         {/* RIGHT — CUBE + FEATURES */}
         <div className="lg:w-1/2">
-          <div className="
+          <div
+            className="
             bg-white/5 border border-white/10 
             rounded-3xl p-8 backdrop-blur-lg 
             shadow-2xl
-          ">
+          "
+          >
             <C3Cube size={260} />
 
             {/* Feature Grid */}
@@ -177,14 +258,14 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </motion.div>
 
       {/* WAITLIST */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div id="waitlist" className="mt-10 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-6">
+        <div id="waitlist" className="mt-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Join the Cybercode Cloud Beta 🚀
           </h2>
           <p className="text-slate-300 max-w-xl mx-auto mb-8">
-            Be among the first to access India’s developer cloud. Early users get
-            priority onboarding & dedicated support.
+            Be among the first to access India’s developer cloud. Early users
+            get priority onboarding & dedicated support.
           </p>
 
           <div className="max-w-2xl mx-auto">
@@ -196,6 +277,9 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </div>
         </div>
       </div>
+
+      {/* DEMO ZONE (just below waitlist) */}
+      <C3DemoZone />
     </section>
   );
 }
@@ -249,7 +333,9 @@ function CloudConsole({ onCreate }) {
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold text-white">{ins.name || ins.id}</h3>
+                      <h3 className="font-semibold text-white">
+                        {ins.name || ins.id}
+                      </h3>
                       <p className="text-sm text-slate-300">
                         {ins.plan || "Student"} • {ins.status}
                       </p>
@@ -257,7 +343,11 @@ function CloudConsole({ onCreate }) {
 
                     <div className="flex gap-2">
                       <Button asChild size="sm">
-                        <a href={ins.url || "#"} target="_blank" rel="noreferrer">
+                        <a
+                          href={ins.url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           Open
                         </a>
                       </Button>
@@ -335,7 +425,11 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
               <Button type="submit" disabled={creating}>
                 {creating ? "Creating…" : "Create Workspace"}
               </Button>
-              <Button variant="secondary" type="button" onClick={() => setGitUrl("")}>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setGitUrl("")}
+              >
                 Cancel
               </Button>
             </div>
