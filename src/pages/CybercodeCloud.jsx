@@ -37,16 +37,14 @@ function NebulaBackground() {
 function C3Cube({ size = 260 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 1, scale: 1 }}
       animate={{
-        opacity: 1,
-        scale: 1,
-        rotateY: [-8, 8, -8],   // safe wobble
-        rotateX: [0, 4, 0],     // slight tilt
-        y: [0, -6, 0],          // soft float
+        rotateY: [ -8, 8, -8 ],
+        rotateX: [ 2, -2, 2 ],
+        y: [0, -6, 0],   // subtle floating
       }}
       transition={{
-        duration: 6,
+        duration: 10,
         repeat: Infinity,
         ease: "easeInOut",
       }}
@@ -55,12 +53,13 @@ function C3Cube({ size = 260 }) {
     >
       <img
         src="/images/c3-cube-premium.png"
-        alt="C3 Rotating Cube"
-        className="w-full h-full object-contain drop-shadow-[0_25px_60px_rgba(56,189,248,0.35)]"
+        alt="C3 Cube"
+        className="w-full h-full object-contain drop-shadow-[0_25px_60px_rgba(56,189,248,0.45)]"
       />
     </motion.div>
   );
 }
+
 
 /* ===========================================================================
    CLOUD LANDING — PREMIUM HERO (integrates nebula, gradient heading, cube)
