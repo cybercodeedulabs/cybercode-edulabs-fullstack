@@ -37,18 +37,27 @@ function NebulaBackground() {
 function C3Cube({ size = 260 }) {
   return (
     <motion.div
-      animate={{ rotateY: [0, 360] }}
-      transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-      style={{ width: size, height: size, perspective: 1200 }}
-      className="mx-auto lg:mx-0 will-change-transform"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        rotateY: [-8, 8, -8],   // safe wobble
+        rotateX: [0, 4, 0],     // slight tilt
+        y: [0, -6, 0],          // soft float
+      }}
+      transition={{
+        duration: 6,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+      className="mx-auto lg:mx-0"
+      style={{ width: size, height: size }}
     >
-      <div className="w-full h-full">
-        <img
-          src="/images/c3-cube-premium.png"
-          alt="C3 Premium Cube"
-          className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(0,180,255,0.20)]"
-        />
-      </div>
+      <img
+        src="/images/c3-logo-premium.png"
+        alt="C3 Rotating Cube"
+        className="w-full h-full object-contain drop-shadow-[0_25px_60px_rgba(56,189,248,0.35)]"
+      />
     </motion.div>
   );
 }
