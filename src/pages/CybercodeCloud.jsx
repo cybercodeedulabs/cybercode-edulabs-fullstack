@@ -1,6 +1,6 @@
 // ============================================================================
 // src/pages/CybercodeCloud.jsx
-// Premium Enterprise Hero Layout (Option C) — with Interactive Demo Zone
+// Premium Enterprise Hero Layout + Interactive Demo Zone + Console/Deploy/Usage
 // ============================================================================
 
 import React, { useEffect, useState } from "react";
@@ -15,14 +15,8 @@ import { Select, SelectItem } from "../components/ui/select";
 // Cloud Waitlist
 import CloudWaitlist from "../components/CloudWaitlist";
 
-// C3 simulators
-import {
-  C3SandboxSimulator,
-  C3GitDeploySimulator,
-  C3IAMSimulator,
-  C3LiveTerminal,
-  C3DemoZone,
-} from "../components/simulations/c3";
+// C3 Cloud Interactive Demo Zone
+import C3CloudDemoZone from "../components/simulations/c3/C3CloudDemoZone";
 
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
@@ -71,87 +65,21 @@ function C3Cube({ size = 240 }) {
 }
 
 /* ===========================================================================
-   INTERACTIVE DEMO ZONE
-   =========================================================================== */
-// function C3DemoZone() {
-//   const [tab, setTab] = useState("sandboxes");
-
-//   const tabs = [
-//     { id: "sandboxes", label: "Safe Sandboxes" },
-//     { id: "git", label: "Git Auto-Deploy" },
-//     { id: "iam", label: "IAM Roles" },
-//     { id: "terminal", label: "Live Terminal" },
-//   ];
-
-//   const renderActive = () => {
-//     switch (tab) {
-//       case "git":
-//         return <C3GitDeploySimulator />;
-//       case "iam":
-//         return <C3IAMSimulator />;
-//       case "terminal":
-//         return <C3LiveTerminal />;
-//       case "sandboxes":
-//       default:
-//         return <C3SandboxSimulator />;
-//     }
-//   };
-
-//   return (
-//     <section className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-//       <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-//         <div>
-//           <h2 className="text-2xl md:text-3xl font-bold text-white">
-//             Explore C3 Cloud in 60 seconds
-//           </h2>
-//           <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-//             Switch between tabs to see how C3 Cloud provisions sandboxes, deploys
-//             from Git, controls IAM roles and exposes a secure shell — all from a
-//             single education-first platform.
-//           </p>
-//         </div>
-//       </div>
-
-//       {/* Tabs */}
-//       <div className="flex flex-wrap gap-2 mb-4">
-//         {tabs.map((t) => (
-//           <Button
-//             key={t.id}
-//             size="sm"
-//             variant={tab === t.id ? "default" : "outline"}
-//             className={
-//               tab === t.id
-//                 ? "bg-cyan-500 text-white"
-//                 : "border-slate-700 text-slate-200"
-//             }
-//             onClick={() => setTab(t.id)}
-//           >
-//             {t.label}
-//           </Button>
-//         ))}
-//       </div>
-
-//       {/* Active simulator */}
-//       {renderActive()}
-//     </section>
-//   );
-// }
-
-/* ===========================================================================
-   PREMIUM HERO LAYOUT — Option C (BEST ENTERPRISE LOOK)
+   PREMIUM HERO LAYOUT — Option C (Enterprise look)
    =========================================================================== */
 function CloudLanding({ onLaunch, onSelectPlan }) {
   return (
     <section className="relative overflow-hidden">
       <NebulaBackground />
 
+      {/* HERO SECTION */}
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="
           relative z-10 max-w-7xl mx-auto 
-          px-6 pt-32 pb-24 
+          px-6 pt-32 pb-16
           flex flex-col lg:flex-row 
           items-center gap-20
         "
@@ -219,7 +147,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </div>
 
           {/* TRUST POINTS */}
-          <div className="mt-10 flex items-center gap-8 text-sm text-slate-400">
+          <div className="mt-10 flex items-center gap-8 text-sm text-slate-400 flex-wrap">
             <div>🇮🇳 India-first Cloud</div>
             <div>🔐 Secure IAM</div>
             <div>⚡ One-click Labs</div>
@@ -258,9 +186,14 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
         </div>
       </motion.div>
 
-      {/* WAITLIST */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-6">
-        <div id="waitlist" className="mt-4 text-center">
+      {/* DEMO ZONE — Explore C3 Cloud in 60 seconds */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-10">
+        <C3CloudDemoZone />
+      </div>
+
+      {/* WAITLIST SECTION */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div id="waitlist" className="mt-6 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
             Join the Cybercode Cloud Beta 🚀
           </h2>
@@ -278,15 +211,12 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
           </div>
         </div>
       </div>
-
-      {/* DEMO ZONE (just below waitlist) */}
-      <C3DemoZone />
     </section>
   );
 }
 
 /* ===========================================================================
-  CONSOLE — unchanged
+  CONSOLE
   =========================================================================== */
 function CloudConsole({ onCreate }) {
   const [instances, setInstances] = useState([]);
@@ -368,7 +298,7 @@ function CloudConsole({ onCreate }) {
 }
 
 /* ===========================================================================
-   DEPLOY — unchanged logic
+   DEPLOY
    =========================================================================== */
 function CloudDeploy({ onSuccess, preselectedPlan }) {
   const [gitUrl, setGitUrl] = useState("");
@@ -442,7 +372,7 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
 }
 
 /* ===========================================================================
-   USAGE — unchanged styling
+   USAGE
    =========================================================================== */
 function CloudUsage() {
   const [usage, setUsage] = useState(null);
@@ -490,9 +420,6 @@ function CloudUsage() {
 /* ===========================================================================
    MAIN EXPORT
    =========================================================================== */
-/* ===========================================================================
-   MAIN EXPORT
-   =========================================================================== */
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [selectedPlan, setSelectedPlan] = useState("student");
@@ -527,11 +454,8 @@ export default function CybercodeCloudModule() {
         )}
       </motion.div>
 
-      {/* Demo zone only on landing */}
-      {view === "landing" && <C3DemoZone />}
-
+      {/* Usage section always visible at bottom */}
       <CloudUsage />
     </div>
   );
 }
-
