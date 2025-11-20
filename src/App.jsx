@@ -30,6 +30,7 @@ import Contact from "./pages/Contact";
 import Labs from "./pages/Labs";
 import Enroll from "./pages/Enroll";
 import AdminWaitlist from "./pages/AdminWaitlist";
+import Pricing from "./pages/Pricing";
 
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
@@ -277,6 +278,7 @@ function App() {
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
             <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
+            <Route path="/pricing" element={<Pricing />} />
 
             <Route path="/register" element={<Register />} />
             <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
