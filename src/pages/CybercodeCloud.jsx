@@ -16,7 +16,7 @@ import { Select, SelectItem } from "../components/ui/select";
 import CloudWaitlist from "../components/CloudWaitlist";
 
 // C3 Cloud Interactive Demo Zone
-import C3CloudDemoZone from "../components/simulations/c3/C3CloudDemoZone";
+import C3DemoZone from "../components/simulations/c3/C3CloudDemoZone";
 
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
@@ -188,7 +188,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
 
       {/* DEMO ZONE — Explore C3 Cloud in 60 seconds */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-10">
-        <C3CloudDemoZone />
+        <C3DemoZone />
       </div>
 
       {/* WAITLIST SECTION */}
