@@ -335,7 +335,7 @@ export default function C3AdvancedSimulator({ compact = false }) {
               <div className="p-4 flex items-center gap-4">
                 <div className="flex-1">
                   <img
-                    src="/mnt/data/c3-architecture.png"
+                    src="/images/c3-architecture.png"
                     alt="C3 Architecture"
                     className="w-full h-40 object-contain rounded-md border border-slate-800/50"
                     style={{ background: "linear-gradient(180deg,#071021, #03101a)" }}
