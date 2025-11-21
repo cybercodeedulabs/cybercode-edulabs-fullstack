@@ -18,6 +18,7 @@ import CloudWaitlist from "../components/CloudWaitlist";
 
 // C3 Cloud Interactive Demo Zone
 import C3DemoZone from "../components/simulations/c3/C3DemoZone";
+import C3AdvancedSimulator from "../components/simulations/c3/C3AdvancedSimulator";
 
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
@@ -191,6 +192,11 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-10">
         <C3DemoZone />
       </div>
+      {/* ADVANCED SIMULATOR — Architecture + Orchestration Flow */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-20">
+        <C3AdvancedSimulator />
+      </div>
+
 
       {/* ABOUT + ARCHITECTURE SECTION */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16">
