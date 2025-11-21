@@ -267,7 +267,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
     </div>
 
     {/* RIGHT — ARCHITECTURE IMAGE */}
-    <div className="flex justify-center lg:justify-end">
+    <div className="flex justify-center lg:justify-end pt-6">
       <div className="
         bg-slate-950/80 border border-slate-800 
         rounded-3xl p-6 shadow-[0_0_45px_rgba(15,23,42,0.85)]
