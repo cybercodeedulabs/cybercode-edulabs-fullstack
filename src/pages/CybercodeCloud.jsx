@@ -203,7 +203,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
   <div className="grid gap-14 lg:grid-cols-2 items-start">
 
     {/* LEFT — PREMIUM TEXT SECTION */}
-    <div className="max-w-3xl">
+    <div className="max-w-2xl leading-relaxed tracking-wide">
 
       {/* Badge */}
       <div className="inline-flex items-center gap-2 mb-4">
@@ -218,7 +218,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </h2>
 
       {/* Paragraph 1 */}
-      <p className="text-[17px] text-slate-300 leading-relaxed mb-5">
+      <p className="text-[17px] text-slate-300 leading-[1.8] mb-5">
         C3 Cloud is an India-first developer cloud platform that gives learners,
         startups, and engineering teams instant access to secure, sandboxed,
         ready-to-use environments. Instead of spending hours configuring
@@ -227,12 +227,12 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </p>
 
       {/* Paragraph 2 */}
-      <p className="text-[17px] text-slate-300 leading-relaxed mb-5">
+      <p className="text-[17px] text-slate-300 leading-[1.8] mb-5">
         Whether you're practicing DevOps, building backend applications,
         experimenting with containers, deploying from Git, or running large-scale
-        internal training programs, C3 Cloud provides clean, predictable, and
-        isolated environments that mirror real-world industry workflows.
-        Every sandbox is pre-configured, auto-cleaned, and securely isolated.
+        internal training, C3 Cloud provides clean, predictable, fully isolated
+        environments that mirror real industry workflows. Every workspace is
+        pre-configured, auto-cleaned, and securely isolated.
       </p>
 
       {/* Subheading */}
@@ -241,25 +241,25 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </h3>
 
       {/* Paragraph 3 */}
-      <p className="text-[17px] text-slate-300 leading-relaxed mb-4">
+      <p className="text-[17px] text-slate-300 leading-[1.8] mb-4">
         Powered by India-region compute and optimized for Indian latency,
         workloads, and pricing, C3 Cloud is designed to support:
       </p>
 
       {/* Bullet List */}
-      <ul className="text-[16px] text-slate-300 space-y-2 mb-6 list-disc list-inside">
-        <li>Students beginning their cloud, DevOps, or programming journey</li>
+      <ul className="text-[16px] text-slate-300 space-y-2 mb-6 list-disc list-inside leading-relaxed">
+        <li>Students beginning their cloud or DevOps journey</li>
         <li>Colleges delivering hands-on labs at scale</li>
-        <li>Startups testing MVPs and backend services affordably</li>
-        <li>Corporate teams running internal cloud or DevOps training</li>
+        <li>Startups testing MVPs & backend services affordably</li>
+        <li>Corporate teams running internal DevOps or cloud training</li>
         <li>Professionals experimenting safely without risking production</li>
       </ul>
 
       {/* Final Paragraph */}
-      <p className="text-[17px] text-slate-300 leading-relaxed">
+      <p className="text-[17px] text-slate-300 leading-[1.8]">
         C3 Cloud brings modern cloud environments within reach for everyone —
-        affordable, accessible, secure, and uniquely tuned to India’s
-        fast-growing developer ecosystem.
+        affordable, accessible, secure, and uniquely tuned to India’s rapidly
+        growing developer ecosystem.
       </p>
     </div>
 
@@ -272,18 +272,19 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       ">
         <img
           src="/images/c3-architecture.png"
-          alt="C3 Cloud high-level architecture"
+          alt="C3 Cloud Architecture Diagram"
           className="w-full h-auto rounded-2xl object-contain"
         />
         <p className="mt-4 text-xs text-slate-400 text-center">
           High-level overview: C3 Console orchestrates labs, workspaces, Git deployments,
-          identity access, and monitoring — all from a unified platform.
+          IAM, and monitoring — unified under a single cloud platform.
         </p>
       </div>
     </div>
 
   </div>
 </div>
+
 {/* WHY C3 CLOUD SECTION */}
 <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24 mt-10">
   <div className="text-center mb-12">
