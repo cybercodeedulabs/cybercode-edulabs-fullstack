@@ -359,7 +359,7 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
   </div>
 </div>
 
-{/* HOW C3 CLOUD WORKS — PREMIUM SECTION */}
+
 {/* HOW C3 CLOUD WORKS — PREMIUM ENTERPRISE SECTION */}
 <div className="relative z-10 max-w-7xl mx-auto px-6 py-24">
 

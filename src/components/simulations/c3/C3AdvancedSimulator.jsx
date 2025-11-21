@@ -324,7 +324,7 @@ export default function C3AdvancedSimulator({ compact = false }) {
             </div>
 
             {/* Architecture preview */}
-            <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-900/80">
+            {/* <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-900/80">
               <div className="px-4 py-3 border-b border-slate-800/60 bg-[#061425]/70">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-white">Architecture</div>
@@ -352,12 +352,12 @@ export default function C3AdvancedSimulator({ compact = false }) {
                   </ul>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Notes */}
-            <div className="text-xs text-slate-400">
+            {/* <div className="text-xs text-slate-400">
               Tip: this is a safe visual demo. For a real live terminal, we will integrate a streamed WebSocket session (Phase 2).
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
