@@ -284,6 +284,75 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
 
   </div>
 </div>
+{/* WHY C3 CLOUD SECTION */}
+<div className="relative z-10 max-w-7xl mx-auto px-6 pb-24 mt-10">
+  <div className="text-center mb-12">
+    <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
+      Why C3 Cloud
+    </span>
+
+    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4 leading-tight">
+      A smarter cloud for builders, learners and modern teams
+    </h2>
+
+    <p className="text-slate-300 text-base md:text-lg mt-3 max-w-3xl mx-auto leading-relaxed">
+      C3 Cloud removes complexity and gives you clean, isolated, ready-to-use 
+      environments so you can focus on building, teaching or experimenting — not configuring servers.
+    </p>
+  </div>
+
+  {/* Feature Grid */}
+  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+    {/* Card 1 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">🚀 One-click Environments</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Launch labs, workspaces, API servers or Kubernetes clusters instantly — no setup, no complexity.
+      </p>
+    </div>
+
+    {/* Card 2 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">🔐 Secure & Isolated Sandboxes</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Every session runs in a fully isolated environment with usage limits, auto-cleanup and IAM controls.
+      </p>
+    </div>
+
+    {/* Card 3 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">🔄 Git Auto-Deploy</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Deploy from GitHub with a single click — perfect for backend apps, APIs, and training demos.
+      </p>
+    </div>
+
+    {/* Card 4 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">📦 Optimized for India</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        India-region compute means lower latency, affordable pricing, and fast performance for local users.
+      </p>
+    </div>
+
+    {/* Card 5 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">👨‍🏫 Perfect for Teams & Training</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Run classroom labs, corporate workshops or DevOps bootcamps for 10 or 200 students seamlessly.
+      </p>
+    </div>
+
+    {/* Card 6 */}
+    <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 shadow-[0_0_25px_rgba(15,23,42,0.6)] hover:border-cyan-400/40 transition">
+      <h3 className="text-lg font-semibold text-white mb-2">🧠 Real Industry Workflows</h3>
+      <p className="text-slate-300 text-sm leading-relaxed">
+        Every environment mirrors real industry tooling — Docker, Git, Kubernetes, dev servers, and more.
+      </p>
+    </div>
+  </div>
+</div>
 
 
       {/* WAITLIST SECTION */}
