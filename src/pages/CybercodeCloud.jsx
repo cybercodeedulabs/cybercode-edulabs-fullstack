@@ -198,79 +198,93 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
       </div>
 
 
-      {/* ABOUT + ARCHITECTURE SECTION */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16">
-        <div className="grid gap-10 lg:grid-cols-2 items-center">
-          {/* LEFT: TEXT */}
-          <div>
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
-                About C3 Cloud
-              </span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-              India’s Developer Cloud, built for how we learn, build and
-              innovate
-            </h2>
+{/* ABOUT + ARCHITECTURE SECTION */}
+<div className="relative z-10 max-w-7xl mx-auto px-6 pb-20">
+  <div className="grid gap-14 lg:grid-cols-2 items-start">
 
-            <p className="text-sm md:text-base text-slate-300 mb-4 leading-relaxed">
-              C3 Cloud is an India-first developer cloud platform designed to
-              give learners, startups and engineering teams instant access to
-              secure, sandboxed environments. Instead of spending hours
-              configuring infrastructure, C3 lets you launch ready-to-use labs,
-              isolated workspaces, API backends and Kubernetes clusters — all
-              with a single click.
-            </p>
+    {/* LEFT — PREMIUM TEXT SECTION */}
+    <div className="max-w-3xl">
 
-            <p className="text-sm md:text-base text-slate-300 mb-4 leading-relaxed">
-              Whether you’re practicing DevOps, building backend applications,
-              experimenting with containers, deploying from Git or running
-              internal training, C3 Cloud provides clean, predictable
-              environments that work out-of-the-box. Every sandbox is
-              pre-configured, auto-cleaned, securely isolated and designed to
-              mirror real-world industry workflows.
-            </p>
-
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">
-              Proudly built in India — serving both education and industry
-            </h3>
-            <p className="text-sm md:text-base text-slate-300 mb-3 leading-relaxed">
-              C3 Cloud is powered by India-region compute and tuned for Indian
-              latency, pricing and use cases. The platform is designed to serve:
-            </p>
-
-            <ul className="text-sm md:text-base text-slate-300 space-y-1 mb-4 list-disc list-inside">
-              <li>Students beginning their cloud and DevOps journey</li>
-              <li>Colleges and training institutes running hands-on labs</li>
-              <li>Startups building and testing MVPs on a budget</li>
-              <li>Corporate teams running internal DevOps / cloud training</li>
-              <li>Professionals experimenting safely without production risk</li>
-            </ul>
-
-            <p className="text-sm md:text-base text-slate-300 leading-relaxed">
-              C3 brings modern cloud environments within reach for everyone —
-              affordable, accessible, secure and tuned to India’s fast-growing
-              developer ecosystem.
-            </p>
-          </div>
-
-          {/* RIGHT: ARCHITECTURE IMAGE */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="bg-slate-950/80 border border-slate-800 rounded-3xl p-4 shadow-[0_0_40px_rgba(15,23,42,0.8)] max-w-md w-full">
-              <img
-                src="/images/c3-architecture.png"
-                alt="C3 Cloud high-level architecture"
-                className="w-full h-auto rounded-2xl object-contain"
-              />
-              <p className="mt-3 text-xs text-slate-400 text-center">
-                High-level view: C3 Console orchestrates learning labs,
-                workspaces and Git deployments with centralized IAM and
-                monitoring.
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Badge */}
+      <div className="inline-flex items-center gap-2 mb-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
+          About C3 Cloud
+        </span>
       </div>
+
+      {/* Title */}
+      <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-6">
+        India’s Developer Cloud — built for how we learn, build, and innovate
+      </h2>
+
+      {/* Paragraph 1 */}
+      <p className="text-[17px] text-slate-300 leading-relaxed mb-5">
+        C3 Cloud is an India-first developer cloud platform that gives learners,
+        startups, and engineering teams instant access to secure, sandboxed,
+        ready-to-use environments. Instead of spending hours configuring
+        infrastructure, C3 lets you launch labs, workspaces, API servers, and
+        Kubernetes clusters — all with a single click.
+      </p>
+
+      {/* Paragraph 2 */}
+      <p className="text-[17px] text-slate-300 leading-relaxed mb-5">
+        Whether you're practicing DevOps, building backend applications,
+        experimenting with containers, deploying from Git, or running large-scale
+        internal training programs, C3 Cloud provides clean, predictable, and
+        isolated environments that mirror real-world industry workflows.
+        Every sandbox is pre-configured, auto-cleaned, and securely isolated.
+      </p>
+
+      {/* Subheading */}
+      <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wide mb-3">
+        Proudly built in India — serving learners, startups, and enterprises
+      </h3>
+
+      {/* Paragraph 3 */}
+      <p className="text-[17px] text-slate-300 leading-relaxed mb-4">
+        Powered by India-region compute and optimized for Indian latency,
+        workloads, and pricing, C3 Cloud is designed to support:
+      </p>
+
+      {/* Bullet List */}
+      <ul className="text-[16px] text-slate-300 space-y-2 mb-6 list-disc list-inside">
+        <li>Students beginning their cloud, DevOps, or programming journey</li>
+        <li>Colleges delivering hands-on labs at scale</li>
+        <li>Startups testing MVPs and backend services affordably</li>
+        <li>Corporate teams running internal cloud or DevOps training</li>
+        <li>Professionals experimenting safely without risking production</li>
+      </ul>
+
+      {/* Final Paragraph */}
+      <p className="text-[17px] text-slate-300 leading-relaxed">
+        C3 Cloud brings modern cloud environments within reach for everyone —
+        affordable, accessible, secure, and uniquely tuned to India’s
+        fast-growing developer ecosystem.
+      </p>
+    </div>
+
+    {/* RIGHT — ARCHITECTURE IMAGE */}
+    <div className="flex justify-center lg:justify-end">
+      <div className="
+        bg-slate-950/80 border border-slate-800 
+        rounded-3xl p-6 shadow-[0_0_45px_rgba(15,23,42,0.85)]
+        max-w-md w-full
+      ">
+        <img
+          src="/images/c3-architecture.png"
+          alt="C3 Cloud high-level architecture"
+          className="w-full h-auto rounded-2xl object-contain"
+        />
+        <p className="mt-4 text-xs text-slate-400 text-center">
+          High-level overview: C3 Console orchestrates labs, workspaces, Git deployments,
+          identity access, and monitoring — all from a unified platform.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 
       {/* WAITLIST SECTION */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
