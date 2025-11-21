@@ -360,73 +360,109 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
 </div>
 
 {/* HOW C3 CLOUD WORKS — PREMIUM SECTION */}
-<div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
+{/* HOW C3 CLOUD WORKS — PREMIUM ENTERPRISE SECTION */}
+<div className="relative z-10 max-w-7xl mx-auto px-6 py-24">
+
+  {/* Section Badge */}
   <div className="text-center mb-14">
-    <span className="text-xs font-semibold uppercase tracking-wide text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
+    <span className="text-xs font-semibold uppercase tracking-wide 
+                     text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
       How C3 Cloud Works
     </span>
 
-    <h2 className="text-3xl md:text-4xl font-bold text-white mt-4 mb-4">
-      From launch to deployment — in three simple steps
+    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4 mb-4 leading-tight">
+      From idea to deployment — simplified into three powerful steps
     </h2>
 
-    <p className="text-slate-300 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">
-      C3 Cloud streamlines the entire developer workflow — provisioning
-      isolated environments, enabling secure development, and automating
-      deployments. Built for real-world scenarios across education, startups,
-      and enterprises.
+    <p className="text-slate-300 max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+      C3 Cloud eliminates the need to manage infrastructure. Whether you're 
+      learning, experimenting, or building at scale, C3 provisions secure 
+      environments, handles IAM, and automates deployments — end to end.
     </p>
   </div>
 
-  {/* Steps */}
-  <div className="grid gap-10 md:grid-cols-3">
+  {/* Steps Section */}
+  <div className="grid gap-12 md:grid-cols-3">
 
-    {/* STEP 1 */}
-    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl hover:shadow-cyan-500/20 transition">
+    {/* Step 1 */}
+    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-7 
+                    shadow-xl hover:shadow-cyan-500/20 transition duration-300">
       <div className="text-cyan-300 text-xl font-bold mb-3">01 — Launch</div>
-      <h3 className="text-lg font-semibold text-white mb-2">
-        One-click Workspace Provisioning
+      <h3 className="text-lg font-semibold text-white mb-3">
+        Provision Workspaces Instantly
       </h3>
       <p className="text-slate-300 text-sm leading-relaxed">
-        C3 provisions isolated workspaces, labs, API servers or Kubernetes
-        clusters instantly — no VM setup, no networking, no infra headaches.
-        Every workspace is pre-configured and auto-cleaned.
+        C3 provisions fully isolated workspaces, labs, API servers, or Kubernetes 
+        clusters with one click — no VM setup, networking, or configuration needed. 
+        Everything arrives pre-configured and auto-cleaned.
       </p>
     </div>
 
-    {/* STEP 2 */}
-    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl hover:shadow-cyan-500/20 transition">
+    {/* Step 2 */}
+    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-7 
+                    shadow-xl hover:shadow-cyan-500/20 transition duration-300">
       <div className="text-cyan-300 text-xl font-bold mb-3">02 — Build</div>
-      <h3 className="text-lg font-semibold text-white mb-2">
-        Develop Securely Inside Sandboxed Environments
+      <h3 className="text-lg font-semibold text-white mb-3">
+        Develop Securely in Sandboxed Environments
       </h3>
       <p className="text-slate-300 text-sm leading-relaxed">
-        Workspaces come with secure shells, IAM-linked permissions, and
-        tools tailored for DevOps, cloud, backend, or container development.
-        Every environment mirrors industry workflows safely.
+        Each workspace includes a secure shell, IAM-linked permissions, Docker tooling, 
+        Git integration and everything needed for backend, cloud or DevOps workflows — 
+        all isolated by design.
       </p>
     </div>
 
-    {/* STEP 3 */}
-    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 shadow-xl hover:shadow-cyan-500/20 transition">
+    {/* Step 3 */}
+    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-7 
+                    shadow-xl hover:shadow-cyan-500/20 transition duration-300">
       <div className="text-cyan-300 text-xl font-bold mb-3">03 — Deploy</div>
-      <h3 className="text-lg font-semibold text-white mb-2">
-        Git Auto-Deploy & Role-Based IAM
+      <h3 className="text-lg font-semibold text-white mb-3">
+        Git Auto-Deploy with IAM Security
       </h3>
       <p className="text-slate-300 text-sm leading-relaxed">
-        Push to Git, and C3 builds and deploys automatically. IAM policies
-        apply security, while monitoring tracks logs, usage, and system health
-        — all handled through the C3 Console.
+        Push code to Git, and C3 builds and deploys automatically to isolated runtime 
+        environments. IAM policies enforce least-privilege access while monitoring 
+        tracks usage, logs, and system health.
       </p>
     </div>
+
   </div>
 
-  {/* Bottom tagline */}
-  <p className="text-center text-slate-400 text-xs mt-10">
-    C3 Cloud bridges learning, development, and deployment — built for India,
-    ready for the world.
+  {/* Tagline */}
+  <p className="text-center text-slate-400 text-xs mt-12">
+    C3 Cloud unifies learning, development and deployment — built for India, ready for the world.
   </p>
 </div>
+
+{/* BUILT FOR INDIA — READY FOR THE WORLD */}
+<div className="relative z-10 max-w-7xl mx-auto px-6 pt-10 pb-24">
+
+  <div className="bg-slate-950/60 border border-slate-800 rounded-3xl p-12 
+                  shadow-[0_0_40px_rgba(34,211,238,0.15)] text-center">
+
+    <span className="text-xs font-semibold uppercase tracking-wide 
+                     text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-full">
+      Vision
+    </span>
+
+    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-5 leading-tight">
+      Built for India. Ready for the World.
+    </h2>
+
+    <p className="text-slate-300 max-w-2xl mx-auto mt-5 text-base md:text-lg leading-relaxed">
+      C3 Cloud is designed and engineered in India — optimized for Indian developers, 
+      Indian latency, and Indian pricing. But the architecture, workflows, and orchestration 
+      capabilities are global-grade. Scalable, secure and built to serve everything from 
+      classrooms to enterprises.
+    </p>
+
+    <p className="text-slate-400 text-sm mt-6">
+      A cloud platform proudly built here — but capable of serving teams everywhere.
+    </p>
+  </div>
+
+</div>
+
 
       {/* WAITLIST SECTION */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
