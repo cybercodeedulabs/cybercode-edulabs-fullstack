@@ -17,10 +17,12 @@ export default function Dashboard() {
     projects = [],
     hasCertificationAccess = false,
     hasServerAccess = false,
-    studyTimeMap = {}, // optional: { "course-slug": secondsSpent }
+    userStats = {},
+    courseProgress: userCourseProgress = {},
   } = useUserData() || {};
 
-  const topPersona = getTopPersona ? getTopPersona() : topPersonaFromScores(personaScores || {});
+  // topPersona: prefer getTopPersona if available, fallback to computed
+  const topPersona = typeof getTopPersona === "function" ? getTopPersona() : topPersonaFromScores(personaScores || {});
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -58,13 +60,22 @@ export default function Dashboard() {
 
   const humanName = user.name || user.email?.split("@")?.[0] || "Learner";
 
-  // Helper to format study time (seconds) to "H hrs M mins"
-  const formatSeconds = (s) => {
-    if (!s || s <= 0) return "—";
-    const hrs = Math.floor(s / 3600);
-    const mins = Math.floor((s % 3600) / 60);
-    return `${hrs > 0 ? `${hrs}h ` : ""}${mins}m`;
+  // Helper to format minutes to "H hrs M mins"
+  const formatMinutes = (mins) => {
+    if (!mins || mins <= 0) return "—";
+    const hrs = Math.floor(mins / 60);
+    const m = Math.floor(mins % 60);
+    return `${hrs > 0 ? `${hrs}h ` : ""}${m}m`;
   };
+
+  // Build studyTimeMap from courseProgress data if not provided explicitly
+  // Expecting courseProgress[slug].timeSpentMinutes (minutes)
+  const studyTimeMap = {};
+  const sourceCourseProgress = userCourseProgress && Object.keys(userCourseProgress).length ? userCourseProgress : courseProgress;
+  Object.entries(sourceCourseProgress || {}).forEach(([slug, info]) => {
+    const mins = info?.timeSpentMinutes || 0;
+    studyTimeMap[slug] = mins;
+  });
 
   return (
     <motion.section
@@ -210,14 +221,14 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
               {section.title}
             </h2>
-            {section.items.length > 0 ? (
+            {section.items && section.items.length > 0 ? (
               <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2">
                 {section.items.map((item) => {
                   // item is likely a course slug
                   const lessons = lessonsData[item] || [];
-                  const prog = courseProgress[item] || { completedLessons: [] };
+                  const prog = sourceCourseProgress[item] || { completedLessons: [] };
                   const percent =
-                    lessons.length > 0 ? Math.round((prog.completedLessons?.length || 0) / lessons.length * 100) : 0;
+                    lessons.length > 0 ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100) : 0;
                   return (
                     <li key={item} className="flex items-center justify-between">
                       <Link
@@ -231,7 +242,7 @@ export default function Dashboard() {
                         <div className="w-36 h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
                           <div style={{ width: `${percent}%` }} className="h-full bg-indigo-600 dark:bg-indigo-400" />
                         </div>
-                        <span className="text-xs text-gray-400">{formatSeconds(studyTimeMap[item])}</span>
+                        <span className="text-xs text-gray-400">{formatMinutes(studyTimeMap[item])}</span>
                       </div>
                     </li>
                   );

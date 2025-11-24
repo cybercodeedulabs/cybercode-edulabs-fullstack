@@ -1,18 +1,4 @@
 // src/utils/personaEngine.js
-/**
- * Lightweight persona utilities.
- *
- * - PERSONAS_LIST: friendly names
- * - inferPersonaFromTitle: conservative rule-based heuristics
- * - quickLessonPersonaDelta(lesson): returns small score deltas for persona scoring
- * - quickCoursePersonaDelta(course): similar but uses course metadata
- * - normalizePersonaScores(scores): convert raw scores to 0-100 normalized percentages
- * - topPersonaFromScores(scores): returns { persona, score, all: [[p,score], ...] }
- *
- * These are intentionally simple and explainable; you can replace them later with an AI model
- * or server side logic when you want more sophisticated mapping.
- */
-
 export const PERSONAS_LIST = {
   security: "Security",
   developer: "Developer",
@@ -38,16 +24,12 @@ export function inferPersonaFromTitle(title = "") {
 
 /**
  * quickLessonPersonaDelta
- * Returns a small "delta" object like { security: 10, developer: 2 }
- * based on conservative keyword matching on lesson.title and lesson.content (if present).
  */
 export function quickLessonPersonaDelta(lesson = {}) {
   if (!lesson || !lesson.title) return {};
-
   const persona = inferPersonaFromTitle(lesson.title);
   const deltas = {};
 
-  // Base values tuned to be modest (so it accumulates gradually)
   switch (persona) {
     case "security":
       deltas.security = 10;
@@ -78,7 +60,6 @@ export function quickLessonPersonaDelta(lesson = {}) {
       deltas.developer = 2;
   }
 
-  // small boost if title has "project" or "capstone"
   if (/(project|capstone|mini project)/i.test(lesson.title || "")) {
     Object.keys(deltas).forEach((k) => (deltas[k] = Math.round(deltas[k] * 1.25)));
   }
@@ -88,14 +69,12 @@ export function quickLessonPersonaDelta(lesson = {}) {
 
 /**
  * quickCoursePersonaDelta
- * Accepts a course object (course.title, course.category) and returns persona deltas
  */
 export function quickCoursePersonaDelta(course = {}) {
   if (!course) return {};
   const title = course.title || "";
   const category = (course.category || "").toLowerCase();
 
-  // category-based strong signal
   if (/cloud|devops|infrastructure/.test(category)) {
     return { cloud: 12, devops: 8 };
   }
@@ -108,32 +87,32 @@ export function quickCoursePersonaDelta(course = {}) {
   if (/security|cyber|network|ccna/.test(category)) {
     return { security: 12, networking: 5 };
   }
-
-  // fallback: infer from title
   return quickLessonPersonaDelta({ title });
 }
 
 /**
  * normalizePersonaScores(scores)
- * Input: { security: 75, developer: 30, ... } (raw numbers)
- * Output: { security: 100, developer: 40, ... } normalized to 0-100 scale
- * Normalization preserves proportions (divides by max).
+ * Convert raw numeric scores into 0-100 percentages.
  */
 export function normalizePersonaScores(scores = {}) {
-  const entries = Object.entries(scores || {});
-  if (!entries.length) return {};
-  const max = Math.max(...entries.map(([, v]) => Number(v || 0)), 1);
-  const normalized = {};
-  entries.forEach(([k, v]) => {
-    const pct = Math.round((Number(v || 0) / max) * 100);
-    normalized[k] = pct;
-  });
-  return normalized;
+  try {
+    const entries = Object.entries(scores || {});
+    if (!entries.length) return {};
+    const max = Math.max(...entries.map(([, v]) => Number(v || 0)), 1);
+    const normalized = {};
+    entries.forEach(([k, v]) => {
+      const pct = Math.round((Number(v || 0) / max) * 100);
+      normalized[k] = pct;
+    });
+    return normalized;
+  } catch (err) {
+    console.warn("normalizePersonaScores failed:", err);
+    return {};
+  }
 }
 
 /**
  * topPersonaFromScores(scores)
- * returns { persona: 'security', score: 75, all: [['security',75], ...] }
  */
 export function topPersonaFromScores(scores = {}) {
   const entries = Object.entries(scores || {}).sort((a, b) => b[1] - a[1]);

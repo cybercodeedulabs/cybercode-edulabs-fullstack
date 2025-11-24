@@ -25,16 +25,17 @@ export default function LessonDetail() {
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
   const [toast, setToast] = useState(null);
-  const [completing, setCompleting] = useState(false);
+
+  // prevent redirect race while completing a lesson
+  const [suppressRedirect, setSuppressRedirect] = useState(false);
 
   const showToast = (msg) => {
     setToast(msg);
-    // auto clear
     setTimeout(() => setToast(null), 2500);
   };
 
-  const { user, enrolledCourses = [], courseProgress = {}, updatePersonaScore } = useUser();
-  const { completeLessonFS, recordStudySession } = useUserData();
+  const { user, enrolledCourses, courseProgress = {}, updatePersonaScore } = useUser();
+  const { completeLessonFS } = useUserData();
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains("dark"));
@@ -44,39 +45,44 @@ export default function LessonDetail() {
   const lessonIndex = lessons.findIndex((l) => l.slug === lessonSlug);
   const lesson = lessons[lessonIndex];
 
-  // Reset outputs when switching lesson
+  // Reset code outputs when lesson changes
   useEffect(() => {
     setOutputs({});
     setCodeInputs({});
     setRunning({});
   }, [lessonSlug]);
 
-  const progress = courseProgress?.[courseSlug]?.currentLessonIndex || 0;
+  // determine progress number (defaults to 0)
+  const progress = (courseProgress && courseProgress[courseSlug] && typeof courseProgress[courseSlug].currentLessonIndex === 'number')
+    ? courseProgress[courseSlug].currentLessonIndex
+    : 0;
+
   const isNextLesson = lessonIndex === progress;
 
-  // Block navigation to locked lessons
+  // Block locked lessons — guarded by suppressRedirect to avoid race during completion
   useEffect(() => {
-    if (lessonIndex > progress) {
+    if (lessonIndex === -1) return;
+    if (lessonIndex > progress && !suppressRedirect) {
       navigate(`/courses/${courseSlug}`, { replace: true });
     }
-  }, [lessonIndex, progress, courseSlug, navigate]);
+  }, [lessonIndex, progress, courseSlug, navigate, suppressRedirect]);
 
-  // Persona updates when viewing lesson — BUT only if lesson is unlocked
+  // Persona updates when viewing lesson (gentle half-delta)
   useEffect(() => {
-    if (!user || !lesson) return;
-
-    // only update persona if lesson is unlocked (don't update for locked views)
-    if (lessonIndex > progress) return;
-
-    const deltas = quickLessonPersonaDelta(lesson);
-    if (Object.keys(deltas).length) {
-      const halfDeltas = Object.fromEntries(
-        Object.entries(deltas).map(([k, v]) => [k, Math.max(1, Math.round(v / 2))])
-      );
-      updatePersonaScore(halfDeltas);
+    if (!user || !lesson || typeof updatePersonaScore !== "function") return;
+    try {
+      const deltas = quickLessonPersonaDelta(lesson);
+      if (Object.keys(deltas).length) {
+        const halfDeltas = Object.fromEntries(
+          Object.entries(deltas).map(([k, v]) => [k, Math.max(1, Math.round(v / 2))])
+        );
+        updatePersonaScore(halfDeltas);
+      }
+    } catch (err) {
+      // swallow persona errors so UI stays responsive
+      console.warn("Persona update skipped:", err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonSlug, user, lesson, lessonIndex, progress]);
+  }, [lessonSlug, user, lesson, updatePersonaScore]);
 
   if (!lesson) {
     return (
@@ -84,7 +90,10 @@ export default function LessonDetail() {
         <h2 className="text-3xl font-bold">Lesson not found</h2>
         <p className="mt-4">
           The lesson you're looking for doesn't exist.{" "}
-          <Link to={`/courses/${courseSlug}`} className="text-indigo-600 underline hover:text-indigo-500 transition">
+          <Link
+            to={`/courses/${courseSlug}`}
+            className="text-indigo-600 underline hover:text-indigo-500 transition"
+          >
             Go back to course
           </Link>
         </p>
@@ -100,7 +109,7 @@ export default function LessonDetail() {
       showToast("Please login to mark lesson complete.");
       return;
     }
-    if (!Array.isArray(enrolledCourses) || !enrolledCourses.includes(courseSlug)) {
+    if (!enrolledCourses || !enrolledCourses.includes(courseSlug)) {
       showToast("Please enroll to complete lessons.");
       return;
     }
@@ -108,32 +117,26 @@ export default function LessonDetail() {
       showToast("Complete previous lessons first!");
       return;
     }
-    if (completing) {
-      return;
-    }
 
-    setCompleting(true);
     try {
-      // completeLessonFS should update Firestore and the local context state
-      if (typeof completeLessonFS !== "function") {
-        console.warn("completeLessonFS not available from useUserData()");
-        showToast("Completion service unavailable. Try again later.");
-        setCompleting(false);
-        return;
-      }
+      // prevent the blocking effect from immediately redirecting while update propagates
+      setSuppressRedirect(true);
 
-      await completeLessonFS(courseSlug, lessonSlug, lessons.length);
-
-      // record a short study session (adjust minutes as you prefer)
-      if (typeof recordStudySession === "function") {
-        // store 3 minutes as a lightweight record for completion
-        await recordStudySession(courseSlug, lessonSlug, 3);
+      // completeLessonFS should update Firestore and also update context state via your hook
+      if (typeof completeLessonFS === "function") {
+        await completeLessonFS(courseSlug, lessonSlug, lessons.length);
+      } else {
+        console.warn("completeLessonFS not available.");
       }
 
       // award persona points for completing this lesson (full deltas)
-      const deltas = quickLessonPersonaDelta(lesson);
-      if (Object.keys(deltas).length) {
-        updatePersonaScore(deltas);
+      try {
+        const deltas = quickLessonPersonaDelta(lesson);
+        if (Object.keys(deltas).length && typeof updatePersonaScore === "function") {
+          updatePersonaScore(deltas);
+        }
+      } catch (err) {
+        console.warn("Persona awarding skipped:", err);
       }
 
       showToast("Lesson completed successfully 🎉");
@@ -145,21 +148,20 @@ export default function LessonDetail() {
           navigate(`/courses/${courseSlug}/lessons/${lessons[nextIndex].slug}`);
         }, 900);
       } else {
-        // No next lesson — navigate back to course page to show completed state
-        setTimeout(() => {
-          navigate(`/courses/${courseSlug}`);
-        }, 900);
+        // If last lesson, navigate back to course page after a brief pick
+        setTimeout(() => navigate(`/courses/${courseSlug}`), 900);
       }
     } catch (err) {
-      console.error("handleComplete error:", err);
+      console.error(err);
       showToast("Failed to mark complete. Try again.");
     } finally {
-      setCompleting(false);
+      // brief cooldown so the blocking effect won't redirect while the next route loads
+      setTimeout(() => setSuppressRedirect(false), 1200);
     }
   };
 
   // ------------------------------------------------------
-  // CODE RUNNER LOGIC
+  // CODE RUNNER LOGIC (UNCHANGED from your file)
   // ------------------------------------------------------
   const handleRunCode = async (idx, language, defaultCode) => {
     const code = codeInputs[idx] ?? defaultCode ?? "";
@@ -197,7 +199,6 @@ export default function LessonDetail() {
             setRunning((s) => ({ ...s, [idx]: false }));
             return;
           }
-          // eslint-disable-next-line no-eval
           const res = eval(code);
           setOutputs((prev) => ({ ...prev, [idx]: String(res ?? "✓ Success") }));
         } catch (err) {
@@ -327,10 +328,11 @@ export default function LessonDetail() {
   }, []);
 
   const scrollToSection = (idx) =>
-    sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    sectionRefs.current[idx]?.scrollIntoView({ behavior: "smooth" });
 
   const goPrev = () =>
-    lessonIndex > 0 && navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
+    lessonIndex > 0 &&
+    navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
 
   const goNext = () =>
     lessonIndex < lessons.length - 1 &&
@@ -441,7 +443,9 @@ export default function LessonDetail() {
                   <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 space-y-4">
                     <textarea
                       value={codeInputs[idx] || block.value}
-                      onChange={(e) => setCodeInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                      onChange={(e) =>
+                        setCodeInputs((prev) => ({ ...prev, [idx]: e.target.value }))
+                      }
                       rows={6}
                       className="w-full p-3 text-sm font-mono bg-white dark:bg-gray-900 text-black dark:text-white border rounded-md"
                     />
@@ -450,7 +454,9 @@ export default function LessonDetail() {
                       onClick={() => handleRunCode(idx, block.language, block.value)}
                       disabled={!!running[idx]}
                       className={`px-4 py-2 rounded-md font-medium ${
-                        running[idx] ? "bg-indigo-400 cursor-wait text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        running[idx]
+                          ? "bg-indigo-400 cursor-wait text-white"
+                          : "bg-indigo-600 hover:bg-indigo-700 text-white"
                       }`}
                     >
                       {running[idx] ? "Running..." : block.language === "go" ? "Open in Go Playground" : "Run Code"}
@@ -476,38 +482,60 @@ export default function LessonDetail() {
         ))}
 
         {/* COMPLETE LESSON BUTTON */}
-        {user && Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug) && (
+        {user && enrolledCourses && enrolledCourses.includes(courseSlug) && (
           <button
             onClick={handleComplete}
-            disabled={!isNextLesson || completing}
+            disabled={!isNextLesson}
             className={`px-6 py-3 rounded-lg font-semibold mt-6 ${
               isNextLesson ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
-            {completing ? "Completing..." : isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
+            {isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
           </button>
         )}
 
-        {/* ENROLL CTA */}
+        {/* ENROLL CTA (unchanged) */}
         <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
-          <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">🚀 Want to go deeper?</h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">Enroll in the full <strong>{lesson.title}</strong> course for hands-on labs.</p>
-          <button onClick={() => navigate(`/enroll/${courseSlug}`)} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+          <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+            🚀 Want to go deeper?
+          </h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
+            Enroll in the full <strong>{lesson.title}</strong> course for hands-on labs.
+          </p>
+          <button
+            onClick={() => navigate(`/enroll/${courseSlug}`)}
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+          >
             Enroll for Deep Dive & Certification
           </button>
         </div>
 
         {/* NAVIGATION BUTTONS */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button onClick={goPrev} disabled={lessonIndex === 0} className={`w-full sm:w-auto px-6 py-3 rounded-xl ${lessonIndex === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
+          <button
+            onClick={goPrev}
+            disabled={lessonIndex === 0}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
+              lessonIndex === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+          >
             ← Previous Lesson
           </button>
 
-          <Link to={`/courses/${courseSlug}`} className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 text-indigo-600 border border-indigo-600 rounded-xl">
+          <Link
+            to={`/courses/${courseSlug}`}
+            className="w-full sm:w-auto px-6 py-3 bg-white dark:bg-gray-800 text-indigo-600 border border-indigo-600 rounded-xl"
+          >
             ← Back to Course
           </Link>
 
-          <button onClick={goNext} disabled={lessonIndex === lessons.length - 1} className={`w-full sm:w-auto px-6 py-3 rounded-xl ${lessonIndex === lessons.length - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}>
+          <button
+            onClick={goNext}
+            disabled={lessonIndex === lessons.length - 1}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
+              lessonIndex === lessons.length - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+          >
             Next Lesson →
           </button>
         </div>
@@ -515,14 +543,18 @@ export default function LessonDetail() {
 
       {/* SIDEBAR */}
       <div className="hidden lg:block w-64 sticky top-28 h-max border-l border-gray-200 dark:border-gray-700 pl-6">
-        <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Lesson Contents</h4>
+        <h4 className="text-lg font-semibold mb-4 text-indigo-600 dark:text-indigo-400">
+          Lesson Contents
+        </h4>
 
         <ul className="space-y-2 text-sm">
           {lesson.content.map((block, idx) => (
             <li
               key={idx}
               onClick={() => scrollToSection(idx)}
-              className={`cursor-pointer p-2 rounded-md ${activeSection === idx ? "bg-indigo-100 dark:bg-indigo-700 font-semibold" : "hover:bg-indigo-50 dark:hover:bg-gray-700"}`}
+              className={`cursor-pointer p-2 rounded-md ${
+                activeSection === idx ? "bg-indigo-100 dark:bg-indigo-700 font-semibold" : "hover:bg-indigo-50 dark:hover:bg-gray-700"
+              }`}
             >
               {block.title || `Section ${idx + 1}`}
             </li>
