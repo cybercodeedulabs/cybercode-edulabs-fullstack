@@ -1,36 +1,50 @@
 // src/pages/Dashboard.jsx
 import { useUser } from "../contexts/UserContext";
-import useUserData from "../hooks/useUserData";
 import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { motion } from "framer-motion";
-import { PERSONAS_LIST, normalizePersonaScores, topPersonaFromScores } from "../utils/personaEngine";
+import {
+  PERSONAS_LIST,
+  normalizePersonaScores,
+  topPersonaFromScores,
+} from "../utils/personaEngine";
 import lessonsData from "../data/lessonsData";
 
 export default function Dashboard() {
-  const { user, setUser, personaScores, getTopPersona, courseProgress = {} } = useUser();
-  const navigate = useNavigate();
-
+  // TAKE EVERYTHING FROM CONTEXT (do NOT call useUserData() here)
   const {
+    user,
+    setUser,
+    personaScores,
+    getTopPersona,
+    courseProgress = {},
     enrolledCourses = [],
     projects = [],
     hasCertificationAccess = false,
     hasServerAccess = false,
     userStats = {},
-    courseProgress: userCourseProgress = {},
-  } = useUserData() || {};
+  } = useUser();
 
-  // topPersona: prefer getTopPersona if available, fallback to computed
-  const topPersona = typeof getTopPersona === "function" ? getTopPersona() : topPersonaFromScores(personaScores || {});
+  const navigate = useNavigate();
+
+  // topPersona: prefer getTopPersona from context, otherwise derived
+  const topPersona =
+    typeof getTopPersona === "function"
+      ? getTopPersona()
+      : topPersonaFromScores(personaScores || {});
 
   const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.warn("SignOut failed:", err);
+    }
+    setUser && setUser(null);
     navigate("/");
   };
 
-  // --- UNAUTHORIZED VIEW ---
+  // UNAUTHORIZED VIEW
   if (!user) {
     return (
       <motion.div
@@ -55,12 +69,13 @@ export default function Dashboard() {
     );
   }
 
-  // Normalize persona scores for bar visuals
+  // Normalize persona scores for display
   const normalized = normalizePersonaScores(personaScores || {});
 
-  const humanName = user.name || user.email?.split("@")?.[0] || "Learner";
+  const humanName =
+    user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
 
-  // Helper to format minutes to "H hrs M mins"
+  // Format minutes helper
   const formatMinutes = (mins) => {
     if (!mins || mins <= 0) return "—";
     const hrs = Math.floor(mins / 60);
@@ -68,10 +83,14 @@ export default function Dashboard() {
     return `${hrs > 0 ? `${hrs}h ` : ""}${m}m`;
   };
 
-  // Build studyTimeMap from courseProgress data if not provided explicitly
-  // Expecting courseProgress[slug].timeSpentMinutes (minutes)
+  // Build studyTimeMap from context courseProgress
+  // courseProgress expected shape: { "<courseSlug>": { timeSpentMinutes: number, ... } }
   const studyTimeMap = {};
-  const sourceCourseProgress = userCourseProgress && Object.keys(userCourseProgress).length ? userCourseProgress : courseProgress;
+  const sourceCourseProgress =
+    courseProgress && Object.keys(courseProgress).length
+      ? courseProgress
+      : {};
+
   Object.entries(sourceCourseProgress || {}).forEach(([slug, info]) => {
     const mins = info?.timeSpentMinutes || 0;
     studyTimeMap[slug] = mins;
@@ -94,7 +113,8 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">
           Welcome, {humanName}
         </h1>
-        {user.isPremium && (
+
+        {user?.isPremium && (
           <span className="inline-block mt-2 px-3 py-1 bg-yellow-300 text-yellow-900 rounded-full text-sm font-semibold shadow">
             ⭐ Premium Member
           </span>
@@ -113,21 +133,24 @@ export default function Dashboard() {
         transition={{ delay: 0.25 }}
       >
         <img
-          src={user.photo || "/images/default-avatar.png"}
+          src={user?.photo || "/images/default-avatar.png"}
           alt="User Avatar"
           className="w-24 h-24 rounded-full shadow-lg border-4 border-indigo-500 dark:border-indigo-400"
         />
         <p className="text-lg mt-4 text-gray-700 dark:text-gray-300">
-          <strong>Email:</strong> {user.email}
+          <strong>Email:</strong> {user?.email}
         </p>
         <div className="mt-3">
-          <Link to="/edit-profile" className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm">
+          <Link
+            to="/edit-profile"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm"
+          >
             Edit Profile
           </Link>
         </div>
       </motion.div>
 
-      {/* 🎯 PERSONA DETECTION CARD */}
+      {/* PERSONA CARD */}
       <motion.div
         className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl shadow-lg mb-12 relative"
         initial={{ opacity: 0, y: 15 }}
@@ -146,7 +169,6 @@ export default function Dashboard() {
               </p>
             ) : (
               <>
-                {/* Top Persona */}
                 <div className="mb-3 flex items-center gap-3">
                   <span className="text-lg font-bold text-indigo-700 dark:text-indigo-300">
                     {PERSONAS_LIST[topPersona.persona] || topPersona.persona}
@@ -156,14 +178,17 @@ export default function Dashboard() {
                   </span>
                 </div>
 
-                {/* Persona Scores */}
                 <div className="space-y-3 mt-3 w-full max-w-2xl">
                   {Object.entries(normalized).map(([p, pct]) => (
                     <div key={p} className="flex items-center gap-4">
                       <div className="flex-1">
                         <div className="flex justify-between mb-1 text-sm">
-                          <span className="capitalize text-gray-700 dark:text-gray-300">{PERSONAS_LIST[p] || p}</span>
-                          <span className="font-semibold text-indigo-600 dark:text-indigo-300">{pct}%</span>
+                          <span className="capitalize text-gray-700 dark:text-gray-300">
+                            {PERSONAS_LIST[p] || p}
+                          </span>
+                          <span className="font-semibold text-indigo-600 dark:text-indigo-300">
+                            {pct}%
+                          </span>
                         </div>
                         <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                           <div
@@ -176,7 +201,6 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                {/* Recommendations CTA */}
                 <div className="mt-5">
                   <Link
                     to="/courses"
@@ -190,7 +214,10 @@ export default function Dashboard() {
           </div>
 
           <div>
-            <Link to="/edit-profile" className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm">
+            <Link
+              to="/edit-profile"
+              className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+            >
               Edit Profile
             </Link>
           </div>
@@ -224,11 +251,12 @@ export default function Dashboard() {
             {section.items && section.items.length > 0 ? (
               <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2">
                 {section.items.map((item) => {
-                  // item is likely a course slug
                   const lessons = lessonsData[item] || [];
                   const prog = sourceCourseProgress[item] || { completedLessons: [] };
                   const percent =
-                    lessons.length > 0 ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100) : 0;
+                    lessons.length > 0
+                      ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100)
+                      : 0;
                   return (
                     <li key={item} className="flex items-center justify-between">
                       <Link
