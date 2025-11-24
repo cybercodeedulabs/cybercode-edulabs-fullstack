@@ -8,14 +8,14 @@ import {
   arrayUnion,
   getDoc,
   increment,
-  serverTimestamp,
   runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
 
 export default function useUserData() {
-  const { user, enrolledCourses, setEnrolledCourses, activatePremium } = useUser();
+  const { user, enrolledCourses, setEnrolledCourses, activatePremium, setCourseProgress } =
+    useUser();
 
   const [userData, setUserData] = useState({
     enrolledCourses: enrolledCourses || [],
@@ -23,25 +23,24 @@ export default function useUserData() {
     hasCertificationAccess: false,
     hasServerAccess: false,
     isPremium: false,
-    courseProgress: {}, // local mirror
+    courseProgress: {},
     userStats: {
       totalMinutes: 0,
-      daily: {}, // { "2025-11-24": 45 }
+      daily: {},
       streak: 0,
-      lastStudyDate: "", // YYYY-MM-DD
+      lastStudyDate: "",
     },
   });
 
-  // ============================================================
-  // 🔥 Sync Firestore → React State → UserContext
-  // ============================================================
+  // ===========================================================================
+  // 🔥 Firestore Listener → Sync Everything
+  // ===========================================================================
   useEffect(() => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
 
     const unsubscribe = onSnapshot(ref, async (snap) => {
-      // Auto-create Firestore document for first-time users
       if (!snap.exists()) {
         await setDoc(
           ref,
@@ -61,12 +60,11 @@ export default function useUserData() {
           },
           { merge: true }
         );
-        return; // wait for next snapshot
+        return;
       }
 
       const data = snap.data();
 
-      // Update local userData state
       setUserData((prev) => ({
         ...prev,
         enrolledCourses: data.enrolledCourses || [],
@@ -78,252 +76,92 @@ export default function useUserData() {
         userStats: data.userStats || prev.userStats,
       }));
 
-      // Sync enrolledCourses into UserContext
       setEnrolledCourses(data.enrolledCourses || []);
+      setCourseProgress(data.courseProgress || {});
 
-      // Sync premium flag only to context (NO FIRESTORE WRITE)
-      if (data.isPremium) {
-        activatePremium();
-      }
+      if (data.isPremium) activatePremium();
     });
 
     return () => unsubscribe();
-  }, [user, setEnrolledCourses, activatePremium]);
+  }, [user, setEnrolledCourses, activatePremium, setCourseProgress]);
 
-  // ============================================================
-  // 🟩 Enroll In Course (Firestore)
-  // ============================================================
+  // ===========================================================================
+  // 🟩 Enroll In Course
+  // ===========================================================================
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
-
     const ref = doc(db, "users", user.uid);
-
-    try {
-      await updateDoc(ref, { enrolledCourses: arrayUnion(courseSlug) });
-    } catch (err) {
-      // If updateDoc fails because doc doesn't exist, fallback to setDoc/merge
-      try {
-        await setDoc(ref, { enrolledCourses: [courseSlug] }, { merge: true });
-      } catch (err2) {
-        console.error("Failed enrolling (set fallback):", err2);
-      }
-    }
-
-    if (!enrolledCourses.includes(courseSlug)) {
-      setEnrolledCourses((prev) => [...prev, courseSlug]);
-    }
+    await updateDoc(ref, {
+      enrolledCourses: arrayUnion(courseSlug),
+    });
   };
 
-  // ============================================================
-  // 🔹 Study Session Recorder (time tracking)
-  // ============================================================
+  // ===========================================================================
+  // 🔹 FIXED Study Session Recorder — Crash Proof
+  // ===========================================================================
   const recordStudySession = async (courseSlug, lessonSlug, minutes) => {
     if (!user) return;
 
     try {
       const userRef = doc(db, "users", user.uid);
+      const today = new Date().toISOString().split("T")[0];
 
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-      const coursePathTime = `courseProgress.${courseSlug}.timeSpentMinutes`;
-      const coursePathSessions = `courseProgress.${courseSlug}.sessions`;
-      const userTotal = `userStats.totalMinutes`;
-      const userDailyPath = `userStats.daily.${today}`;
-
-      // Read current doc (to compute streak)
-      const snap = await getDoc(userRef);
-      const current = snap?.data() || {};
-      const prevStats = current.userStats || {};
-      const lastDate = prevStats.lastStudyDate || "";
-      const prevStreak = prevStats.streak || 0;
-
-      // compute new streak
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-      let newStreak = 1;
-      if (lastDate === today) {
-        newStreak = prevStreak; // same day, keep streak
-      } else if (lastDate === yesterdayStr) {
-        newStreak = prevStreak + 1;
-      } else {
-        newStreak = 1;
-      }
-
-      // Firestore update using updateDoc (works for nested fields)
+      // SAFE update — no serverTimestamp() inside arrayUnion
       await updateDoc(userRef, {
-        [coursePathTime]: increment(minutes),
-        [coursePathSessions]: arrayUnion({
+        [`courseProgress.${courseSlug}.timeSpentMinutes`]: increment(minutes),
+        [`courseProgress.${courseSlug}.sessions`]: arrayUnion({
           lesson: lessonSlug,
           minutes,
-          date: serverTimestamp(),
+          ts: Date.now(), // replace serverTimestamp
         }),
-        [userTotal]: increment(minutes),
-        [userDailyPath]: increment(minutes),
+        "userStats.totalMinutes": increment(minutes),
+        [`userStats.daily.${today}`]: increment(minutes),
         "userStats.lastStudyDate": today,
-        "userStats.streak": newStreak,
-      });
-
-      // local state update (optimistic)
-      setUserData((prev) => {
-        const updatedCourseProgress = {
-          ...(prev.courseProgress || {}),
-          [courseSlug]: {
-            ...(prev.courseProgress?.[courseSlug] || {}),
-            timeSpentMinutes:
-              (prev.courseProgress?.[courseSlug]?.timeSpentMinutes || 0) + minutes,
-            sessions: [
-              ...(prev.courseProgress?.[courseSlug]?.sessions || []),
-              { lesson: lessonSlug, minutes, date: new Date().toISOString() },
-            ],
-          },
-        };
-
-        const updatedUserStats = {
-          ...(prev.userStats || {}),
-          totalMinutes: (prev.userStats?.totalMinutes || 0) + minutes,
-          daily: {
-            ...(prev.userStats?.daily || {}),
-            [today]: (prev.userStats?.daily?.[today] || 0) + minutes,
-          },
-          lastStudyDate: today,
-          streak: newStreak,
-        };
-
-        return {
-          ...prev,
-          courseProgress: updatedCourseProgress,
-          userStats: updatedUserStats,
-        };
       });
     } catch (err) {
-      console.error("Failed to record study session:", err);
+      console.error("🔥 recordStudySession FAILED", err);
     }
   };
 
-  // ============================================================
-  // 🔥 Complete Lesson (Firestore) — transaction-safe implementation
-  // ============================================================
-  const completeLessonFS = async (courseSlug, lessonSlug, totalLessons = null) => {
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    const coursePath = `courseProgress.${courseSlug}`;
-
-    try {
-      await runTransaction(db, async (transaction) => {
-        const userSnap = await transaction.get(userRef);
-        const currentData = userSnap.exists() ? userSnap.data() : {};
-
-        // Ensure courseProgress structure exists
-        const currentCourseProgress = (currentData.courseProgress && currentData.courseProgress[courseSlug]) || {};
-        const existingCompleted = Array.isArray(currentCourseProgress.completedLessons)
-          ? [...currentCourseProgress.completedLessons]
-          : [];
-
-        // If already completed, no-op (still update updatedAt)
-        if (!existingCompleted.includes(lessonSlug)) {
-          existingCompleted.push(lessonSlug);
-        }
-
-        // Deduplicate and keep order (simple)
-        const uniqueCompleted = Array.from(new Set(existingCompleted));
-        // newIndex = number of completed lessons -> this becomes the next lesson index (0-based)
-        const newIndex = uniqueCompleted.length;
-
-        // Build the updates
-        const updates = {
-          [`${coursePath}.completedLessons`]: uniqueCompleted,
-          [`${coursePath}.currentLessonIndex`]: newIndex,
-          [`${coursePath}.updatedAt`]: serverTimestamp(),
-        };
-
-        // Apply via transaction.update
-        transaction.update(userRef, updates);
-      });
-
-      // optimistic local update after successful transaction
-      setUserData((prev) => {
-        const prevCourse = prev.courseProgress?.[courseSlug] || {};
-        const prevCompleted = Array.isArray(prevCourse.completedLessons) ? [...prevCourse.completedLessons] : [];
-        if (!prevCompleted.includes(lessonSlug)) prevCompleted.push(lessonSlug);
-        const newIndex = prevCompleted.length;
-        return {
-          ...prev,
-          courseProgress: {
-            ...prev.courseProgress,
-            [courseSlug]: {
-              ...prevCourse,
-              completedLessons: prevCompleted,
-              currentLessonIndex: newIndex,
-              updatedAt: new Date().toISOString(),
-            },
-          },
-        };
-      });
-    } catch (err) {
-      console.error("completeLessonFS transaction failed:", err);
-      throw err;
-    }
-  };
-
-  // ============================================================
-  // 🟨 Grant Certification Access → also make Premium
-  // ============================================================
+  // ===========================================================================
+  // 🟨 Premium / Certification
+  // ===========================================================================
   const grantCertificationAccess = async () => {
     if (!user) return;
-
-    const ref = doc(db, "users", user.uid);
-
-    await updateDoc(ref, {
+    await updateDoc(doc(db, "users", user.uid), {
       hasCertificationAccess: true,
       isPremium: true,
     });
-
     activatePremium();
   };
 
-  // ============================================================
-  // 🟦 Grant Server Access → also make Premium
-  // ============================================================
   const grantServerAccess = async () => {
     if (!user) return;
-
-    const ref = doc(db, "users", user.uid);
-
-    await updateDoc(ref, {
+    await updateDoc(doc(db, "users", user.uid), {
       hasServerAccess: true,
       isPremium: true,
     });
-
     activatePremium();
   };
 
-  // ============================================================
-  // ⭐ Full Premium Access (Certification + Server)
-  // ============================================================
   const grantFullPremium = async () => {
     if (!user) return;
-
-    const ref = doc(db, "users", user.uid);
-
-    await updateDoc(ref, {
+    await updateDoc(doc(db, "users", user.uid), {
       isPremium: true,
       hasCertificationAccess: true,
       hasServerAccess: true,
     });
-
     activatePremium();
   };
 
-  // ============================================================
-  // ⚠️ Utility: reset progress for current user (useful for testing)
-  // ============================================================
+  // ===========================================================================
+  // 🟥 Reset progress for current user
+  // ===========================================================================
   const resetMyProgress = async () => {
     if (!user) return;
-    const ref = doc(db, "users", user.uid);
-    await updateDoc(ref, {
+
+    await updateDoc(doc(db, "users", user.uid), {
       courseProgress: {},
-      enrolledCourses: [],
       userStats: {
         totalMinutes: 0,
         daily: {},
@@ -331,15 +169,36 @@ export default function useUserData() {
         lastStudyDate: "",
       },
     });
+
+    setCourseProgress({});
   };
 
-  // ============================================================
-  // Placeholder: server-side reset for all users (DO NOT CALL FROM CLIENT in production)
-  // Implement server-side secure script or Cloud Function for this.
-  // ============================================================
-  const resetProgressForAllUsers = async () => {
-    console.warn("resetProgressForAllUsers() should be implemented as a secure admin operation (Cloud Function).");
-    // Example: call an admin endpoint here (not shown)
+  // ===========================================================================
+  // 🔥 FIXED — COMPLETE LESSON (Atomic Transaction)
+  // ===========================================================================
+  const completeLessonFS = async (courseSlug, lessonSlug, totalLessons) => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(userRef);
+      const data = snap.data() || {};
+
+      const course = data.courseProgress?.[courseSlug] || {};
+      const completed = new Set(course.completedLessons || []);
+
+      completed.add(lessonSlug);
+
+      const newCompleted = Array.from(completed);
+      const newIndex = newCompleted.length;
+
+      tx.update(userRef, {
+        [`courseProgress.${courseSlug}.completedLessons`]: newCompleted,
+        [`courseProgress.${courseSlug}.currentLessonIndex`]: newIndex,
+        [`courseProgress.${courseSlug}.updatedAt`]: Date.now(),
+      });
+    });
   };
 
   return {
@@ -349,7 +208,6 @@ export default function useUserData() {
     completeLessonFS,
     recordStudySession,
     resetMyProgress,
-    resetProgressForAllUsers,
     grantCertificationAccess,
     grantServerAccess,
     grantFullPremium,

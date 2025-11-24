@@ -2,53 +2,38 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import lessonsData from "../data/lessonsData";
+import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 
 export const UserProvider = ({ children }) => {
-  // ------------------------------------
-  // USER + PREMIUM STATE
-  // ------------------------------------
+  // ----------------------
+  // AUTH + BASIC USER STATE
+  // ----------------------
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem("cybercodeUser");
     return stored ? JSON.parse(stored) : null;
   });
 
-  const [enrolledCourses, setEnrolledCourses] = useState(() => {
-    const stored = localStorage.getItem("enrolledCourses");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [courseProgress, setCourseProgress] = useState(() => {
-    const stored = localStorage.getItem("courseProgress");
-    return stored ? JSON.parse(stored) : {};
-  });
-
   const [loading, setLoading] = useState(true);
 
-  // ====================================================
-  // 🔥 AUTH LISTENER — Sync Firebase User → Local State
-  // ====================================================
+  // 🔥 Listen to Firebase Auth
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Keep previous premium status from local storage
         const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
-        const userData = {
+        const u = {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName,
           email: firebaseUser.email,
           photo: firebaseUser.photoURL,
-
-          // ⭐ No auto-premium — only respect stored
           isPremium: stored.isPremium || false,
         };
 
-        setUser(userData);
-        localStorage.setItem("cybercodeUser", JSON.stringify(userData));
+        setUser(u);
+        localStorage.setItem("cybercodeUser", JSON.stringify(u));
       } else {
         setUser(null);
         localStorage.removeItem("cybercodeUser");
@@ -57,34 +42,28 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return unsub;
   }, []);
 
-  // ====================================================
-  // 🔄 Persist State
-  // ====================================================
-  useEffect(() => {
-    if (user) localStorage.setItem("cybercodeUser", JSON.stringify(user));
-    localStorage.setItem("enrolledCourses", JSON.stringify(enrolledCourses));
-    localStorage.setItem("courseProgress", JSON.stringify(courseProgress));
-  }, [user, enrolledCourses, courseProgress]);
+  // ----------------------
+  // 🔥 FIRESTORE DATA HOOK
+  // ----------------------
+  const userData = useUserData();
+  // This gives:
+  // enrolledCourses
+  // courseProgress
+  // completeLessonFS
+  // recordStudySession
+  // resetMyProgress
+  // project list
+  // premium flags
+  // server access
+  // certification access
+  // and more!
 
-  // ====================================================
-  // 🟩 LOCAL Enroll in Course (Firestore updates happen in useUserData)
-  // ====================================================
-  const enrollInCourse = (courseSlug) => {
-    if (!user) return;
-
-    setEnrolledCourses((prev) => {
-      const updated = prev.includes(courseSlug) ? prev : [...prev, courseSlug];
-      localStorage.setItem("enrolledCourses", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  // ====================================================
-  // 🧠 Persona Engine
-  // ====================================================
+  // ----------------------
+  // Persona Engine
+  // ----------------------
   const [personaScores, setPersonaScores] = useState(() => {
     try {
       const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
@@ -94,14 +73,14 @@ export const UserProvider = ({ children }) => {
     }
   });
 
-  const updatePersonaScore = (personaOrObj, delta = 0) => {
+  const updatePersonaScore = (obj, delta = 0) => {
     setPersonaScores((prev) => {
-      const next = { ...(prev || {}) };
+      const next = { ...prev };
 
-      if (typeof personaOrObj === "string") {
-        next[personaOrObj] = (next[personaOrObj] || 0) + delta;
-      } else if (typeof personaOrObj === "object") {
-        Object.entries(personaOrObj).forEach(([p, v]) => {
+      if (typeof obj === "string") {
+        next[obj] = (next[obj] || 0) + delta;
+      } else {
+        Object.entries(obj).forEach(([p, v]) => {
           next[p] = (next[p] || 0) + (v || 0);
         });
       }
@@ -112,64 +91,20 @@ export const UserProvider = ({ children }) => {
   };
 
   const getTopPersona = () => {
-    const entries = Object.entries(personaScores || {});
-    if (entries.length === 0) return null;
-    entries.sort((a, b) => b[1] - a[1]);
-    return { persona: entries[0][0], score: entries[0][1], all: entries };
+    const e = Object.entries(personaScores || {});
+    if (!e.length) return null;
+
+    e.sort((a, b) => b[1] - a[1]);
+    return { persona: e[0][0], score: e[0][1], all: e };
   };
 
-  // ====================================================
-  // 📘 Lesson Completion - keep local wrapper (deprecated)
-  // ====================================================
-  // Note: new Firestore-backed completion is implemented in useUserData()
-  // This local function can remain for offline/demo fallback.
-  const completeLesson = (courseSlug, lessonSlug) => {
-    const lessons = lessonsData[courseSlug] || [];
-    const courseData = courseProgress[courseSlug] || {
-      completedLessons: [],
-      currentLessonIndex: 0,
-    };
-
-    const nextLesson = lessons[courseData.completedLessons.length];
-    if (nextLesson?.slug !== lessonSlug) return;
-
-    const updated = {
-      ...courseProgress,
-      [courseSlug]: {
-        completedLessons: [...courseData.completedLessons, lessonSlug],
-        currentLessonIndex: courseData.currentLessonIndex + 1,
-      },
-    };
-
-    setCourseProgress(updated);
-    localStorage.setItem("courseProgress", JSON.stringify(updated));
-  };
-
-  // ====================================================
-  // ⭐ PREMIUM ACTIVATION (LOCAL ONLY)
-  // ====================================================
-  const activatePremium = () => {
-    setUser((prev) => {
-      if (!prev) return prev; // safety
-
-      const updated = { ...prev, isPremium: true };
-      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  // ====================================================
-  // 🔴 Logout
-  // ====================================================
+  // ----------------------
+  // Logout
+  // ----------------------
   const logout = async () => {
     await signOut(auth);
-
-    setUser(null);
-    setEnrolledCourses([]);
-    setCourseProgress({});
-    localStorage.removeItem("cybercodeUser");
-    localStorage.removeItem("enrolledCourses");
-    localStorage.removeItem("courseProgress");
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   return (
@@ -178,24 +113,15 @@ export const UserProvider = ({ children }) => {
         user,
         setUser,
         logout,
+        loading,
 
-        enrolledCourses,
-        enrollInCourse,
+        // 🔥 Firestore-synced values
+        ...userData,
 
-        courseProgress,
-        setCourseProgress, // <--- newly exposed setter
-
-        completeLesson, // local fallback
-        // Note: Firestore-backed completion is available via useUserData().completeLessonFS
-
+        // Personas
         personaScores,
         updatePersonaScore,
         getTopPersona,
-
-        loading,
-
-        // ⭐ premium now stable
-        activatePremium,
       }}
     >
       {children}
