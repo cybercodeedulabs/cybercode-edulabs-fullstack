@@ -41,7 +41,6 @@ export const UserProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem("cybercodeUser");
       }
-
       setLoading(false);
     });
 
@@ -49,7 +48,7 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   // -------------------------------------------------------
-  // LOCAL PROVIDER STATE (Synced via Firestore)
+  // LOCAL STATE (synced from Firestore)
   // -------------------------------------------------------
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
@@ -89,7 +88,7 @@ export const UserProvider = ({ children }) => {
   };
 
   // -------------------------------------------------------
-  // HOOK: FIRESTORE SYNC
+  // Firestore Hook (FULL FEATURE SET)
   // -------------------------------------------------------
   const firestore = useUserData(user, {
     setEnrolledCourses,
@@ -98,7 +97,7 @@ export const UserProvider = ({ children }) => {
   });
 
   // -------------------------------------------------------
-  // ENROLL: Local + Firestore
+  // LOCAL + FIRESTORE ENROLL
   // -------------------------------------------------------
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
@@ -139,7 +138,7 @@ export const UserProvider = ({ children }) => {
         courseProgress,
         setCourseProgress,
 
-        // Firestore functions
+        // 🔥 FULL FIRESTORE FEATURE SET
         ...firestore,
 
         // Persona
