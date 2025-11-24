@@ -2,7 +2,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
@@ -44,22 +43,6 @@ export const UserProvider = ({ children }) => {
 
     return unsub;
   }, []);
-
-  // ----------------------
-  // 🔥 FIRESTORE DATA HOOK
-  // ----------------------
-  const userData = useUserData();
-  // This gives:
-  // enrolledCourses
-  // courseProgress
-  // completeLessonFS
-  // recordStudySession
-  // resetMyProgress
-  // project list
-  // premium flags
-  // server access
-  // certification access
-  // and more!
 
   // ----------------------
   // Persona Engine
@@ -114,9 +97,6 @@ export const UserProvider = ({ children }) => {
         setUser,
         logout,
         loading,
-
-        // 🔥 Firestore-synced values
-        ...userData,
 
         // Personas
         personaScores,
