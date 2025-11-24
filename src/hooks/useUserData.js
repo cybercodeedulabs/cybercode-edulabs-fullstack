@@ -278,10 +278,55 @@ export default function useUserData() {
     // Example: call an admin endpoint here (not shown)
   };
 
+  // ============================================================
+// 🟦 COMPLETE LESSON (Firestore + Time Tracking + Progress Sync)
+// ============================================================
+const completeLessonFS = async (courseSlug, lessonSlug, totalLessons) => {
+  if (!user) return;
+
+  const ref = doc(db, "users", user.uid);
+
+  const coursePath = `courseProgress.${courseSlug}`;
+  const completedPath = `${coursePath}.completedLessons`;
+  const indexPath = `${coursePath}.currentLessonIndex`;
+
+  // read existing data
+  const snap = await getDoc(ref);
+  const data = snap.data() || {};
+  const courseProg = data.courseProgress?.[courseSlug] || {};
+
+  const oldIndex = courseProg.currentLessonIndex || 0;
+  const newIndex = oldIndex + 1;
+
+  // Firestore update
+  await updateDoc(ref, {
+    [completedPath]: arrayUnion(lessonSlug),
+    [indexPath]: newIndex >= totalLessons ? totalLessons - 1 : newIndex,
+  });
+
+  // local update
+  setUserData(prev => ({
+    ...prev,
+    courseProgress: {
+      ...(prev.courseProgress || {}),
+      [courseSlug]: {
+        ...(prev.courseProgress?.[courseSlug] || {}),
+        completedLessons: [
+          ...(prev.courseProgress?.[courseSlug]?.completedLessons || []),
+          lessonSlug,
+        ],
+        currentLessonIndex: newIndex >= totalLessons ? totalLessons - 1 : newIndex,
+      }
+    }
+  }));
+};
+
+
   return {
     ...userData,
     enrolledCourses,
     enrollInCourse,
+    completeLessonFS,
     recordStudySession,
     resetMyProgress,
     resetProgressForAllUsers,
