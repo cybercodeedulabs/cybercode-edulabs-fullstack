@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
@@ -17,7 +18,7 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Listen to Firebase Auth
+  // 🔥 Firebase Auth Listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -43,6 +44,21 @@ export const UserProvider = ({ children }) => {
 
     return unsub;
   }, []);
+
+  // ----------------------
+  // 🔥 FIRESTORE USER DATA (enroll, progress, stats...)
+  // ----------------------
+  const userData = useUserData();
+  // This includes:
+  // enrolledCourses
+  // enrollInCourse
+  // completeLessonFS
+  // recordStudySession
+  // resetMyProgress
+  // premium functions
+  // courseProgress
+  // userStats
+  // etc.
 
   // ----------------------
   // Persona Engine
@@ -98,7 +114,10 @@ export const UserProvider = ({ children }) => {
         logout,
         loading,
 
-        // Personas
+        // Firestore synced data & functions
+        ...userData,
+
+        // Persona system
         personaScores,
         updatePersonaScore,
         getTopPersona,
