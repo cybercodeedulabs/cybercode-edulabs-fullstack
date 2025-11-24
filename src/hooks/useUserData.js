@@ -9,6 +9,7 @@ import {
   getDoc,
   increment,
   serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
@@ -97,11 +98,16 @@ export default function useUserData() {
 
     const ref = doc(db, "users", user.uid);
 
-    await updateDoc(
-      ref,
-      { enrolledCourses: arrayUnion(courseSlug) },
-      { merge: true }
-    );
+    try {
+      await updateDoc(ref, { enrolledCourses: arrayUnion(courseSlug) });
+    } catch (err) {
+      // If updateDoc fails because doc doesn't exist, fallback to setDoc/merge
+      try {
+        await setDoc(ref, { enrolledCourses: [courseSlug] }, { merge: true });
+      } catch (err2) {
+        console.error("Failed enrolling (set fallback):", err2);
+      }
+    }
 
     if (!enrolledCourses.includes(courseSlug)) {
       setEnrolledCourses((prev) => [...prev, courseSlug]);
@@ -111,13 +117,6 @@ export default function useUserData() {
   // ============================================================
   // 🔹 Study Session Recorder (time tracking)
   // ============================================================
-  /**
-   * recordStudySession(courseSlug, lessonSlug, minutes)
-   *
-   * - Adds minutes to courseProgress.[courseSlug].timeSpentMinutes (increment)
-   * - Appends a session to courseProgress.[courseSlug].sessions
-   * - Updates userStats.totalMinutes, userStats.daily[today], userStats.streak, lastStudyDate
-   */
   const recordStudySession = async (courseSlug, lessonSlug, minutes) => {
     if (!user) return;
 
@@ -151,7 +150,7 @@ export default function useUserData() {
         newStreak = 1;
       }
 
-      // Firestore update
+      // Firestore update using updateDoc (works for nested fields)
       await updateDoc(userRef, {
         [coursePathTime]: increment(minutes),
         [coursePathSessions]: arrayUnion({
@@ -172,7 +171,7 @@ export default function useUserData() {
           [courseSlug]: {
             ...(prev.courseProgress?.[courseSlug] || {}),
             timeSpentMinutes:
-              ((prev.courseProgress?.[courseSlug]?.timeSpentMinutes || 0) + minutes),
+              (prev.courseProgress?.[courseSlug]?.timeSpentMinutes || 0) + minutes,
             sessions: [
               ...(prev.courseProgress?.[courseSlug]?.sessions || []),
               { lesson: lessonSlug, minutes, date: new Date().toISOString() },
@@ -185,7 +184,7 @@ export default function useUserData() {
           totalMinutes: (prev.userStats?.totalMinutes || 0) + minutes,
           daily: {
             ...(prev.userStats?.daily || {}),
-            [today]: ((prev.userStats?.daily?.[today] || 0) + minutes),
+            [today]: (prev.userStats?.daily?.[today] || 0) + minutes,
           },
           lastStudyDate: today,
           streak: newStreak,
@@ -199,6 +198,71 @@ export default function useUserData() {
       });
     } catch (err) {
       console.error("Failed to record study session:", err);
+    }
+  };
+
+  // ============================================================
+  // 🔥 Complete Lesson (Firestore) — transaction-safe implementation
+  // ============================================================
+  const completeLessonFS = async (courseSlug, lessonSlug, totalLessons = null) => {
+    if (!user) return;
+    const userRef = doc(db, "users", user.uid);
+    const coursePath = `courseProgress.${courseSlug}`;
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        const currentData = userSnap.exists() ? userSnap.data() : {};
+
+        // Ensure courseProgress structure exists
+        const currentCourseProgress = (currentData.courseProgress && currentData.courseProgress[courseSlug]) || {};
+        const existingCompleted = Array.isArray(currentCourseProgress.completedLessons)
+          ? [...currentCourseProgress.completedLessons]
+          : [];
+
+        // If already completed, no-op (still update updatedAt)
+        if (!existingCompleted.includes(lessonSlug)) {
+          existingCompleted.push(lessonSlug);
+        }
+
+        // Deduplicate and keep order (simple)
+        const uniqueCompleted = Array.from(new Set(existingCompleted));
+        // newIndex = number of completed lessons -> this becomes the next lesson index (0-based)
+        const newIndex = uniqueCompleted.length;
+
+        // Build the updates
+        const updates = {
+          [`${coursePath}.completedLessons`]: uniqueCompleted,
+          [`${coursePath}.currentLessonIndex`]: newIndex,
+          [`${coursePath}.updatedAt`]: serverTimestamp(),
+        };
+
+        // Apply via transaction.update
+        transaction.update(userRef, updates);
+      });
+
+      // optimistic local update after successful transaction
+      setUserData((prev) => {
+        const prevCourse = prev.courseProgress?.[courseSlug] || {};
+        const prevCompleted = Array.isArray(prevCourse.completedLessons) ? [...prevCourse.completedLessons] : [];
+        if (!prevCompleted.includes(lessonSlug)) prevCompleted.push(lessonSlug);
+        const newIndex = prevCompleted.length;
+        return {
+          ...prev,
+          courseProgress: {
+            ...prev.courseProgress,
+            [courseSlug]: {
+              ...prevCourse,
+              completedLessons: prevCompleted,
+              currentLessonIndex: newIndex,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        };
+      });
+    } catch (err) {
+      console.error("completeLessonFS transaction failed:", err);
+      throw err;
     }
   };
 
@@ -278,51 +342,6 @@ export default function useUserData() {
     // Example: call an admin endpoint here (not shown)
   };
 
-// ============================================================
-// 🔥 Complete Lesson (Firestore)
-// ============================================================
-const completeLessonFS = async (courseSlug, lessonSlug, totalLessons) => {
-  if (!user) return;
-
-  const userRef = doc(db, "users", user.uid);
-
-  const coursePath = `courseProgress.${courseSlug}`;
-
-  // read existing progress
-  const snap = await getDoc(userRef);
-  const data = snap.data() || {};
-
-  const course = data.courseProgress?.[courseSlug] || {};
-  const completed = new Set(course.completedLessons || []);
-
-  completed.add(lessonSlug);
-
-  const newCompleted = Array.from(completed);
-  const newIndex = newCompleted.length; // lessonIndex = #completed
-
-  await updateDoc(userRef, {
-    [`${coursePath}.completedLessons`]: newCompleted,
-    [`${coursePath}.currentLessonIndex`]: newIndex,
-    [`${coursePath}.updatedAt`]: serverTimestamp(),
-  });
-
-  // local state update (optimistic)
-  setUserData((prev) => {
-    const prevCourse = prev.courseProgress?.[courseSlug] || {};
-    return {
-      ...prev,
-      courseProgress: {
-        ...prev.courseProgress,
-        [courseSlug]: {
-          ...prevCourse,
-          completedLessons: newCompleted,
-          currentLessonIndex: newIndex,
-          updatedAt: new Date().toISOString(),
-        },
-      },
-    };
-  });
-};
   return {
     ...userData,
     enrolledCourses,
