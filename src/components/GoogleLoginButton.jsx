@@ -12,31 +12,40 @@ export default function GoogleLoginButton() {
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      const gUser = result.user;
 
-      console.log("✅ Google Login Successful:", user);
+      console.log("✅ Google Login Successful:", gUser);
 
-      // Create a simplified user object for storage consistency
       const userData = {
-        name: user.displayName,
-        email: user.email,
-        photo: user.photoURL,
-        uid: user.uid,
+        name: gUser.displayName,
+        email: gUser.email,
+        photo: gUser.photoURL,
+        uid: gUser.uid,
       };
 
-      // ✅ Persist user data
+      // Store locally
       localStorage.setItem("cybercodeUser", JSON.stringify(userData));
       setUser(userData);
 
-      // ✅ Handle redirect after login (if user came from a protected page)
-      const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+      // Redirect if something previously stored wanted login
+      const redirectPath =
+        sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+
       sessionStorage.removeItem("redirectAfterLogin");
 
-      // ✅ Navigate to redirect destination
       navigate(redirectPath);
     } catch (error) {
-      console.error("❌ Google Login Failed:", error);
-      alert("Google Sign-In failed. Please try again.");
+      // Prevent false login-failed alerts
+      console.warn("⚠ Google login popup warning (ignored):", error.message);
+
+      // Real failure detection
+      if (
+        !auth.currentUser &&                     // No user authenticated
+        !localStorage.getItem("cybercodeUser")   // Nothing saved
+      ) {
+        console.error("❌ REAL Google Login Failure:", error);
+        alert("Google Sign-In failed. Please try again.");
+      }
     }
   };
 
@@ -52,11 +61,7 @@ export default function GoogleLoginButton() {
                  hover:bg-gray-50 dark:hover:bg-gray-700 
                  transition-all duration-200"
     >
-      <img
-        src="/images/google.svg"
-        alt="Google"
-        className="w-5 h-5"
-      />
+      <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
       <span className="text-sm md:text-base font-medium">
         Sign in with Google
       </span>
