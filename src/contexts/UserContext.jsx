@@ -119,8 +119,10 @@ export const UserProvider = ({ children }) => {
   };
 
   // ====================================================
-  // 📘 Lesson Completion
+  // 📘 Lesson Completion - keep local wrapper (deprecated)
   // ====================================================
+  // Note: new Firestore-backed completion is implemented in useUserData()
+  // This local function can remain for offline/demo fallback.
   const completeLesson = (courseSlug, lessonSlug) => {
     const lessons = lessonsData[courseSlug] || [];
     const courseData = courseProgress[courseSlug] || {
@@ -164,6 +166,7 @@ export const UserProvider = ({ children }) => {
 
     setUser(null);
     setEnrolledCourses([]);
+    setCourseProgress({});
     localStorage.removeItem("cybercodeUser");
     localStorage.removeItem("enrolledCourses");
     localStorage.removeItem("courseProgress");
@@ -180,7 +183,10 @@ export const UserProvider = ({ children }) => {
         enrollInCourse,
 
         courseProgress,
-        completeLesson,
+        setCourseProgress, // <--- newly exposed setter
+
+        completeLesson, // local fallback
+        // Note: Firestore-backed completion is available via useUserData().completeLessonFS
 
         personaScores,
         updatePersonaScore,
