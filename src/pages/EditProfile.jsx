@@ -6,10 +6,13 @@ import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { PERSONAS_LIST } from "../utils/personaEngine";
 
 export default function EditProfile() {
-  const { user, setUser } = useUser();
+  const { user, setUser, personaScores, getTopPersona } = useUser();
   const navigate = useNavigate();
+
+  const topPersona = getTopPersona();
 
   const [form, setForm] = useState({
     name: "",
@@ -21,6 +24,7 @@ export default function EditProfile() {
 
   const [uploading, setUploading] = useState(false);
 
+  // Pre-fill form
   useEffect(() => {
     if (user) {
       setForm({
@@ -37,26 +41,30 @@ export default function EditProfile() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   // ==========================
-  // UPLOAD PROFILE PHOTO
+  // 📌 Upload Profile Photo
   // ==========================
   const handlePhotoUpload = async (e) => {
     if (!user) return;
-
     const file = e.target.files[0];
     if (!file) return;
 
     setUploading(true);
 
-    const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
+    try {
+      const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
 
-    setForm((prev) => ({ ...prev, photo: url }));
+      setForm((prev) => ({ ...prev, photo: url }));
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+
     setUploading(false);
   };
 
   // ==========================
-  // SAVE PROFILE
+  // 📌 Save Profile
   // ==========================
   const saveProfile = async () => {
     if (!user) return;
@@ -71,10 +79,16 @@ export default function EditProfile() {
       photo: form.photo,
     });
 
+    // Update local context
     setUser({ ...user, ...form });
 
     navigate("/dashboard");
   };
+
+  // Profile Completion %
+  const fields = ["name", "phone", "role", "about", "photo"];
+  const filled = fields.filter((f) => form[f] && form[f] !== "").length;
+  const percent = Math.round((filled / fields.length) * 100);
 
   return (
     <motion.div
@@ -89,11 +103,11 @@ export default function EditProfile() {
           Edit Your Profile
         </h1>
 
-        {/* Avatar Section */}
+        {/* Avatar */}
         <div className="flex flex-col items-center mb-8">
           <img
             src={form.photo}
-            className="w-28 h-28 rounded-full object-cover border-4 border-indigo-500 shadow-md"
+            className="w-28 h-28 rounded-full object-cover border-4 border-indigo-500 dark:border-indigo-400 shadow-md"
           />
 
           <label className="mt-4 text-sm font-medium bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition">
@@ -102,7 +116,19 @@ export default function EditProfile() {
           </label>
         </div>
 
-        {/* Form */}
+        {/* Persona Block */}
+        {topPersona && (
+          <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-4 rounded-xl mb-8">
+            <p className="text-sm text-indigo-500 font-semibold">
+              Your Learning Persona
+            </p>
+            <p className="text-lg font-bold mt-1 text-gray-900 dark:text-gray-100">
+              {PERSONAS_LIST[topPersona.persona]}
+            </p>
+          </div>
+        )}
+
+        {/* FORM FIELDS */}
         <div className="grid grid-cols-1 gap-5">
           <div>
             <label className="text-sm font-medium">Full Name</label>
@@ -143,6 +169,20 @@ export default function EditProfile() {
               className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-md min-h-[120px]"
             />
           </div>
+        </div>
+
+        {/* Profile Meter */}
+        <div className="mt-6">
+          <p className="text-sm mb-1 text-gray-600 dark:text-gray-400">
+            Profile Completion
+          </p>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 h-3 rounded-full">
+            <div
+              className="bg-indigo-600 h-3 rounded-full transition-all"
+              style={{ width: `${percent}%` }}
+            ></div>
+          </div>
+          <p className="text-sm mt-1 font-semibold">{percent}% Completed</p>
         </div>
 
         {/* Save Button */}
