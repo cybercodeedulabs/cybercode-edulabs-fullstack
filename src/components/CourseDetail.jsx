@@ -107,8 +107,14 @@ export default function CourseDetail() {
         <div className="mb-6 flex items-center justify-center">
           {isEnrolled ? (
             <button
-              onClick={() => navigate(`/courses/${courseSlug}`)}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+              className="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+              onClick={() => {
+                if (!lessons.length) {
+                  showToast("Lessons not available yet.");
+                  return;
+                }
+                navigate(`/courses/${courseSlug}/lessons/${lessons[0].slug}`);
+              }}
             >
               Go to Course
             </button>
@@ -120,6 +126,7 @@ export default function CourseDetail() {
               Enroll Now
             </button>
           )}
+
         </div>
 
         {/* Highlight Boxes */}
@@ -242,6 +249,10 @@ export default function CourseDetail() {
                 showToast("Complete previous lessons to unlock this lesson.");
                 return;
               }
+              if (!lesson?.slug) {
+                showToast("Lesson content missing.");
+                return;
+              }
               navigate(`/courses/${courseSlug}/lessons/${lesson.slug}`);
             };
 
@@ -249,13 +260,12 @@ export default function CourseDetail() {
               <li
                 key={lesson.slug}
                 onClick={handleLessonClick}
-                className={`block px-6 py-4 cursor-pointer transition-colors duration-200 ${
-                  completed
-                    ? "bg-green-50 dark:bg-green-900"
-                    : isNext
+                className={`block px-6 py-4 cursor-pointer transition-colors duration-200 ${completed
+                  ? "bg-green-50 dark:bg-green-900"
+                  : isNext
                     ? "bg-yellow-50 dark:bg-yellow-900"
                     : "bg-gray-100 dark:bg-gray-800 opacity-50"
-                }`}
+                  }`}
               >
                 <span className="text-lg font-medium">
                   {index + 1}. {lesson.title}{" "}

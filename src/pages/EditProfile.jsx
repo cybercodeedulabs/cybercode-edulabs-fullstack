@@ -1,7 +1,7 @@
 // src/pages/EditProfile.jsx
 import React, { useState, useEffect } from "react";
 import { useUser } from "../contexts/UserContext";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
@@ -9,10 +9,11 @@ import { motion } from "framer-motion";
 import { PERSONAS_LIST } from "../utils/personaEngine";
 
 export default function EditProfile() {
-  const { user, setUser, personaScores, getTopPersona } = useUser();
+  const { user, setUser, getTopPersona } = useUser();
   const navigate = useNavigate();
 
-  const topPersona = getTopPersona();
+  const topPersona =
+    typeof getTopPersona === "function" ? getTopPersona() : null;
 
   const [form, setForm] = useState({
     name: "",
@@ -24,7 +25,7 @@ export default function EditProfile() {
 
   const [uploading, setUploading] = useState(false);
 
-  // Pre-fill form
+  // Prefill form with existing user data
   useEffect(() => {
     if (user) {
       setForm({
@@ -45,6 +46,7 @@ export default function EditProfile() {
   // ==========================
   const handlePhotoUpload = async (e) => {
     if (!user) return;
+
     const file = e.target.files[0];
     if (!file) return;
 
@@ -55,9 +57,17 @@ export default function EditProfile() {
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
+      // Update local form
       setForm((prev) => ({ ...prev, photo: url }));
+
+      // Update Firestore immediately
+      await setDoc(
+        doc(db, "users", user.uid),
+        { photo: url, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
     } catch (error) {
-      console.error("Upload failed:", error);
+      console.error("Photo upload failed:", error);
     }
 
     setUploading(false);
@@ -71,18 +81,27 @@ export default function EditProfile() {
 
     const refUser = doc(db, "users", user.uid);
 
-    await updateDoc(refUser, {
-      name: form.name,
-      phone: form.phone,
-      role: form.role,
-      about: form.about,
-      photo: form.photo,
-    });
+    try {
+      await setDoc(
+        refUser,
+        {
+          name: form.name,
+          phone: form.phone,
+          role: form.role,
+          about: form.about,
+          photo: form.photo,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
-    // Update local context
-    setUser({ ...user, ...form });
+      // Update local context
+      setUser({ ...user, ...form });
 
-    navigate("/dashboard");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Profile update failed:", err);
+    }
   };
 
   // Profile Completion %

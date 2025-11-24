@@ -9,6 +9,7 @@ export default function Register() {
   return (
     <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-24 px-6">
       <div className="max-w-xl mx-auto text-center space-y-8">
+
         {/* Header */}
         <motion.h1
           className="text-4xl md:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400"
@@ -45,7 +46,7 @@ export default function Register() {
         >
           {user ? (
             <p className="text-lg font-medium text-green-600 dark:text-green-400">
-              ✅ Welcome, {user.displayName}!
+              ✅ Welcome, {user.name}!
             </p>
           ) : (
             <GoogleLoginButton />

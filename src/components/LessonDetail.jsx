@@ -533,10 +533,10 @@ export default function LessonDetail() {
             🚀 Want to go deeper?
           </h3>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Enroll in the full <strong>{lesson.title}</strong> course for hands-on labs.
+            Enroll in the full <strong>{courseSlug.replace(/-/g, " ").toUpperCase()}</strong> course for hands-on labs.
           </p>
           <button
-            onClick={() => navigate(`/enroll/${courseSlug}`)}
+            onClick={() => navigate(`/courses/${courseSlug}`)}
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
           >
             Enroll for Deep Dive & Certification

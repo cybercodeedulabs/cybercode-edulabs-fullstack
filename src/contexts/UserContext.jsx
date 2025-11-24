@@ -8,9 +8,7 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 
 export const UserProvider = ({ children }) => {
-  // -------------------------------------------------------
-  // AUTH USER
-  // -------------------------------------------------------
+  // AUTH USER (cached)
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("cybercodeUser");
@@ -22,21 +20,29 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
+  // -----------------------------------------------------
+  // 🔵 AUTH LISTENER (Google login session)
+  // -----------------------------------------------------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
+        // DO NOT override Firestore profile fields
         const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
-        const u = {
+        const merged = {
           uid: firebaseUser.uid,
-          name: firebaseUser.displayName,
           email: firebaseUser.email,
-          photo: firebaseUser.photoURL,
+          // Keep custom profile fields from Firestore or stored
+          name: stored.name || firebaseUser.displayName || "",
+          photo: stored.photo || firebaseUser.photoURL || "",
+          phone: stored.phone || "",
+          role: stored.role || "",
+          about: stored.about || "",
           isPremium: stored.isPremium || false,
         };
 
-        setUser(u);
-        localStorage.setItem("cybercodeUser", JSON.stringify(u));
+        setUser(merged);
+        localStorage.setItem("cybercodeUser", JSON.stringify(merged));
       } else {
         setUser(null);
         localStorage.removeItem("cybercodeUser");
@@ -47,15 +53,15 @@ export const UserProvider = ({ children }) => {
     return () => unsub();
   }, []);
 
-  // -------------------------------------------------------
-  // LOCAL STATE (synced from Firestore)
-  // -------------------------------------------------------
+  // -----------------------------------------------------
+  // LOCAL STATE synced from Firestore
+  // -----------------------------------------------------
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
 
-  // -------------------------------------------------------
+  // -----------------------------------------------------
   // PERSONA ENGINE
-  // -------------------------------------------------------
+  // -----------------------------------------------------
   const [personaScores, setPersonaScores] = useState(() => {
     try {
       const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
@@ -68,6 +74,7 @@ export const UserProvider = ({ children }) => {
   const updatePersonaScore = (obj, delta = 0) => {
     setPersonaScores((prev) => {
       const next = { ...(prev || {}) };
+
       if (typeof obj === "string") {
         next[obj] = (next[obj] || 0) + delta;
       } else {
@@ -75,30 +82,45 @@ export const UserProvider = ({ children }) => {
           next[k] = (next[k] || 0) + (v || 0);
         });
       }
+
       localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
   const getTopPersona = () => {
-    const e = Object.entries(personaScores);
-    if (!e.length) return null;
-    e.sort((a, b) => b[1] - a[1]);
-    return { persona: e[0][0], score: e[0][1], all: e };
+    const list = Object.entries(personaScores);
+    if (!list.length) return null;
+    list.sort((a, b) => b[1] - a[1]);
+    return { persona: list[0][0], score: list[0][1], all: list };
   };
 
-  // -------------------------------------------------------
-  // Firestore Hook (FULL FEATURE SET)
-  // -------------------------------------------------------
+  // -----------------------------------------------------
+  // FIRESTORE HOOK
+  // -----------------------------------------------------
   const firestore = useUserData(user, {
     setEnrolledCourses,
     setCourseProgress,
-    setUser,
+    setUser: (updater) => {
+      // Merge Firestore user fields into context + localStorage
+      setUser((prev) => {
+        const next =
+          typeof updater === "function" ? updater(prev) : updater;
+
+        const merged = {
+          ...prev,
+          ...next,
+        };
+
+        localStorage.setItem("cybercodeUser", JSON.stringify(merged));
+        return merged;
+      });
+    },
   });
 
-  // -------------------------------------------------------
-  // LOCAL + FIRESTORE ENROLL
-  // -------------------------------------------------------
+  // -----------------------------------------------------
+  // ENROLL WRAPPER
+  // -----------------------------------------------------
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
@@ -113,9 +135,9 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // -------------------------------------------------------
+  // -----------------------------------------------------
   // LOGOUT
-  // -------------------------------------------------------
+  // -----------------------------------------------------
   const logout = async () => {
     await signOut(auth);
     setUser(null);
@@ -125,10 +147,14 @@ export const UserProvider = ({ children }) => {
     window.location.href = "/";
   };
 
+  // -----------------------------------------------------
+  // CONTEXT VALUE
+  // -----------------------------------------------------
   return (
     <UserContext.Provider
       value={{
         user,
+        setUser,
         loading,
         logout,
 
@@ -138,10 +164,8 @@ export const UserProvider = ({ children }) => {
         courseProgress,
         setCourseProgress,
 
-        // 🔥 FULL FIRESTORE FEATURE SET
         ...firestore,
 
-        // Persona
         personaScores,
         updatePersonaScore,
         getTopPersona,

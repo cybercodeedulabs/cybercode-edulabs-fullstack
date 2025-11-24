@@ -12,40 +12,26 @@ export default function GoogleLoginButton() {
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const gUser = result.user;
-
-      console.log("✅ Google Login Successful:", gUser);
+      const u = result.user;
 
       const userData = {
-        name: gUser.displayName,
-        email: gUser.email,
-        photo: gUser.photoURL,
-        uid: gUser.uid,
+        name: u.displayName,
+        email: u.email,
+        photo: u.photoURL,
+        uid: u.uid,
       };
 
-      // Store locally
       localStorage.setItem("cybercodeUser", JSON.stringify(userData));
       setUser(userData);
 
-      // Redirect if something previously stored wanted login
       const redirectPath =
         sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
-
       sessionStorage.removeItem("redirectAfterLogin");
 
       navigate(redirectPath);
     } catch (error) {
-      // Prevent false login-failed alerts
-      console.warn("⚠ Google login popup warning (ignored):", error.message);
-
-      // Real failure detection
-      if (
-        !auth.currentUser &&                     // No user authenticated
-        !localStorage.getItem("cybercodeUser")   // Nothing saved
-      ) {
-        console.error("❌ REAL Google Login Failure:", error);
-        alert("Google Sign-In failed. Please try again.");
-      }
+      console.error("Google Login Failed:", error);
+      alert("Google Sign-In failed. Please try again.");
     }
   };
 
@@ -62,9 +48,7 @@ export default function GoogleLoginButton() {
                  transition-all duration-200"
     >
       <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
-      <span className="text-sm md:text-base font-medium">
-        Sign in with Google
-      </span>
+      <span className="text-sm md:text-base font-medium">Sign in with Google</span>
     </motion.button>
   );
 }
