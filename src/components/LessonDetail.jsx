@@ -1,4 +1,4 @@
-// File: src/components/LessonDetail.jsx
+// src/components/LessonDetail.jsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -36,7 +36,7 @@ export default function LessonDetail() {
   // NOTE: get everything from UserContext (useUser)
   const {
     user,
-    enrolledCourses,
+    enrolledCourses = [],
     courseProgress = {},
     updatePersonaScore,
     completeLessonFS,
@@ -49,7 +49,7 @@ export default function LessonDetail() {
 
   const lessons = lessonsData[courseSlug] || [];
   const lessonIndex = lessons.findIndex((l) => l.slug === lessonSlug);
-  const lesson = lessons[lessonIndex];
+  const lesson = lessonIndex >= 0 ? lessons[lessonIndex] : null;
 
   // Reset code outputs when lesson changes
   useEffect(() => {
@@ -59,9 +59,12 @@ export default function LessonDetail() {
   }, [lessonSlug]);
 
   // determine progress number (defaults to 0)
-  const progress = (courseProgress && courseProgress[courseSlug] && typeof courseProgress[courseSlug].currentLessonIndex === 'number')
-    ? courseProgress[courseSlug].currentLessonIndex
-    : 0;
+  const progress =
+    courseProgress &&
+    courseProgress[courseSlug] &&
+    typeof courseProgress[courseSlug].currentLessonIndex === "number"
+      ? courseProgress[courseSlug].currentLessonIndex
+      : 0;
 
   const isNextLesson = lessonIndex === progress;
 
@@ -88,7 +91,8 @@ export default function LessonDetail() {
       // swallow persona errors so UI stays responsive
       console.warn("Persona update skipped:", err);
     }
-  }, [lessonSlug, user, lesson, updatePersonaScore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonSlug, user, lesson]);
 
   if (!lesson) {
     return (
@@ -136,9 +140,9 @@ export default function LessonDetail() {
         if (typeof setCourseProgress === "function") {
           setCourseProgress((prev = {}) => {
             const prevCourse = prev[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-            if (Array.isArray(prevCourse.completedLessons) && prevCourse.completedLessons.includes(lessonSlug)) {
-              return prev; // already present
-            }
+            const already = Array.isArray(prevCourse.completedLessons) && prevCourse.completedLessons.includes(lessonSlug);
+            if (already) return prev; // already present
+
             const nextCompleted = Array.isArray(prevCourse.completedLessons)
               ? [...prevCourse.completedLessons, lessonSlug]
               : [lessonSlug];

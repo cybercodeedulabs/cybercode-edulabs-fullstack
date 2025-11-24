@@ -1,4 +1,4 @@
-// File: src/components/CourseDetail.jsx
+// src/components/CourseDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";
@@ -16,20 +16,25 @@ export default function CourseDetail() {
 
   const {
     user,
-    enrolledCourses,
+    enrolledCourses = [],
     enrollInCourse,
-    courseProgress,
+    courseProgress = {},
     updatePersonaScore,
   } = useUser();
 
   // Auto persona scoring
   useEffect(() => {
     if (!user || !course) return;
-    const deltas = quickCoursePersonaDelta(course);
-    if (Object.keys(deltas).length > 0) updatePersonaScore(deltas);
+    try {
+      const deltas = quickCoursePersonaDelta(course);
+      if (deltas && Object.keys(deltas).length > 0) updatePersonaScore(deltas);
+    } catch (err) {
+      console.warn("Persona scoring skipped:", err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseSlug, user]);
 
-  const isEnrolled = user && Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug);
+  const isEnrolled = !!user && Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug);
 
   const progressData =
     (courseProgress && courseProgress[courseSlug]) || {
@@ -37,9 +42,10 @@ export default function CourseDetail() {
       currentLessonIndex: 0,
     };
 
-  const progressPercent = lessons.length > 0
-    ? Math.round((progressData.completedLessons.length / lessons.length) * 100)
-    : 0;
+  const progressPercent =
+    lessons.length > 0
+      ? Math.round(((Array.isArray(progressData.completedLessons) ? progressData.completedLessons.length : 0) / lessons.length) * 100)
+      : 0;
 
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
@@ -54,9 +60,9 @@ export default function CourseDetail() {
     }
 
     try {
-      // enrollInCourse in provider is an optimistic local update wrapper which also calls Firestore
-      enrollInCourse(courseSlug);
-      showToast(`Successfully enrolled in "${course.title}"`);
+      // enrollInCourse in provider performs optimistic local update and triggers Firestore write
+      await enrollInCourse(courseSlug);
+      showToast(`Successfully enrolled in "${course?.title || courseSlug}"`);
     } catch (err) {
       console.error("Enroll failed:", err);
       showToast("Enrollment failed. Try again.");
@@ -76,7 +82,6 @@ export default function CourseDetail() {
 
   return (
     <div className="text-left relative">
-
       {/* Toast Alert */}
       {toast && (
         <div className="fixed top-5 right-5 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
@@ -98,6 +103,24 @@ export default function CourseDetail() {
 
       {/* ===== COURSE DETAILS ===== */}
       <div className="max-w-4xl mx-auto px-4 pb-10">
+        {/* Enroll CTA (top for convenience) */}
+        <div className="mb-6 flex items-center justify-center">
+          {isEnrolled ? (
+            <button
+              onClick={() => navigate(`/courses/${courseSlug}`)}
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+            >
+              Go to Course
+            </button>
+          ) : (
+            <button
+              onClick={handleEnroll}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+            >
+              Enroll Now
+            </button>
+          )}
+        </div>
 
         {/* Highlight Boxes */}
         <section className="mb-10 grid sm:grid-cols-2 gap-6">
@@ -201,7 +224,6 @@ export default function CourseDetail() {
 
       {/* ===== LESSONS SECTION ===== */}
       <div className="max-w-4xl mx-auto px-4 pb-16">
-
         <h2 className="text-2xl font-semibold text-indigo-700 dark:text-indigo-300 mb-4">
           Lessons ({lessons.length})
         </h2>
@@ -209,7 +231,7 @@ export default function CourseDetail() {
         <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
           {lessons.map((lesson, index) => {
             const completed = Array.isArray(progressData.completedLessons) && progressData.completedLessons.includes(lesson.slug);
-            const isNext = index === progressData.currentLessonIndex;
+            const isNext = index === (progressData.currentLessonIndex || 0);
 
             const handleLessonClick = () => {
               if (!isEnrolled) {
@@ -236,7 +258,7 @@ export default function CourseDetail() {
                 }`}
               >
                 <span className="text-lg font-medium">
-                  {index + 1}. {lesson.title} {" "}
+                  {index + 1}. {lesson.title}{" "}
                   {completed ? "✅" : isNext ? "🟡" : "🔒"}
                 </span>
               </li>
@@ -245,34 +267,37 @@ export default function CourseDetail() {
         </ul>
 
         {/* ===== CERTIFICATE PREVIEW ===== */}
-        <CertificatePreview
-          certificate={{
-            image: "/images/certificate-default.png",
-            previewUrl: `/certificate/${courseSlug}`,
+        <div className="mt-8">
+          <CertificatePreview
+            certificate={{
+              image: "/images/certificate-default.png",
+              previewUrl: `/certificate/${courseSlug}`,
 
-            studentName: user?.name || "",
-            studentPhoto: user?.photo || "",
-            courseName: course?.title || "",
-            courseSlug,
+              studentName: user?.name || "",
+              studentPhoto: user?.photo || "",
+              courseName: course?.title || "",
+              courseSlug,
 
-            certificateId:
-              progressData?.certificateId ||
-              `CERT-${courseSlug.toUpperCase()}-${user?.uid?.slice(-6) || "000000"}`,
+              certificateId:
+                (progressData && progressData.certificateId) ||
+                `CERT-${(courseSlug || "").toUpperCase()}-${(user?.uid || "000000").slice(-6)}`,
 
-            completionDate:
-              progressData.completedLessons.length === lessons.length
-                ? new Date().toISOString().split("T")[0]
-                : "",
+              completionDate:
+                Array.isArray(progressData.completedLessons) && progressData.completedLessons.length === lessons.length
+                  ? new Date().toISOString().split("T")[0]
+                  : "",
 
-            isPremium: user?.isPremium ?? false,
-          }}
-          isEnrolled={isEnrolled}
-          isCompleted={
-            progressData.completedLessons.length === lessons.length &&
-            lessons.length > 0
-          }
-          progressPercent={progressPercent}
-        />
+              isPremium: user?.isPremium ?? false,
+            }}
+            isEnrolled={isEnrolled}
+            isCompleted={
+              Array.isArray(progressData.completedLessons) &&
+              progressData.completedLessons.length === lessons.length &&
+              lessons.length > 0
+            }
+            progressPercent={progressPercent}
+          />
+        </div>
 
         {/* ===== RECOMMENDED COURSES ===== */}
         <section className="mt-16">
@@ -324,7 +349,6 @@ export default function CourseDetail() {
               </ul>
             </div>
           </div>
-
         </section>
       </div>
     </div>
