@@ -8,9 +8,9 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 
 export const UserProvider = ({ children }) => {
-  // --------------------------------------------------------
-  // BASIC USER (AUTH)
-  // --------------------------------------------------------
+  // -------------------------------------------------------
+  // AUTH USER
+  // -------------------------------------------------------
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("cybercodeUser");
@@ -22,9 +22,8 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // Auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
@@ -46,18 +45,18 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // --------------------------------------------------------
-  // LOCAL STATE (kept in context)
-  // --------------------------------------------------------
+  // -------------------------------------------------------
+  // LOCAL PROVIDER STATE (Synced via Firestore)
+  // -------------------------------------------------------
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
 
-  // --------------------------------------------------------
-  // PERSONA ENGINE (Local Only)
-  // --------------------------------------------------------
+  // -------------------------------------------------------
+  // PERSONA ENGINE
+  // -------------------------------------------------------
   const [personaScores, setPersonaScores] = useState(() => {
     try {
       const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
@@ -70,7 +69,6 @@ export const UserProvider = ({ children }) => {
   const updatePersonaScore = (obj, delta = 0) => {
     setPersonaScores((prev) => {
       const next = { ...(prev || {}) };
-
       if (typeof obj === "string") {
         next[obj] = (next[obj] || 0) + delta;
       } else {
@@ -78,97 +76,76 @@ export const UserProvider = ({ children }) => {
           next[k] = (next[k] || 0) + (v || 0);
         });
       }
-
       localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
   const getTopPersona = () => {
-    const entries = Object.entries(personaScores || {});
-    if (!entries.length) return null;
-
-    entries.sort((a, b) => b[1] - a[1]);
-    return { persona: entries[0][0], score: entries[0][1], all: entries };
+    const e = Object.entries(personaScores);
+    if (!e.length) return null;
+    e.sort((a, b) => b[1] - a[1]);
+    return { persona: e[0][0], score: e[0][1], all: e };
   };
 
-  // --------------------------------------------------------
-  // PREMIUM FLAG LOCAL ONLY
-  // --------------------------------------------------------
-  const activatePremium = () => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, isPremium: true };
-      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  // --------------------------------------------------------
-  // FIRESTORE-HOOK (NO circular import)
-  // --------------------------------------------------------
-  const firestoreFunctions = useUserData({
-    user,
+  // -------------------------------------------------------
+  // HOOK: FIRESTORE SYNC
+  // -------------------------------------------------------
+  const firestore = useUserData(user, {
     setEnrolledCourses,
     setCourseProgress,
-    activatePremium,
+    setUser,
   });
 
-  // --------------------------------------------------------
-  // ENROLL (local + Firestore)
-  // --------------------------------------------------------
+  // -------------------------------------------------------
+  // ENROLL: Local + Firestore
+  // -------------------------------------------------------
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
-    // local
-    setEnrolledCourses((prev) => {
-      if (!prev.includes(courseSlug)) {
-        return [...prev, courseSlug];
-      }
-      return prev;
-    });
+    setEnrolledCourses((prev) =>
+      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
+    );
 
-    // firestore
     try {
-      await firestoreFunctions.enrollInCourse(courseSlug);
-    } catch (e) {
-      console.error("Firestore enrollment failed:", e);
+      await firestore.enrollInCourse(courseSlug);
+    } catch (err) {
+      console.error("Enroll failed:", err);
     }
   };
 
-  // --------------------------------------------------------
+  // -------------------------------------------------------
   // LOGOUT
-  // --------------------------------------------------------
+  // -------------------------------------------------------
   const logout = async () => {
     await signOut(auth);
     setUser(null);
     setEnrolledCourses([]);
     setCourseProgress({});
-    localStorage.clear(); // keeps persona if you want
+    localStorage.clear();
+    window.location.href = "/";
   };
 
   return (
     <UserContext.Provider
       value={{
         user,
-        setUser,
         loading,
         logout,
 
         enrolledCourses,
-        setEnrolledCourses,
         enrollInCourse,
 
         courseProgress,
         setCourseProgress,
 
-        ...firestoreFunctions,
+        // Firestore functions
+        ...firestore,
 
+        // Persona
         personaScores,
         updatePersonaScore,
         getTopPersona,
-
-        activatePremium,
       }}
     >
       {children}
