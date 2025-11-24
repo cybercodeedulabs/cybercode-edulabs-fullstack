@@ -1,4 +1,4 @@
-// src/components/LessonDetail.jsx
+// File: src/components/LessonDetail.jsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -9,7 +9,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
-import useUserData from "../hooks/useUserData";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
 import { quickLessonPersonaDelta } from "../utils/personaEngine";
 
@@ -34,8 +33,15 @@ export default function LessonDetail() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const { user, enrolledCourses, courseProgress = {}, updatePersonaScore } = useUser();
-  const { completeLessonFS } = useUserData();
+  // NOTE: get everything from UserContext (useUser)
+  const {
+    user,
+    enrolledCourses,
+    courseProgress = {},
+    updatePersonaScore,
+    completeLessonFS,
+    setCourseProgress,
+  } = useUser();
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains("dark"));
@@ -122,9 +128,32 @@ export default function LessonDetail() {
       // prevent the blocking effect from immediately redirecting while update propagates
       setSuppressRedirect(true);
 
-      // completeLessonFS should update Firestore and also update context state via your hook
+      // completeLessonFS should update Firestore and also update context state via snapshot
       if (typeof completeLessonFS === "function") {
-        await completeLessonFS(courseSlug, lessonSlug, lessons.length);
+        await completeLessonFS(courseSlug, lessonSlug);
+
+        // optimistic local update: if setCourseProgress provided, update local immediately
+        if (typeof setCourseProgress === "function") {
+          setCourseProgress((prev = {}) => {
+            const prevCourse = prev[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+            if (Array.isArray(prevCourse.completedLessons) && prevCourse.completedLessons.includes(lessonSlug)) {
+              return prev; // already present
+            }
+            const nextCompleted = Array.isArray(prevCourse.completedLessons)
+              ? [...prevCourse.completedLessons, lessonSlug]
+              : [lessonSlug];
+
+            return {
+              ...prev,
+              [courseSlug]: {
+                ...prevCourse,
+                completedLessons: nextCompleted,
+                currentLessonIndex: nextCompleted.length,
+                updatedAt: new Date().toISOString(),
+              },
+            };
+          });
+        }
       } else {
         console.warn("completeLessonFS not available.");
       }

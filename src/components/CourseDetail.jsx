@@ -1,4 +1,4 @@
-// src/components/CourseDetail.jsx
+// File: src/components/CourseDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";
@@ -37,9 +37,9 @@ export default function CourseDetail() {
       currentLessonIndex: 0,
     };
 
-  const progressPercent = Math.round(
-    (progressData.completedLessons.length / lessons.length) * 100
-  );
+  const progressPercent = lessons.length > 0
+    ? Math.round((progressData.completedLessons.length / lessons.length) * 100)
+    : 0;
 
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
@@ -47,9 +47,20 @@ export default function CourseDetail() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleEnroll = () => {
-    enrollInCourse(courseSlug);
-    showToast(`Successfully enrolled in "${course.title}"`);
+  const handleEnroll = async () => {
+    if (!user) {
+      showToast("Please login to enroll.");
+      return;
+    }
+
+    try {
+      // enrollInCourse in provider is an optimistic local update wrapper which also calls Firestore
+      enrollInCourse(courseSlug);
+      showToast(`Successfully enrolled in "${course.title}"`);
+    } catch (err) {
+      console.error("Enroll failed:", err);
+      showToast("Enrollment failed. Try again.");
+    }
   };
 
   if (!course) {
@@ -225,7 +236,7 @@ export default function CourseDetail() {
                 }`}
               >
                 <span className="text-lg font-medium">
-                  {index + 1}. {lesson.title}{" "}
+                  {index + 1}. {lesson.title} {" "}
                   {completed ? "✅" : isNext ? "🟡" : "🔒"}
                 </span>
               </li>

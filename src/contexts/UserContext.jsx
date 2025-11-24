@@ -8,19 +8,23 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 
 export const UserProvider = ({ children }) => {
-  // ----------------------
-  // AUTH + BASIC USER STATE
-  // ----------------------
+  // --------------------------------------------------------
+  // BASIC USER (AUTH)
+  // --------------------------------------------------------
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("cybercodeUser");
-    return stored ? JSON.parse(stored) : null;
+    try {
+      const raw = localStorage.getItem("cybercodeUser");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   });
 
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Firebase Auth Listener
+  // Auth state listener
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
@@ -42,27 +46,18 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     });
 
-    return unsub;
+    return () => unsubscribe();
   }, []);
 
-  // ----------------------
-  // 🔥 FIRESTORE USER DATA (enroll, progress, stats...)
-  // ----------------------
-  const userData = useUserData();
-  // This includes:
-  // enrolledCourses
-  // enrollInCourse
-  // completeLessonFS
-  // recordStudySession
-  // resetMyProgress
-  // premium functions
-  // courseProgress
-  // userStats
-  // etc.
+  // --------------------------------------------------------
+  // LOCAL STATE (kept in context)
+  // --------------------------------------------------------
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [courseProgress, setCourseProgress] = useState({});
 
-  // ----------------------
-  // Persona Engine
-  // ----------------------
+  // --------------------------------------------------------
+  // PERSONA ENGINE (Local Only)
+  // --------------------------------------------------------
   const [personaScores, setPersonaScores] = useState(() => {
     try {
       const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
@@ -74,13 +69,13 @@ export const UserProvider = ({ children }) => {
 
   const updatePersonaScore = (obj, delta = 0) => {
     setPersonaScores((prev) => {
-      const next = { ...prev };
+      const next = { ...(prev || {}) };
 
       if (typeof obj === "string") {
         next[obj] = (next[obj] || 0) + delta;
       } else {
-        Object.entries(obj).forEach(([p, v]) => {
-          next[p] = (next[p] || 0) + (v || 0);
+        Object.entries(obj).forEach(([k, v]) => {
+          next[k] = (next[k] || 0) + (v || 0);
         });
       }
 
@@ -90,20 +85,66 @@ export const UserProvider = ({ children }) => {
   };
 
   const getTopPersona = () => {
-    const e = Object.entries(personaScores || {});
-    if (!e.length) return null;
+    const entries = Object.entries(personaScores || {});
+    if (!entries.length) return null;
 
-    e.sort((a, b) => b[1] - a[1]);
-    return { persona: e[0][0], score: e[0][1], all: e };
+    entries.sort((a, b) => b[1] - a[1]);
+    return { persona: entries[0][0], score: entries[0][1], all: entries };
   };
 
-  // ----------------------
-  // Logout
-  // ----------------------
+  // --------------------------------------------------------
+  // PREMIUM FLAG LOCAL ONLY
+  // --------------------------------------------------------
+  const activatePremium = () => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, isPremium: true };
+      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // --------------------------------------------------------
+  // FIRESTORE-HOOK (NO circular import)
+  // --------------------------------------------------------
+  const firestoreFunctions = useUserData({
+    user,
+    setEnrolledCourses,
+    setCourseProgress,
+    activatePremium,
+  });
+
+  // --------------------------------------------------------
+  // ENROLL (local + Firestore)
+  // --------------------------------------------------------
+  const enrollInCourse = async (courseSlug) => {
+    if (!user) return;
+
+    // local
+    setEnrolledCourses((prev) => {
+      if (!prev.includes(courseSlug)) {
+        return [...prev, courseSlug];
+      }
+      return prev;
+    });
+
+    // firestore
+    try {
+      await firestoreFunctions.enrollInCourse(courseSlug);
+    } catch (e) {
+      console.error("Firestore enrollment failed:", e);
+    }
+  };
+
+  // --------------------------------------------------------
+  // LOGOUT
+  // --------------------------------------------------------
   const logout = async () => {
     await signOut(auth);
-    localStorage.clear();
-    window.location.href = "/";
+    setUser(null);
+    setEnrolledCourses([]);
+    setCourseProgress({});
+    localStorage.clear(); // keeps persona if you want
   };
 
   return (
@@ -111,16 +152,23 @@ export const UserProvider = ({ children }) => {
       value={{
         user,
         setUser,
-        logout,
         loading,
+        logout,
 
-        // Firestore synced data & functions
-        ...userData,
+        enrolledCourses,
+        setEnrolledCourses,
+        enrollInCourse,
 
-        // Persona system
+        courseProgress,
+        setCourseProgress,
+
+        ...firestoreFunctions,
+
         personaScores,
         updatePersonaScore,
         getTopPersona,
+
+        activatePremium,
       }}
     >
       {children}
