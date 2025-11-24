@@ -6,18 +6,15 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  getDoc,
+  increment,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { useUser } from "../contexts/UserContext";
 
 export default function useUserData() {
-  const {
-    user,
-    enrolledCourses,
-    setEnrolledCourses,
-    activatePremium,
-    setCourseProgress, // new: setter from context
-  } = useUser();
+  const { user, enrolledCourses, setEnrolledCourses, activatePremium } = useUser();
 
   const [userData, setUserData] = useState({
     enrolledCourses: enrolledCourses || [],
@@ -25,7 +22,13 @@ export default function useUserData() {
     hasCertificationAccess: false,
     hasServerAccess: false,
     isPremium: false,
-    courseProgress: {},
+    courseProgress: {}, // local mirror
+    userStats: {
+      totalMinutes: 0,
+      daily: {}, // { "2025-11-24": 45 }
+      streak: 0,
+      lastStudyDate: "", // YYYY-MM-DD
+    },
   });
 
   // ============================================================
@@ -48,6 +51,12 @@ export default function useUserData() {
             hasServerAccess: false,
             isPremium: false,
             courseProgress: {},
+            userStats: {
+              totalMinutes: 0,
+              daily: {},
+              streak: 0,
+              lastStudyDate: "",
+            },
           },
           { merge: true }
         );
@@ -57,22 +66,19 @@ export default function useUserData() {
       const data = snap.data();
 
       // Update local userData state
-      setUserData({
+      setUserData((prev) => ({
+        ...prev,
         enrolledCourses: data.enrolledCourses || [],
         projects: data.projects || [],
         hasCertificationAccess: data.hasCertificationAccess || false,
         hasServerAccess: data.hasServerAccess || false,
         isPremium: data.isPremium || false,
         courseProgress: data.courseProgress || {},
-      });
+        userStats: data.userStats || prev.userStats,
+      }));
 
       // Sync enrolledCourses into UserContext
       setEnrolledCourses(data.enrolledCourses || []);
-
-      // Sync courseProgress into UserContext (so components reading useUser() see it)
-      if (typeof setCourseProgress === "function") {
-        setCourseProgress(data.courseProgress || {});
-      }
 
       // Sync premium flag only to context (NO FIRESTORE WRITE)
       if (data.isPremium) {
@@ -81,17 +87,17 @@ export default function useUserData() {
     });
 
     return () => unsubscribe();
-  }, [user, setEnrolledCourses, activatePremium, setCourseProgress]);
+  }, [user, setEnrolledCourses, activatePremium]);
 
   // ============================================================
-  // 🟩 Enroll In Course
+  // 🟩 Enroll In Course (Firestore)
   // ============================================================
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
     const ref = doc(db, "users", user.uid);
 
-    await setDoc(
+    await updateDoc(
       ref,
       { enrolledCourses: arrayUnion(courseSlug) },
       { merge: true }
@@ -99,6 +105,100 @@ export default function useUserData() {
 
     if (!enrolledCourses.includes(courseSlug)) {
       setEnrolledCourses((prev) => [...prev, courseSlug]);
+    }
+  };
+
+  // ============================================================
+  // 🔹 Study Session Recorder (time tracking)
+  // ============================================================
+  /**
+   * recordStudySession(courseSlug, lessonSlug, minutes)
+   *
+   * - Adds minutes to courseProgress.[courseSlug].timeSpentMinutes (increment)
+   * - Appends a session to courseProgress.[courseSlug].sessions
+   * - Updates userStats.totalMinutes, userStats.daily[today], userStats.streak, lastStudyDate
+   */
+  const recordStudySession = async (courseSlug, lessonSlug, minutes) => {
+    if (!user) return;
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const coursePathTime = `courseProgress.${courseSlug}.timeSpentMinutes`;
+      const coursePathSessions = `courseProgress.${courseSlug}.sessions`;
+      const userTotal = `userStats.totalMinutes`;
+      const userDailyPath = `userStats.daily.${today}`;
+
+      // Read current doc (to compute streak)
+      const snap = await getDoc(userRef);
+      const current = snap?.data() || {};
+      const prevStats = current.userStats || {};
+      const lastDate = prevStats.lastStudyDate || "";
+      const prevStreak = prevStats.streak || 0;
+
+      // compute new streak
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      let newStreak = 1;
+      if (lastDate === today) {
+        newStreak = prevStreak; // same day, keep streak
+      } else if (lastDate === yesterdayStr) {
+        newStreak = prevStreak + 1;
+      } else {
+        newStreak = 1;
+      }
+
+      // Firestore update
+      await updateDoc(userRef, {
+        [coursePathTime]: increment(minutes),
+        [coursePathSessions]: arrayUnion({
+          lesson: lessonSlug,
+          minutes,
+          date: serverTimestamp(),
+        }),
+        [userTotal]: increment(minutes),
+        [userDailyPath]: increment(minutes),
+        "userStats.lastStudyDate": today,
+        "userStats.streak": newStreak,
+      });
+
+      // local state update (optimistic)
+      setUserData((prev) => {
+        const updatedCourseProgress = {
+          ...(prev.courseProgress || {}),
+          [courseSlug]: {
+            ...(prev.courseProgress?.[courseSlug] || {}),
+            timeSpentMinutes:
+              ((prev.courseProgress?.[courseSlug]?.timeSpentMinutes || 0) + minutes),
+            sessions: [
+              ...(prev.courseProgress?.[courseSlug]?.sessions || []),
+              { lesson: lessonSlug, minutes, date: new Date().toISOString() },
+            ],
+          },
+        };
+
+        const updatedUserStats = {
+          ...(prev.userStats || {}),
+          totalMinutes: (prev.userStats?.totalMinutes || 0) + minutes,
+          daily: {
+            ...(prev.userStats?.daily || {}),
+            [today]: ((prev.userStats?.daily?.[today] || 0) + minutes),
+          },
+          lastStudyDate: today,
+          streak: newStreak,
+        };
+
+        return {
+          ...prev,
+          courseProgress: updatedCourseProgress,
+          userStats: updatedUserStats,
+        };
+      });
+    } catch (err) {
+      console.error("Failed to record study session:", err);
     }
   };
 
@@ -152,81 +252,41 @@ export default function useUserData() {
   };
 
   // ============================================================
-  // 🔁 Complete lesson (Firestore-backed)
+  // ⚠️ Utility: reset progress for current user (useful for testing)
   // ============================================================
-  const completeLessonFS = async (courseSlug, lessonSlug, lessonsLength = null) => {
+  const resetMyProgress = async () => {
     if (!user) return;
-
     const ref = doc(db, "users", user.uid);
+    await updateDoc(ref, {
+      courseProgress: {},
+      enrolledCourses: [],
+      userStats: {
+        totalMinutes: 0,
+        daily: {},
+        streak: 0,
+        lastStudyDate: "",
+      },
+    });
+  };
 
-    // read current snapshot (we could also rely on local userData.courseProgress)
-    // but to be safe, read from our local userData state
-    const currentProgress = userData.courseProgress?.[courseSlug] || {
-      completedLessons: [],
-      currentLessonIndex: 0,
-    };
-
-    // Avoid duplicates
-    if (currentProgress.completedLessons.includes(lessonSlug)) return;
-
-    const updated = {
-      completedLessons: [...currentProgress.completedLessons, lessonSlug],
-      currentLessonIndex: (currentProgress.currentLessonIndex || 0) + 1,
-    };
-
-    // Write merged object under courseProgress.<slug>
-    try {
-      await updateDoc(ref, {
-        [`courseProgress.${courseSlug}`]: updated,
-      });
-
-      // Also update local context state immediately (optimistic UI)
-      if (typeof setCourseProgress === "function") {
-        setCourseProgress((prev) => {
-          const next = { ...(prev || {}) };
-          next[courseSlug] = updated;
-          // persist to localStorage as before to keep current behavior when offline
-          try {
-            localStorage.setItem("courseProgress", JSON.stringify(next));
-          } catch (e) {
-            // ignore storage errors
-          }
-          return next;
-        });
-      }
-
-      // Auto unlock certificate if we've completed all lessons for this course
-      // if lessonsLength provided, compare; otherwise we rely on updated.completedLessons
-      const completedCount = updated.completedLessons.length;
-      const totalLessons = typeof lessonsLength === "number" ? lessonsLength : null;
-
-      if (totalLessons && completedCount >= totalLessons) {
-        // set hasCertificationAccess true
-        await updateDoc(ref, { hasCertificationAccess: true });
-      }
-    } catch (err) {
-      console.error("Failed to update course progress in Firestore", err);
-      // fallback: update local progress only
-      if (typeof setCourseProgress === "function") {
-        setCourseProgress((prev) => {
-          const next = { ...(prev || {}) };
-          next[courseSlug] = updated;
-          try {
-            localStorage.setItem("courseProgress", JSON.stringify(next));
-          } catch (e) {}
-          return next;
-        });
-      }
-    }
+  // ============================================================
+  // Placeholder: server-side reset for all users (DO NOT CALL FROM CLIENT in production)
+  // Implement server-side secure script or Cloud Function for this.
+  // ============================================================
+  const resetProgressForAllUsers = async () => {
+    console.warn("resetProgressForAllUsers() should be implemented as a secure admin operation (Cloud Function).");
+    // Example: call an admin endpoint here (not shown)
   };
 
   return {
     ...userData,
     enrolledCourses,
     enrollInCourse,
+    recordStudySession,
+    resetMyProgress,
+    resetProgressForAllUsers,
     grantCertificationAccess,
     grantServerAccess,
     grantFullPremium,
-    completeLessonFS, // new
   };
 }

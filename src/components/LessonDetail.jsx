@@ -107,14 +107,24 @@ export default function LessonDetail() {
     }
 
     try {
+      // completeLessonFS should update Firestore and also update context state via your hook
       await completeLessonFS(courseSlug, lessonSlug, lessons.length);
 
+      // award persona points for completing this lesson
       const deltas = quickLessonPersonaDelta(lesson);
       if (Object.keys(deltas).length) {
         updatePersonaScore(deltas);
       }
 
       showToast("Lesson completed successfully 🎉");
+
+      // Move to next lesson automatically (if exists) after small delay
+      const nextIndex = lessonIndex + 1;
+      if (nextIndex < lessons.length) {
+        setTimeout(() => {
+          navigate(`/courses/${courseSlug}/lessons/${lessons[nextIndex].slug}`);
+        }, 900);
+      }
     } catch (err) {
       console.error(err);
       showToast("Failed to mark complete. Try again.");
@@ -412,9 +422,7 @@ export default function LessonDetail() {
                     />
 
                     <button
-                      onClick={() =>
-                        handleRunCode(idx, block.language, block.value)
-                      }
+                      onClick={() => handleRunCode(idx, block.language, block.value)}
                       disabled={!!running[idx]}
                       className={`px-4 py-2 rounded-md font-medium ${
                         running[idx]
@@ -422,11 +430,7 @@ export default function LessonDetail() {
                           : "bg-indigo-600 hover:bg-indigo-700 text-white"
                       }`}
                     >
-                      {running[idx]
-                        ? "Running..."
-                        : block.language === "go"
-                        ? "Open in Go Playground"
-                        : "Run Code"}
+                      {running[idx] ? "Running..." : block.language === "go" ? "Open in Go Playground" : "Run Code"}
                     </button>
 
                     <pre className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono">
@@ -454,9 +458,7 @@ export default function LessonDetail() {
             onClick={handleComplete}
             disabled={!isNextLesson}
             className={`px-6 py-3 rounded-lg font-semibold mt-6 ${
-              isNextLesson
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              isNextLesson ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
             {isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
@@ -485,9 +487,7 @@ export default function LessonDetail() {
             onClick={goPrev}
             disabled={lessonIndex === 0}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
-              lessonIndex === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+              lessonIndex === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
           >
             ← Previous Lesson
@@ -504,9 +504,7 @@ export default function LessonDetail() {
             onClick={goNext}
             disabled={lessonIndex === lessons.length - 1}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
-              lessonIndex === lessons.length - 1
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+              lessonIndex === lessons.length - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
           >
             Next Lesson →
@@ -526,9 +524,7 @@ export default function LessonDetail() {
               key={idx}
               onClick={() => scrollToSection(idx)}
               className={`cursor-pointer p-2 rounded-md ${
-                activeSection === idx
-                  ? "bg-indigo-100 dark:bg-indigo-700 font-semibold"
-                  : "hover:bg-indigo-50 dark:hover:bg-gray-700"
+                activeSection === idx ? "bg-indigo-100 dark:bg-indigo-700 font-semibold" : "hover:bg-indigo-50 dark:hover:bg-gray-700"
               }`}
             >
               {block.title || `Section ${idx + 1}`}
