@@ -31,6 +31,7 @@ import Labs from "./pages/Labs";
 import Enroll from "./pages/Enroll";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import Pricing from "./pages/Pricing";
+import EditProfile from "./pages/EditProfile";
 
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
@@ -273,6 +274,7 @@ function App() {
             <Route path="/podcast/:id" element={<PodcastEpisode />} />
             <Route path="/community" element={<Community />} />
             <Route path="/student-projects" element={<StudentProjects />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
 
             {/* ✅ Protect individual courses and lessons */}
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
