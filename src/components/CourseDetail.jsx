@@ -29,10 +29,10 @@ export default function CourseDetail() {
     if (Object.keys(deltas).length > 0) updatePersonaScore(deltas);
   }, [courseSlug, user]);
 
-  const isEnrolled = user && enrolledCourses.includes(courseSlug);
+  const isEnrolled = user && Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug);
 
   const progressData =
-    courseProgress[courseSlug] || {
+    (courseProgress && courseProgress[courseSlug]) || {
       completedLessons: [],
       currentLessonIndex: 0,
     };
@@ -197,7 +197,7 @@ export default function CourseDetail() {
 
         <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
           {lessons.map((lesson, index) => {
-            const completed = progressData.completedLessons.includes(lesson.slug);
+            const completed = Array.isArray(progressData.completedLessons) && progressData.completedLessons.includes(lesson.slug);
             const isNext = index === progressData.currentLessonIndex;
 
             const handleLessonClick = () => {
