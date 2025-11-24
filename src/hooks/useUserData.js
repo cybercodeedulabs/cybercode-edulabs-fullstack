@@ -278,50 +278,51 @@ export default function useUserData() {
     // Example: call an admin endpoint here (not shown)
   };
 
-  // ============================================================
-// 🟦 COMPLETE LESSON (Firestore + Time Tracking + Progress Sync)
+// ============================================================
+// 🔥 Complete Lesson (Firestore)
 // ============================================================
 const completeLessonFS = async (courseSlug, lessonSlug, totalLessons) => {
   if (!user) return;
 
-  const ref = doc(db, "users", user.uid);
+  const userRef = doc(db, "users", user.uid);
 
   const coursePath = `courseProgress.${courseSlug}`;
-  const completedPath = `${coursePath}.completedLessons`;
-  const indexPath = `${coursePath}.currentLessonIndex`;
 
-  // read existing data
-  const snap = await getDoc(ref);
+  // read existing progress
+  const snap = await getDoc(userRef);
   const data = snap.data() || {};
-  const courseProg = data.courseProgress?.[courseSlug] || {};
 
-  const oldIndex = courseProg.currentLessonIndex || 0;
-  const newIndex = oldIndex + 1;
+  const course = data.courseProgress?.[courseSlug] || {};
+  const completed = new Set(course.completedLessons || []);
 
-  // Firestore update
-  await updateDoc(ref, {
-    [completedPath]: arrayUnion(lessonSlug),
-    [indexPath]: newIndex >= totalLessons ? totalLessons - 1 : newIndex,
+  completed.add(lessonSlug);
+
+  const newCompleted = Array.from(completed);
+  const newIndex = newCompleted.length; // lessonIndex = #completed
+
+  await updateDoc(userRef, {
+    [`${coursePath}.completedLessons`]: newCompleted,
+    [`${coursePath}.currentLessonIndex`]: newIndex,
+    [`${coursePath}.updatedAt`]: serverTimestamp(),
   });
 
-  // local update
-  setUserData(prev => ({
-    ...prev,
-    courseProgress: {
-      ...(prev.courseProgress || {}),
-      [courseSlug]: {
-        ...(prev.courseProgress?.[courseSlug] || {}),
-        completedLessons: [
-          ...(prev.courseProgress?.[courseSlug]?.completedLessons || []),
-          lessonSlug,
-        ],
-        currentLessonIndex: newIndex >= totalLessons ? totalLessons - 1 : newIndex,
-      }
-    }
-  }));
+  // local state update (optimistic)
+  setUserData((prev) => {
+    const prevCourse = prev.courseProgress?.[courseSlug] || {};
+    return {
+      ...prev,
+      courseProgress: {
+        ...prev.courseProgress,
+        [courseSlug]: {
+          ...prevCourse,
+          completedLessons: newCompleted,
+          currentLessonIndex: newIndex,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    };
+  });
 };
-
-
   return {
     ...userData,
     enrolledCourses,
