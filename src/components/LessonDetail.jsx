@@ -1,8 +1,10 @@
-// src/components/LessonDetail.jsx
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import {
+  oneDark,
+  oneLight,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -11,7 +13,7 @@ import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
 import { quickLessonPersonaDelta } from "../utils/personaEngine";
-import courseData from "../data/courseData"
+import courseData from "../data/courseData";
 
 export default function LessonDetail() {
   const { courseSlug, lessonSlug } = useParams();
@@ -42,6 +44,7 @@ export default function LessonDetail() {
     updatePersonaScore,
     completeLessonFS,
     setCourseProgress,
+    recordStudySession, // ⏱ used for time tracking
   } = useUser();
 
   useEffect(() => {
@@ -51,8 +54,7 @@ export default function LessonDetail() {
   const lessons = lessonsData[courseSlug] || [];
   const lessonIndex = lessons.findIndex((l) => l.slug === lessonSlug);
   const lesson = lessonIndex >= 0 ? lessons[lessonIndex] : null;
-  const course = courseData.find(c => c.slug === courseSlug);
-
+  const course = courseData.find((c) => c.slug === courseSlug);
 
   // Reset code outputs when lesson changes
   useEffect(() => {
@@ -86,7 +88,10 @@ export default function LessonDetail() {
       const deltas = quickLessonPersonaDelta(lesson);
       if (Object.keys(deltas).length) {
         const halfDeltas = Object.fromEntries(
-          Object.entries(deltas).map(([k, v]) => [k, Math.max(1, Math.round(v / 2))])
+          Object.entries(deltas).map(([k, v]) => [
+            k,
+            Math.max(1, Math.round(v / 2)),
+          ])
         );
         updatePersonaScore(halfDeltas);
       }
@@ -96,6 +101,24 @@ export default function LessonDetail() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonSlug, user, lesson]);
+
+  // ⏱ STUDY-TIME TRACKING (per lesson)
+  useEffect(() => {
+    if (!user || typeof recordStudySession !== "function") return;
+    const start = Date.now();
+
+    return () => {
+      const diffMs = Date.now() - start;
+      const minutes = Math.round(diffMs / 60000); // round to nearest minute
+      if (minutes > 0) {
+        try {
+          recordStudySession(courseSlug, lessonSlug, minutes);
+        } catch (err) {
+          console.warn("Failed to record study session:", err);
+        }
+      }
+    };
+  }, [user, courseSlug, lessonSlug, recordStudySession]);
 
   if (!lesson) {
     return (
@@ -142,8 +165,13 @@ export default function LessonDetail() {
         // optimistic local update: if setCourseProgress provided, update local immediately
         if (typeof setCourseProgress === "function") {
           setCourseProgress((prev = {}) => {
-            const prevCourse = prev[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-            const already = Array.isArray(prevCourse.completedLessons) && prevCourse.completedLessons.includes(lessonSlug);
+            const prevCourse = prev[courseSlug] || {
+              completedLessons: [],
+              currentLessonIndex: 0,
+            };
+            const already =
+              Array.isArray(prevCourse.completedLessons) &&
+              prevCourse.completedLessons.includes(lessonSlug);
             if (already) return prev; // already present
 
             const nextCompleted = Array.isArray(prevCourse.completedLessons)
@@ -168,7 +196,10 @@ export default function LessonDetail() {
       // award persona points for completing this lesson (full deltas)
       try {
         const deltas = quickLessonPersonaDelta(lesson);
-        if (Object.keys(deltas).length && typeof updatePersonaScore === "function") {
+        if (
+          Object.keys(deltas).length &&
+          typeof updatePersonaScore === "function"
+        ) {
           updatePersonaScore(deltas);
         }
       } catch (err) {
@@ -181,7 +212,9 @@ export default function LessonDetail() {
       const nextIndex = lessonIndex + 1;
       if (nextIndex < lessons.length) {
         setTimeout(() => {
-          navigate(`/courses/${courseSlug}/lessons/${lessons[nextIndex].slug}`);
+          navigate(
+            `/courses/${courseSlug}/lessons/${lessons[nextIndex].slug}`
+          );
         }, 900);
       } else {
         // If last lesson, navigate back to course page after a brief pick
@@ -225,7 +258,11 @@ export default function LessonDetail() {
       // JS runner
       if (language === "javascript" || language === "js") {
         try {
-          if (/require\(['"](express|fs|http|path|os|mongoose|dotenv)['"]\)/.test(code)) {
+          if (
+            /require\(['"](express|fs|http|path|os|mongoose|dotenv)['"]\)/.test(
+              code
+            )
+          ) {
             setOutputs((prev) => ({
               ...prev,
               [idx]:
@@ -236,9 +273,15 @@ export default function LessonDetail() {
             return;
           }
           const res = eval(code);
-          setOutputs((prev) => ({ ...prev, [idx]: String(res ?? "✓ Success") }));
+          setOutputs((prev) => ({
+            ...prev,
+            [idx]: String(res ?? "✓ Success"),
+          }));
         } catch (err) {
-          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+          setOutputs((prev) => ({
+            ...prev,
+            [idx]: `❌ ${err.message}`,
+          }));
         } finally {
           setRunning((s) => ({ ...s, [idx]: false }));
         }
@@ -252,7 +295,9 @@ export default function LessonDetail() {
           const pyodide = await loadPyodideIfNeeded();
           setOutputs((prev) => ({ ...prev, [idx]: "⏳ Running..." }));
 
-          if (/import\s+(requests|flask|boto3|sklearn|numpy|pandas)/.test(code)) {
+          if (
+            /import\s+(requests|flask|boto3|sklearn|numpy|pandas)/.test(code)
+          ) {
             setOutputs((prev) => ({
               ...prev,
               [idx]:
@@ -272,7 +317,10 @@ export default function LessonDetail() {
             [idx]: captured.join("") || String(result || "✓ Success"),
           }));
         } catch (err) {
-          setOutputs((prev) => ({ ...prev, [idx]: `❌ ${err.message}` }));
+          setOutputs((prev) => ({
+            ...prev,
+            [idx]: `❌ ${err.message}`,
+          }));
         } finally {
           setRunning((s) => ({ ...s, [idx]: false }));
         }
@@ -290,22 +338,32 @@ export default function LessonDetail() {
           const resp = await fetch("https://go.dev/_/play/compile", {
             method: "POST",
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+              "Content-Type":
+                "application/x-www-form-urlencoded;charset=UTF-8",
             },
             body: payload.toString(),
           });
 
           const data = await resp.json();
           if (data.Errors) {
-            setOutputs((prev) => ({ ...prev, [idx]: `❌ ${data.Errors}` }));
+            setOutputs((prev) => ({
+              ...prev,
+              [idx]: `❌ ${data.Errors}`,
+            }));
           } else {
-            const output = (data.Events || []).map((e) => e.Message).join("");
-            setOutputs((prev) => ({ ...prev, [idx]: output || "✓ Success" }));
+            const output = (data.Events || [])
+              .map((e) => e.Message)
+              .join("");
+            setOutputs((prev) => ({
+              ...prev,
+              [idx]: output || "✓ Success",
+            }));
           }
         } catch {
           setOutputs((prev) => ({
             ...prev,
-            [idx]: "⚠️ Go cannot run inline. Opening in Go Playground...",
+            [idx]:
+              "⚠️ Go cannot run inline. Opening in Go Playground...",
           }));
           const form = document.createElement("form");
           form.method = "POST";
@@ -368,16 +426,39 @@ export default function LessonDetail() {
 
   const goPrev = () =>
     lessonIndex > 0 &&
-    navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`);
+    navigate(
+      `/courses/${courseSlug}/lessons/${lessons[lessonIndex - 1].slug}`
+    );
 
   const goNext = () =>
     lessonIndex < lessons.length - 1 &&
-    navigate(`/courses/${courseSlug}/lessons/${lessons[lessonIndex + 1].slug}`);
+    navigate(
+      `/courses/${courseSlug}/lessons/${lessons[lessonIndex + 1].slug}`
+    );
 
   const handleCopy = (value, idx) => {
     navigator.clipboard.writeText(value);
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
+  };
+
+  // 🧭 Sidebar label helper: no more "Section 1 / 2"
+  const getSectionLabel = (block, idx) => {
+    if (block.navTitle) return block.navTitle;
+    if (block.title) return block.title;
+
+    switch (block.type) {
+      case "text":
+        return `Concept ${idx + 1}`;
+      case "image":
+        return `Diagram ${idx + 1}`;
+      case "code":
+        return `Code Example ${idx + 1}`;
+      case "component":
+        return `Interactive Lab ${idx + 1}`;
+      default:
+        return `Part ${idx + 1}`;
+    }
   };
 
   return (
@@ -406,7 +487,10 @@ export default function LessonDetail() {
             {/* TEXT */}
             {block.type === "text" && (
               <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed space-y-4">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
                   {block.value}
                 </ReactMarkdown>
               </div>
@@ -480,14 +564,19 @@ export default function LessonDetail() {
                     <textarea
                       value={codeInputs[idx] || block.value}
                       onChange={(e) =>
-                        setCodeInputs((prev) => ({ ...prev, [idx]: e.target.value }))
+                        setCodeInputs((prev) => ({
+                          ...prev,
+                          [idx]: e.target.value,
+                        }))
                       }
                       rows={6}
                       className="w-full p-3 text-sm font-mono bg-white dark:bg-gray-900 text-black dark:text-white border rounded-md"
                     />
 
                     <button
-                      onClick={() => handleRunCode(idx, block.language, block.value)}
+                      onClick={() =>
+                        handleRunCode(idx, block.language, block.value)
+                      }
                       disabled={!!running[idx]}
                       className={`px-4 py-2 rounded-md font-medium ${
                         running[idx]
@@ -495,7 +584,11 @@ export default function LessonDetail() {
                           : "bg-indigo-600 hover:bg-indigo-700 text-white"
                       }`}
                     >
-                      {running[idx] ? "Running..." : block.language === "go" ? "Open in Go Playground" : "Run Code"}
+                      {running[idx]
+                        ? "Running..."
+                        : block.language === "go"
+                        ? "Open in Go Playground"
+                        : "Run Code"}
                     </button>
 
                     <pre className="p-3 bg-black rounded-md overflow-x-auto text-sm text-white font-mono">
@@ -523,29 +616,34 @@ export default function LessonDetail() {
             onClick={handleComplete}
             disabled={!isNextLesson}
             className={`px-6 py-3 rounded-lg font-semibold mt-6 ${
-              isNextLesson ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              isNextLesson
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-gray-400 text-gray-200 cursor-not-allowed"
             }`}
           >
-            {isNextLesson ? "Mark Lesson as Complete ✅" : "Lesson Locked 🔒"}
+            {isNextLesson
+              ? "Mark Lesson as Complete ✅"
+              : "Lesson Locked 🔒"}
           </button>
         )}
 
-        {/* ENROLL CTA (unchanged) */}
+        {/* ENROLL CTA (unchanged, but only when NOT enrolled) */}
         {!enrolledCourses?.includes(courseSlug) && (
-        <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
-          <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
-            🚀 Want to go deeper?
-          </h3>
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Enroll in the full <strong>{course?.title}</strong> course for hands-on labs.
-          </p>
-          <button
-            onClick={() => navigate(`/enroll/${courseSlug}`)}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-          >
-            Enroll for Deep Dive & Certification
-          </button>
-        </div>
+          <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
+            <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+              🚀 Want to go deeper?
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Enroll in the full <strong>{course?.title}</strong> course for
+              hands-on labs.
+            </p>
+            <button
+              onClick={() => navigate(`/enroll/${courseSlug}`)}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+            >
+              Enroll for Deep Dive & Certification
+            </button>
+          </div>
         )}
 
         {/* NAVIGATION BUTTONS */}
@@ -554,7 +652,9 @@ export default function LessonDetail() {
             onClick={goPrev}
             disabled={lessonIndex === 0}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
-              lessonIndex === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
+              lessonIndex === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
           >
             ← Previous Lesson
@@ -571,7 +671,9 @@ export default function LessonDetail() {
             onClick={goNext}
             disabled={lessonIndex === lessons.length - 1}
             className={`w-full sm:w-auto px-6 py-3 rounded-xl ${
-              lessonIndex === lessons.length - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"
+              lessonIndex === lessons.length - 1
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
             }`}
           >
             Next Lesson →
@@ -591,10 +693,12 @@ export default function LessonDetail() {
               key={idx}
               onClick={() => scrollToSection(idx)}
               className={`cursor-pointer p-2 rounded-md ${
-                activeSection === idx ? "bg-indigo-100 dark:bg-indigo-700 font-semibold" : "hover:bg-indigo-50 dark:hover:bg-gray-700"
+                activeSection === idx
+                  ? "bg-indigo-100 dark:bg-indigo-700 font-semibold"
+                  : "hover:bg-indigo-50 dark:hover:bg-gray-700"
               }`}
             >
-              {block.title || `Section ${idx + 1}`}
+              {getSectionLabel(block, idx)}
             </li>
           ))}
         </ul>

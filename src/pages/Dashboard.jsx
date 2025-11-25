@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useUser } from "../contexts/UserContext";
 import { useNavigate, Link } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -87,9 +86,7 @@ export default function Dashboard() {
   // courseProgress expected shape: { "<courseSlug>": { timeSpentMinutes: number, ... } }
   const studyTimeMap = {};
   const sourceCourseProgress =
-    courseProgress && Object.keys(courseProgress).length
-      ? courseProgress
-      : {};
+    courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
 
   Object.entries(sourceCourseProgress || {}).forEach(([slug, info]) => {
     const mins = info?.timeSpentMinutes || 0;
@@ -121,7 +118,8 @@ export default function Dashboard() {
         )}
 
         <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Manage your learning progress, access real-time projects, and unlock certifications.
+          Manage your learning progress, access real-time projects, and unlock
+          certifications.
         </p>
       </motion.div>
 
@@ -165,7 +163,8 @@ export default function Dashboard() {
 
             {!topPersona ? (
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Start exploring courses — your persona will be detected automatically.
+                Start exploring courses — your persona will be detected
+                automatically.
               </p>
             ) : (
               <>
@@ -236,7 +235,8 @@ export default function Dashboard() {
           {
             title: "📁 My Projects",
             items: projects,
-            emptyText: "Your project progress will appear here once you start learning.",
+            emptyText:
+              "Your project progress will appear here once you start learning.",
             linkPrefix: "/projects/",
           },
         ].map((section, index) => (
@@ -252,13 +252,22 @@ export default function Dashboard() {
               <ul className="list-disc pl-5 text-gray-700 dark:text-gray-300 space-y-2">
                 {section.items.map((item) => {
                   const lessons = lessonsData[item] || [];
-                  const prog = sourceCourseProgress[item] || { completedLessons: [] };
+                  const prog = sourceCourseProgress[item] || {
+                    completedLessons: [],
+                  };
                   const percent =
                     lessons.length > 0
-                      ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100)
+                      ? Math.round(
+                          ((prog.completedLessons?.length || 0) /
+                            lessons.length) *
+                            100
+                        )
                       : 0;
                   return (
-                    <li key={item} className="flex items-center justify-between">
+                    <li
+                      key={item}
+                      className="flex items-center justify-between"
+                    >
                       <Link
                         to={`${section.linkPrefix}${item}`}
                         className="hover:underline hover:text-indigo-600 dark:hover:text-indigo-400"
@@ -266,18 +275,27 @@ export default function Dashboard() {
                         {item}
                       </Link>
                       <div className="text-sm flex items-center gap-3">
-                        <span className="text-gray-500 dark:text-gray-400">{percent}%</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {percent}%
+                        </span>
                         <div className="w-36 h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                          <div style={{ width: `${percent}%` }} className="h-full bg-indigo-600 dark:bg-indigo-400" />
+                          <div
+                            style={{ width: `${percent}%` }}
+                            className="h-full bg-indigo-600 dark:bg-indigo-400"
+                          />
                         </div>
-                        <span className="text-xs text-gray-400">{formatMinutes(studyTimeMap[item])}</span>
+                        <span className="text-xs text-gray-400">
+                          {formatMinutes(studyTimeMap[item])}
+                        </span>
                       </div>
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <p className="text-gray-600 dark:text-gray-400">{section.emptyText}</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                {section.emptyText}
+              </p>
             )}
           </motion.div>
         ))}
@@ -293,7 +311,9 @@ export default function Dashboard() {
             🎓 Certification Access
           </h2>
           {hasCertificationAccess ? (
-            <p className="text-green-600 dark:text-green-400">Access granted.</p>
+            <p className="text-green-600 dark:text-green-400">
+              Access granted.
+            </p>
           ) : (
             <Link
               to="/payment?type=certification"
@@ -312,7 +332,9 @@ export default function Dashboard() {
             🖥️ 1-Year Server Access
           </h2>
           {hasServerAccess ? (
-            <p className="text-green-600 dark:text-green-400">Server Access Active.</p>
+            <p className="text-green-600 dark:text-green-400">
+              Server Access Active.
+            </p>
           ) : (
             <Link
               to="/payment?type=server"
@@ -343,8 +365,15 @@ export default function Dashboard() {
       </div>
 
       {/* LOGOUT */}
-      <motion.div className="text-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-        <button onClick={handleLogout} className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition">
+      <motion.div
+        className="text-center"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
+      >
+        <button
+          onClick={handleLogout}
+          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition"
+        >
           🔓 Logout
         </button>
       </motion.div>
