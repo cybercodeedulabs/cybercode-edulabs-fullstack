@@ -11,6 +11,7 @@ import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
 import { quickLessonPersonaDelta } from "../utils/personaEngine";
+import courseData from "../data/courseData"
 
 export default function LessonDetail() {
   const { courseSlug, lessonSlug } = useParams();
@@ -50,6 +51,8 @@ export default function LessonDetail() {
   const lessons = lessonsData[courseSlug] || [];
   const lessonIndex = lessons.findIndex((l) => l.slug === lessonSlug);
   const lesson = lessonIndex >= 0 ? lessons[lessonIndex] : null;
+  const course = courseData.find(c => c.slug === courseSlug);
+
 
   // Reset code outputs when lesson changes
   useEffect(() => {
@@ -528,20 +531,22 @@ export default function LessonDetail() {
         )}
 
         {/* ENROLL CTA (unchanged) */}
+        {!enrolledCourses?.includes(courseSlug) && (
         <div className="text-center mt-10 p-6 bg-gradient-to-r from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 rounded-2xl shadow-md">
           <h3 className="text-lg sm:text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
             🚀 Want to go deeper?
           </h3>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Enroll in the full <strong>{courseSlug.replace(/-/g, " ").toUpperCase()}</strong> course for hands-on labs.
+            Enroll in the full <strong>{course?.title}</strong> course for hands-on labs.
           </p>
           <button
-            onClick={() => navigate(`/courses/${courseSlug}`)}
+            onClick={() => navigate(`/enroll/${courseSlug}`)}
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
           >
             Enroll for Deep Dive & Certification
           </button>
         </div>
+        )}
 
         {/* NAVIGATION BUTTONS */}
         <div className="mt-20 flex flex-col sm:flex-row justify-between items-center gap-4">

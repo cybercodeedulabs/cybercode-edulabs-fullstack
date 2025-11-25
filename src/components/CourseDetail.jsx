@@ -308,6 +308,30 @@ export default function CourseDetail() {
             progressPercent={progressPercent}
           />
         </div>
+        {/* ===== PREMIUM DEEP DIVE CTA ===== */}
+{user && (
+  <div className="text-center mt-10 p-6 bg-gradient-to-r 
+    from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 
+    rounded-2xl shadow-md max-w-3xl mx-auto"
+  >
+    <h3 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+      🚀 Want hands-on labs, mentorship & certification?
+    </h3>
+
+    <p className="text-gray-700 dark:text-gray-300 mb-4">
+      Upgrade to Premium & access advanced deep-dive training for this course.
+    </p>
+
+    <button
+      onClick={() => navigate(`/enroll/${courseSlug}`)}
+      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 
+      text-white rounded-lg shadow transition"
+    >
+      Enroll for Deep Dive & Certification
+    </button>
+  </div>
+)}
+
 
         {/* ===== RECOMMENDED COURSES ===== */}
         <section className="mt-16">
