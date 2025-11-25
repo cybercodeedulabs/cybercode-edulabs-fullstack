@@ -9,8 +9,6 @@ import {
   topPersonaFromScores,
 } from "../utils/personaEngine";
 import lessonsData from "../data/lessonsData";
-import { useMemo } from "react";
-
 
 export default function Dashboard() {
   // TAKE EVERYTHING FROM CONTEXT (do NOT call useUserData() here)
@@ -71,11 +69,7 @@ export default function Dashboard() {
   }
 
   // Normalize persona scores for display
-  const normalized = useMemo(
-    () => normalizePersonaScores(personaScores || {}),
-    [personaScores]
-  );
-
+  const normalized = normalizePersonaScores(personaScores || {});
 
   const humanName =
     user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
@@ -264,10 +258,10 @@ export default function Dashboard() {
                   const percent =
                     lessons.length > 0
                       ? Math.round(
-                        ((prog.completedLessons?.length || 0) /
-                          lessons.length) *
-                        100
-                      )
+                          ((prog.completedLessons?.length || 0) /
+                            lessons.length) *
+                            100
+                        )
                       : 0;
                   return (
                     <li
