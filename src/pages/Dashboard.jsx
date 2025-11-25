@@ -74,24 +74,10 @@ export default function Dashboard() {
   const humanName =
     user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
 
-  // Format minutes helper
-  const formatMinutes = (mins) => {
-    if (!mins || mins <= 0) return "—";
-    const hrs = Math.floor(mins / 60);
-    const m = Math.floor(mins % 60);
-    return `${hrs > 0 ? `${hrs}h ` : ""}${m}m`;
-  };
-
   // Build studyTimeMap from context courseProgress
   // courseProgress expected shape: { "<courseSlug>": { timeSpentMinutes: number, ... } }
-  const studyTimeMap = {};
   const sourceCourseProgress =
     courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
-
-  Object.entries(sourceCourseProgress || {}).forEach(([slug, info]) => {
-    const mins = info?.timeSpentMinutes || 0;
-    studyTimeMap[slug] = mins;
-  });
 
   return (
     <motion.section
@@ -284,9 +270,6 @@ export default function Dashboard() {
                             className="h-full bg-indigo-600 dark:bg-indigo-400"
                           />
                         </div>
-                        <span className="text-xs text-gray-400">
-                          {formatMinutes(studyTimeMap[item])}
-                        </span>
                       </div>
                     </li>
                   );
