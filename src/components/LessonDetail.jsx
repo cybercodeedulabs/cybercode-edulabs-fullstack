@@ -26,6 +26,7 @@ export default function LessonDetail() {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const [activeSection, setActiveSection] = useState(0);
   const sectionRefs = useRef([]);
+  const sessionStartRef = useRef(Date.now());
   const [toast, setToast] = useState(null);
 
   // prevent redirect race while completing a lesson
@@ -102,23 +103,25 @@ export default function LessonDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonSlug, user, lesson]);
 
-  // ⏱ STUDY-TIME TRACKING (per lesson)
-  useEffect(() => {
-    if (!user || typeof recordStudySession !== "function") return;
-    const start = Date.now();
 
-    return () => {
-      const diffMs = Date.now() - start;
-      const minutes = Math.round(diffMs / 60000); // round to nearest minute
-      if (minutes > 0) {
-        try {
-          recordStudySession(courseSlug, lessonSlug, minutes);
-        } catch (err) {
-          console.warn("Failed to record study session:", err);
-        }
-      }
-    };
-  }, [user, courseSlug, lessonSlug, recordStudySession]);
+  // ⏱ STUDY-TIME TRACKING (per lesson)
+ useEffect(() => {
+  sessionStartRef.current = Date.now();
+
+  return () => {
+    if (!user || typeof recordStudySession !== "function") return;
+
+    const diffMs = Date.now() - sessionStartRef.current;
+    const minutes = Math.max(1, Math.round(diffMs / 60000)); // at least 1 min
+
+    try {
+      recordStudySession(courseSlug, lessonSlug, minutes);
+    } catch (err) {
+      console.warn("Failed to record study session:", err);
+    }
+  };
+}, [courseSlug, lessonSlug, user, recordStudySession]);
+
 
   if (!lesson) {
     return (
