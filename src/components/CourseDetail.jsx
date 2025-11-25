@@ -34,7 +34,10 @@ export default function CourseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseSlug, user]);
 
-  const isEnrolled = !!user && Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug);
+  const isEnrolled =
+    !!user &&
+    Array.isArray(enrolledCourses) &&
+    enrolledCourses.includes(courseSlug);
 
   const progressData =
     (courseProgress && courseProgress[courseSlug]) || {
@@ -44,7 +47,13 @@ export default function CourseDetail() {
 
   const progressPercent =
     lessons.length > 0
-      ? Math.round(((Array.isArray(progressData.completedLessons) ? progressData.completedLessons.length : 0) / lessons.length) * 100)
+      ? Math.round(
+          ((Array.isArray(progressData.completedLessons)
+            ? progressData.completedLessons.length
+            : 0) /
+            lessons.length) *
+            100
+        )
       : 0;
 
   const [toast, setToast] = useState(null);
@@ -80,6 +89,22 @@ export default function CourseDetail() {
     );
   }
 
+  // ====== helpers for new sections ======
+  const hasCareerSection =
+    isEnrolled &&
+    (course.careerPaths ||
+      course.outcomes ||
+      course.salaryRange ||
+      course.marketDemand ||
+      course.nextRecommended);
+
+  const nextCourses =
+    Array.isArray(course.nextRecommended) && course.nextRecommended.length > 0
+      ? course.nextRecommended
+          .map((slug) => courseData.find((c) => c.slug === slug))
+          .filter(Boolean)
+      : [];
+
   return (
     <div className="text-left relative">
       {/* Toast Alert */}
@@ -98,35 +123,62 @@ export default function CourseDetail() {
           <p className="text-lg md:text-xl text-indigo-100">
             {course.description}
           </p>
+
+          {/* Small trust chip */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs md:text-sm text-indigo-100/90">
+            <span className="px-3 py-1 rounded-full bg-black/20 border border-indigo-300/40">
+              🔐 Real-world, job-focused curriculum
+            </span>
+            <span className="px-3 py-1 rounded-full bg-black/20 border border-indigo-300/40">
+              🎓 Guided path from basics to advanced
+            </span>
+          </div>
         </div>
       </div>
 
       {/* ===== COURSE DETAILS ===== */}
       <div className="max-w-4xl mx-auto px-4 pb-10">
         {/* Enroll CTA (top for convenience) */}
-        <div className="mb-6 flex items-center justify-center">
+        <div className="mb-6 flex flex-col items-center justify-center gap-3">
           {isEnrolled ? (
-            <button
-              className="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
-              onClick={() => {
-                if (!lessons.length) {
-                  showToast("Lessons not available yet.");
-                  return;
-                }
-                navigate(`/courses/${courseSlug}/lessons/${lessons[0].slug}`);
-              }}
-            >
-              Go to Course
-            </button>
+            <>
+              <button
+                className="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+                onClick={() => {
+                  if (!lessons.length) {
+                    showToast("Lessons not available yet.");
+                    return;
+                  }
+                  navigate(`/courses/${courseSlug}/lessons/${lessons[0].slug}`);
+                }}
+              >
+                Go to Course ({progressPercent}% Complete)
+              </button>
+              {!user?.isPremium && (
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  You have unlocked the{" "}
+                  <span className="font-semibold">Core / Basic track</span>.{" "}
+                  Premium unlocks{" "}
+                  <span className="font-semibold">
+                    advanced labs, mentor review & projects.
+                  </span>
+                </p>
+              )}
+            </>
           ) : (
-            <button
-              onClick={handleEnroll}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-            >
-              Enroll Now
-            </button>
+            <>
+              <button
+                onClick={handleEnroll}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow"
+              >
+                Enroll Now — Start with Free Core Lessons
+              </button>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                No payment needed for the basics. Premium is optional for
+                deep-dive labs & certification.
+              </p>
+            </>
           )}
-
         </div>
 
         {/* Highlight Boxes */}
@@ -134,11 +186,21 @@ export default function CourseDetail() {
           <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-xl shadow">
             <h3 className="text-xl font-bold mb-2">📌 Course Highlights</h3>
             <ul className="text-sm space-y-1">
-              <li><strong>Duration:</strong> {course.duration}</li>
-              <li><strong>Level:</strong> {course.level}</li>
-              <li><strong>Mode:</strong> {course.mode}</li>
-              <li><strong>Language:</strong> {course.language}</li>
-              <li><strong>Last Updated:</strong> {course.lastUpdated}</li>
+              <li>
+                <strong>Duration:</strong> {course.duration}
+              </li>
+              <li>
+                <strong>Level:</strong> {course.level}
+              </li>
+              <li>
+                <strong>Mode:</strong> {course.mode}
+              </li>
+              <li>
+                <strong>Language:</strong> {course.language}
+              </li>
+              <li>
+                <strong>Last Updated:</strong> {course.lastUpdated}
+              </li>
             </ul>
           </div>
 
@@ -208,6 +270,188 @@ export default function CourseDetail() {
           </p>
         </section>
 
+        {/* ===== CAREER / FUTURE SCOPE (ENROLLED ONLY) ===== */}
+        {hasCareerSection && (
+          <section className="mb-12">
+            <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
+              🎯 Your Future After This Course
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Career outcomes & roles */}
+              <div className="p-5 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 border border-indigo-100 dark:border-indigo-700 shadow-sm">
+                <h4 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+                  Career Outcomes & Roles
+                </h4>
+
+                {course.idealFor && course.idealFor.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                      Best suited for
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {course.idealFor.map((p, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-3 py-1 rounded-full bg-white dark:bg-gray-800 border text-xs"
+                        >
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {course.careerPaths && course.careerPaths.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                      Typical job roles
+                    </p>
+                    <ul className="list-disc pl-5 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {course.careerPaths.map((r, i) => (
+                        <li key={i}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {course.outcomes && course.outcomes.length > 0 && (
+                  <div className="mt-3 border-t border-indigo-100 dark:border-indigo-800 pt-3">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                      By the end of this course, you will…
+                    </p>
+                    <ul className="list-disc pl-5 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {course.outcomes.map((o, i) => (
+                        <li key={i}>{o}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Salary & Demand */}
+              <div className="p-5 rounded-xl bg-gradient-to-br from-emerald-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 border border-emerald-100 dark:border-emerald-700 shadow-sm">
+                <h4 className="text-lg font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
+                  Salary & Market Demand Snapshot
+                </h4>
+
+                {course.salaryRange && (
+                  <div className="mb-3 text-sm text-gray-800 dark:text-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Typical salary range*
+                      </span>
+                    </div>
+                    <div className="mt-1 grid grid-cols-1 gap-1 text-sm">
+                      {course.salaryRange.india && (
+                        <div>
+                          <span className="font-semibold">India: </span>
+                          {course.salaryRange.india}
+                        </div>
+                      )}
+                      {course.salaryRange.global && (
+                        <div>
+                          <span className="font-semibold">Global: </span>
+                          {course.salaryRange.global}
+                        </div>
+                      )}
+                    </div>
+                    {course.salaryRange.note && (
+                      <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                        *{course.salaryRange.note}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {course.marketDemand && (
+                  <div className="mt-3 text-sm text-gray-800 dark:text-gray-200">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                      Demand trend
+                    </p>
+                    <p>{course.marketDemand}</p>
+                  </div>
+                )}
+
+                {course.demandTags && course.demandTags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {course.demandTags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 rounded-full bg-white/70 dark:bg-gray-900 border border-emerald-100 dark:border-emerald-700 text-[11px]"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 text-xs text-gray-600 dark:text-gray-300 border-t border-emerald-100 dark:border-emerald-800 pt-3">
+                  <p>
+                    Cybercode EduLabs focuses on{" "}
+                    <span className="font-semibold">
+                      job-focused labs, portfolio projects, and interview
+                      readiness
+                    </span>{" "}
+                    so that your learning directly supports your career move.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Roadmap after this course */}
+            {nextCourses.length > 0 && (
+              <div className="mt-6 p-5 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                <h4 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+                  🧭 Recommended Roadmap After This Course
+                </h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  Once you are comfortable with this course, you can continue
+                  your journey with:
+                </p>
+                <ul className="space-y-1 text-sm">
+                  {nextCourses.map((c) => (
+                    <li key={c.slug}>
+                      <Link
+                        to={`/courses/${c.slug}`}
+                        className="text-indigo-600 dark:text-indigo-300 hover:underline"
+                      >
+                        → {c.title}
+                      </Link>{" "}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ({c.category})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Premium nudge inside context */}
+            {!user?.isPremium && (
+              <div className="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-700 text-sm text-indigo-900 dark:text-indigo-100">
+                <p className="mb-1 font-semibold">
+                  Want this path with maximum confidence?
+                </p>
+                <p className="mb-3">
+                  Premium learners get{" "}
+                  <span className="font-semibold">
+                    mentor guidance, resume / LinkedIn review, and advanced
+                    real-world labs
+                  </span>{" "}
+                  mapped to these roles.
+                </p>
+                <button
+                  onClick={() => navigate(`/enroll/${courseSlug}`)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs"
+                >
+                  View Premium Track Options
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* FAQ */}
         <section className="mb-12">
           <h3 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
@@ -219,7 +463,9 @@ export default function CourseDetail() {
                 key={i}
                 className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow"
               >
-                <summary className="font-semibold cursor-pointer">{f.q}</summary>
+                <summary className="font-semibold cursor-pointer">
+                  {f.q}
+                </summary>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                   {f.a}
                 </p>
@@ -237,7 +483,9 @@ export default function CourseDetail() {
 
         <ul className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
           {lessons.map((lesson, index) => {
-            const completed = Array.isArray(progressData.completedLessons) && progressData.completedLessons.includes(lesson.slug);
+            const completed =
+              Array.isArray(progressData.completedLessons) &&
+              progressData.completedLessons.includes(lesson.slug);
             const isNext = index === (progressData.currentLessonIndex || 0);
 
             const handleLessonClick = () => {
@@ -260,12 +508,13 @@ export default function CourseDetail() {
               <li
                 key={lesson.slug}
                 onClick={handleLessonClick}
-                className={`block px-6 py-4 cursor-pointer transition-colors duration-200 ${completed
-                  ? "bg-green-50 dark:bg-green-900"
-                  : isNext
+                className={`block px-6 py-4 cursor-pointer transition-colors duration-200 ${
+                  completed
+                    ? "bg-green-50 dark:bg-green-900"
+                    : isNext
                     ? "bg-yellow-50 dark:bg-yellow-900"
                     : "bg-gray-100 dark:bg-gray-800 opacity-50"
-                  }`}
+                }`}
               >
                 <span className="text-lg font-medium">
                   {index + 1}. {lesson.title}{" "}
@@ -290,10 +539,13 @@ export default function CourseDetail() {
 
               certificateId:
                 (progressData && progressData.certificateId) ||
-                `CERT-${(courseSlug || "").toUpperCase()}-${(user?.uid || "000000").slice(-6)}`,
+                `CERT-${(courseSlug || "").toUpperCase()}-${(
+                  user?.uid || "000000"
+                ).slice(-6)}`,
 
               completionDate:
-                Array.isArray(progressData.completedLessons) && progressData.completedLessons.length === lessons.length
+                Array.isArray(progressData.completedLessons) &&
+                progressData.completedLessons.length === lessons.length
                   ? new Date().toISOString().split("T")[0]
                   : "",
 
@@ -308,30 +560,32 @@ export default function CourseDetail() {
             progressPercent={progressPercent}
           />
         </div>
+
         {/* ===== PREMIUM DEEP DIVE CTA ===== */}
-{user && (
-  <div className="text-center mt-10 p-6 bg-gradient-to-r 
+        {user && (
+          <div
+            className="text-center mt-10 p-6 bg-gradient-to-r 
     from-indigo-100 to-blue-50 dark:from-indigo-900 dark:to-blue-900 
     rounded-2xl shadow-md max-w-3xl mx-auto"
-  >
-    <h3 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
-      🚀 Want hands-on labs, mentorship & certification?
-    </h3>
+          >
+            <h3 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
+              🚀 Want hands-on labs, mentorship & certification?
+            </h3>
 
-    <p className="text-gray-700 dark:text-gray-300 mb-4">
-      Upgrade to Premium & access advanced deep-dive training for this course.
-    </p>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Upgrade to Premium & access advanced deep-dive training for this
+              course.
+            </p>
 
-    <button
-      onClick={() => navigate(`/enroll/${courseSlug}`)}
-      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 
+            <button
+              onClick={() => navigate(`/enroll/${courseSlug}`)}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 
       text-white rounded-lg shadow transition"
-    >
-      Enroll for Deep Dive & Certification
-    </button>
-  </div>
-)}
-
+            >
+              Enroll for Deep Dive & Certification
+            </button>
+          </div>
+        )}
 
         {/* ===== RECOMMENDED COURSES ===== */}
         <section className="mt-16">
