@@ -7,9 +7,7 @@ export default function GoalSummaryCard({ goals }) {
     return (
       <div className="bg-indigo-50 dark:bg-indigo-900 p-4 rounded-2xl">
         <p className="text-indigo-700 dark:text-indigo-200">🎯 No goals set yet.</p>
-        <Link to="/set-goals" className="mt-2 inline-block px-3 py-1 bg-indigo-600 text-white rounded">
-          Set My Goals
-        </Link>
+        <Link to="/set-goals" className="mt-2 inline-block px-3 py-1 bg-indigo-600 text-white rounded">Set My Goals</Link>
       </div>
     );
   }
@@ -33,12 +31,9 @@ export default function GoalSummaryCard({ goals }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <Link to="/set-goals" className="px-3 py-1 bg-indigo-600 text-white rounded">
-          Edit Goals
-        </Link>
-        <Link to="/dashboard" className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-          View Roadmap
-        </Link>
+        <Link to="/set-goals" className="px-3 py-1 bg-indigo-600 text-white rounded">Edit Goals</Link>
+        {/* Updated to nested dashboard route */}
+        <Link to="/dashboard/roadmap" className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded">View Roadmap</Link>
       </div>
     </div>
   );

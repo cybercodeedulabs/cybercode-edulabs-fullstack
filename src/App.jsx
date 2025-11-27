@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// ✅ New import for AI Assistant
 import AIAssistant from "./components/AIAssistant";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -33,7 +32,8 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 import Pricing from "./pages/Pricing";
 import EditProfile from "./pages/EditProfile";
 
-import GoalSetupWizard from "./pages/GoalSetupWizard"; // NEW
+import GoalSetupWizard from "./pages/GoalSetupWizard";
+import RoadmapPage from "./pages/RoadmapPage"; // NEW
 
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
@@ -62,18 +62,14 @@ function App() {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // =============================
-  // Home Page Component
-  // =============================
   const HomePage = () => {
     const { user, logout } = useUser();
 
     return (
       <>
-        {/* HERO */}
+        {/* HERO SECTION (unchanged) */}
         <section className="relative bg-gray-900 text-white overflow-hidden">
           <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-banner.png')" }}></div>
-
           <div className="relative z-10 px-6 py-32 max-w-7xl mx-auto text-center">
             <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight" initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
               Learn. Build. Deploy.<br />
@@ -84,7 +80,6 @@ function App() {
               Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers India’s first developer-focused cloud platform — built for real innovation.
             </motion.p>
 
-            {/* CTA Buttons */}
             <motion.div className="flex flex-col sm:flex-row gap-4 justify-center items-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.6 }}>
               {user ? (
                 <>
@@ -105,7 +100,7 @@ function App() {
           </div>
         </section>
 
-        {/* CLOUD PROMO */}
+        {/* Remaining home content unchanged */}
         <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
             <div>
@@ -122,17 +117,14 @@ function App() {
           </div>
         </section>
 
-        {/* COURSES */}
         <section id="courses" className="py-20 bg-white dark:bg-gray-950">
           <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">Explore Courses by Category</h2>
           <CourseCategoryTabs />
         </section>
 
-        {/* FEATURES */}
         <section className="bg-gray-100 dark:bg-gray-900 py-20 px-6">
           <div className="max-w-7xl mx-auto text-center">
             <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">The Cybercode Advantage</h2>
-
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <FeatureItem icon="ai" title="AI-Powered Smart Learning" description="AI-driven learning support that assists you through concepts, workflows, and real production scenarios." />
               <FeatureItem icon="cloud" title="Hands-On Cloud Labs" description="Practice on real cloud infrastructure powered by Cybercode Cloud — VMs, containers, networks and more." />
@@ -142,13 +134,8 @@ function App() {
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
         <Testimonials />
-
-        {/* REGISTRATION CTA */}
-        <div id="register">
-          <RegistrationCTA />
-        </div>
+        <div id="register"><RegistrationCTA /></div>
       </>
     );
   };
@@ -171,7 +158,6 @@ function App() {
             <Route path="/student-projects" element={<StudentProjects />} />
             <Route path="/edit-profile" element={<EditProfile />} />
 
-            {/* Protect individual courses and lessons */}
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
             <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
@@ -181,6 +167,7 @@ function App() {
             <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
             <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/roadmap" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} /> {/* NEW */}
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -195,7 +182,6 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/payment" element={<Payment />} />
 
-            {/* NEW: Goal Setup */}
             <Route path="/set-goals" element={<ProtectedRoute><GoalSetupWizard /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
