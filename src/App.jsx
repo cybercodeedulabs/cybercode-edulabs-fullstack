@@ -33,6 +33,8 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 import Pricing from "./pages/Pricing";
 import EditProfile from "./pages/EditProfile";
 
+import GoalSetupWizard from "./pages/GoalSetupWizard"; // NEW
+
 // Legal & Cloud pages
 import CybercodeCloud from "./pages/CybercodeCloud";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -53,8 +55,6 @@ import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-
-
 function App() {
   const [darkMode, setDarkMode] = useState(false);
 
@@ -70,76 +70,32 @@ function App() {
 
     return (
       <>
-        {/* =======================
-            HERO SECTION
-        ==========================*/}
+        {/* HERO */}
         <section className="relative bg-gray-900 text-white overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-30"
-            style={{ backgroundImage: "url('/images/hero-banner.png')" }}
-          ></div>
+          <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-banner.png')" }}></div>
 
           <div className="relative z-10 px-6 py-32 max-w-7xl mx-auto text-center">
-            <motion.h1
-              className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight"
-              initial={{ opacity: 0, y: -40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+            <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight" initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
               Learn. Build. Deploy.<br />
               <span className="text-indigo-400">All in One Tech Ecosystem.</span>
             </motion.h1>
 
-            <motion.p
-              className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-            >
-              Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers
-              India’s first developer-focused cloud platform — built for real innovation.
+            <motion.p className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8 }}>
+              Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers India’s first developer-focused cloud platform — built for real innovation.
             </motion.p>
 
             {/* CTA Buttons */}
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-            >
+            <motion.div className="flex flex-col sm:flex-row gap-4 justify-center items-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.6 }}>
               {user ? (
                 <>
-                  <Link
-                    to="/dashboard"
-                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
-                  >
-                    👋 Welcome {user.name?.split(" ")[0]} — Dashboard
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg"
-                  >
-                    Logout
-                  </button>
+                  <Link to="/dashboard" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">👋 Welcome {user.name?.split(" ")[0]} — Dashboard</Link>
+                  <button onClick={logout} className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg">Logout</button>
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/courses"
-                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
-                  >
-                     Explore Courses
-                  </Link>
-                  <Link
-                    to="/demo"
-                    className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg"
-                  >
-                     Free Demo Class
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2"
-                  >
+                  <Link to="/courses" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">Explore Courses</Link>
+                  <Link to="/demo" className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg">Free Demo Class</Link>
+                  <Link to="/register" className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2">
                     <img src="/images/google.svg" className="w-5 h-5" />
                     Sign in with Google
                   </Link>
@@ -149,108 +105,47 @@ function App() {
           </div>
         </section>
 
-        {/* =======================
-              CLOUD PROMO BLOCK
-        ==========================*/}
+        {/* CLOUD PROMO */}
         <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                ☁️ Introducing Cybercode Cloud
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">
-                India’s first indigenous cloud platform built for developers, startups, 
-                and enterprises. Fast, scalable, secure — and designed to empower you.
-              </p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">☁️ Introducing Cybercode Cloud</h2>
+              <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">India’s first indigenous cloud platform built for developers, startups, and enterprises. Fast, scalable, secure — and designed to empower you.</p>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/cloud"
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow"
-                >
-                   Explore Cloud Platform
-                </Link>
-                <Link
-                  to="/cloud"
-                  className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow"
-                >
-                  Join Waitlist
-                </Link>
+                <Link to="/cloud" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">Explore Cloud Platform</Link>
+                <Link to="/cloud" className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow">Join Waitlist</Link>
               </div>
             </div>
 
-            <img
-              src="/images/cloud-illustration.png"
-              alt="Cloud Platform"
-              className="rounded-lg shadow-lg"
-            />
+            <img src="/images/cloud-illustration.png" alt="Cloud Platform" className="rounded-lg shadow-lg" />
           </div>
         </section>
 
-        {/* =======================
-           COURSE CATEGORIES
-        ==========================*/}
+        {/* COURSES */}
         <section id="courses" className="py-20 bg-white dark:bg-gray-950">
-          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
-            Explore Courses by Category
-          </h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">Explore Courses by Category</h2>
           <CourseCategoryTabs />
         </section>
 
-        {/* =======================
-                FEATURES
-        ========================== */}
+        {/* FEATURES */}
         <section className="bg-gray-100 dark:bg-gray-900 py-20 px-6">
           <div className="max-w-7xl mx-auto text-center">
-
-            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">
-              The Cybercode Advantage
-            </h2>
+            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">The Cybercode Advantage</h2>
 
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-
-              {/* 1. AI-powered learning */}
-              <FeatureItem
-                icon="ai"
-                title="AI-Powered Smart Learning"
-                description="AI-driven learning support that assists you through concepts, workflows, and real production scenarios.
-"
-              />
-
-              {/* 2. Hands-on cloud labs */}
-              <FeatureItem
-                icon="cloud"
-                title="Hands-On Cloud Labs"
-                description="Practice on real cloud infrastructure powered by Cybercode Cloud — VMs, containers, networks and more."
-              />
-
-              {/* 3. Real-time project experience */}
-              <FeatureItem
-                icon="projects"
-                title="Real-Time Project Experience"
-                description="Industry-grade workflows that match real DevOps, cloud, and developer environments."
-              />
-
-              {/* 4. Career-focused training */}
-              <FeatureItem
-                icon="training"
-                title="Career-Focused Training Path"
-                description="Every course is structured for actual job roles, interviews, and real production tasks."
-              />
-
+              <FeatureItem icon="ai" title="AI-Powered Smart Learning" description="AI-driven learning support that assists you through concepts, workflows, and real production scenarios." />
+              <FeatureItem icon="cloud" title="Hands-On Cloud Labs" description="Practice on real cloud infrastructure powered by Cybercode Cloud — VMs, containers, networks and more." />
+              <FeatureItem icon="projects" title="Real-Time Project Experience" description="Industry-grade workflows that match real DevOps, cloud, and developer environments." />
+              <FeatureItem icon="training" title="Career-Focused Training Path" description="Every course is structured for actual job roles, interviews, and real production tasks." />
             </div>
           </div>
         </section>
 
-
-        {/* =======================
-            TESTIMONIALS
-        ==========================*/}
+        {/* TESTIMONIALS */}
         <Testimonials />
 
-        {/* =======================
-            REGISTRATION CTA
-        ==========================*/}
+        {/* REGISTRATION CTA */}
         <div id="register">
           <RegistrationCTA />
         </div>
@@ -276,7 +171,7 @@ function App() {
             <Route path="/student-projects" element={<StudentProjects />} />
             <Route path="/edit-profile" element={<EditProfile />} />
 
-            {/* ✅ Protect individual courses and lessons */}
+            {/* Protect individual courses and lessons */}
             <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
             <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
             <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
@@ -299,13 +194,17 @@ function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/support" element={<Support />} />
             <Route path="/payment" element={<Payment />} />
+
+            {/* NEW: Goal Setup */}
+            <Route path="/set-goals" element={<ProtectedRoute><GoalSetupWizard /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
         <CookieBanner />
         <Footer />
-        <AIAssistant />
+        <AIAssistant /> {/* floating assistant available site-wide */}
       </div>
     </Router>
   );

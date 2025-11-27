@@ -20,19 +20,20 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
+  // User goals
+  const [userGoals, setUserGoals] = useState(null);
+
   // -----------------------------------------------------
   // 🔵 AUTH LISTENER (Google login session)
   // -----------------------------------------------------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // DO NOT override Firestore profile fields
         const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
 
         const merged = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          // Keep custom profile fields from Firestore or stored
           name: stored.name || firebaseUser.displayName || "",
           photo: stored.photo || firebaseUser.photoURL || "",
           phone: stored.phone || "",
@@ -96,27 +97,24 @@ export const UserProvider = ({ children }) => {
   };
 
   // -----------------------------------------------------
-  // FIRESTORE HOOK
+  // FIRESTORE HOOK (now includes setUserGoals)
   // -----------------------------------------------------
   const firestore = useUserData(user, {
     setEnrolledCourses,
     setCourseProgress,
     setUser: (updater) => {
-      // Merge Firestore user fields into context + localStorage
       setUser((prev) => {
-        const next =
-          typeof updater === "function" ? updater(prev) : updater;
-
-        const merged = {
-          ...prev,
-          ...next,
-        };
-
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        const merged = { ...prev, ...next };
         localStorage.setItem("cybercodeUser", JSON.stringify(merged));
         return merged;
       });
     },
+    setUserGoals,
   });
+
+  // make saveUserGoals available via context (if returned by hook)
+  const saveUserGoals = firestore.saveUserGoals;
 
   // -----------------------------------------------------
   // ENROLL WRAPPER
@@ -124,9 +122,7 @@ export const UserProvider = ({ children }) => {
   const enrollInCourse = async (courseSlug) => {
     if (!user) return;
 
-    setEnrolledCourses((prev) =>
-      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
-    );
+    setEnrolledCourses((prev) => (prev.includes(courseSlug) ? prev : [...prev, courseSlug]));
 
     try {
       await firestore.enrollInCourse(courseSlug);
@@ -169,6 +165,10 @@ export const UserProvider = ({ children }) => {
         personaScores,
         updatePersonaScore,
         getTopPersona,
+
+        userGoals,
+        setUserGoals,
+        saveUserGoals,
       }}
     >
       {children}

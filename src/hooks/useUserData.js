@@ -17,10 +17,12 @@ import { db } from "../firebase";
  * NOTE:
  *  - NO useUser() imported (prevents circular deps)
  *  - UserContext passes user + setter callbacks
+ *
+ * Updated to support user goals.
  */
 export default function useUserData(
   user,
-  { setEnrolledCourses, setCourseProgress, setUser }
+  { setEnrolledCourses, setCourseProgress, setUser, setUserGoals }
 ) {
   // If user not logged in => return empty feature set
   if (!user) {
@@ -32,6 +34,7 @@ export default function useUserData(
       grantCertificationAccess: async () => {},
       grantServerAccess: async () => {},
       grantFullPremium: async () => {},
+      saveUserGoals: async () => {},
     };
   }
 
@@ -66,15 +69,29 @@ export default function useUserData(
     const data = snap.data();
 
     // Sync provider state
-    if (setEnrolledCourses)
-      setEnrolledCourses(data.enrolledCourses || []);
-
-    if (setCourseProgress)
-      setCourseProgress(data.courseProgress || {});
+    if (setEnrolledCourses) setEnrolledCourses(data.enrolledCourses || []);
+    if (setCourseProgress) setCourseProgress(data.courseProgress || {});
 
     // Sync premium flag into user object
-    if (data.isPremium && setUser)
-      setUser((u) => (u ? { ...u, isPremium: true } : u));
+    if (data.isPremium && setUser) setUser((u) => (u ? { ...u, isPremium: true } : u));
+
+    // If goals are present in root user doc (optional fallback)
+    if (data.goals && setUserGoals) {
+      setUserGoals(data.goals);
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // GOALS: subcollection doc listener
+  // ---------------------------------------------------------------------
+  const goalsRef = doc(db, "users", user.uid, "goals", "main");
+  onSnapshot(goalsRef, (snap) => {
+    if (snap.exists()) {
+      if (setUserGoals) setUserGoals(snap.data());
+    } else {
+      // no goals yet — set to null
+      if (setUserGoals) setUserGoals(null);
+    }
   });
 
   // =====================================================================
@@ -168,6 +185,19 @@ export default function useUserData(
   };
 
   // =====================================================================
+  // 🟣 6. SAVE USER GOALS (subcollection)
+  // =====================================================================
+  const saveUserGoals = async (goals) => {
+    // write to users/{uid}/goals/main
+    await setDoc(goalsRef, {
+      ...goals,
+      updatedAt: Date.now(),
+      createdAt: goals.createdAt || Date.now(),
+    });
+    if (setUserGoals) setUserGoals(goals);
+  };
+
+  // =====================================================================
   // RETURN EVERYTHING
   // =====================================================================
   return {
@@ -178,5 +208,6 @@ export default function useUserData(
     grantCertificationAccess,
     grantServerAccess,
     grantFullPremium,
+    saveUserGoals,
   };
 }
