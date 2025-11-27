@@ -33,9 +33,11 @@ import Pricing from "./pages/Pricing";
 import EditProfile from "./pages/EditProfile";
 
 import GoalSetupWizard from "./pages/GoalSetupWizard";
-import RoadmapPage from "./pages/RoadmapPage"; // NEW
+import RoadmapPage from "./pages/RoadmapPage";
 
-// Legal & Cloud pages
+// NOTE: you said DashboardLayout.jsx lives in components. Import it from there:
+import DashboardLayout from "./components/DashboardLayout";
+
 import CybercodeCloud from "./pages/CybercodeCloud";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
@@ -67,30 +69,72 @@ function App() {
 
     return (
       <>
-        {/* HERO SECTION (unchanged) */}
         <section className="relative bg-gray-900 text-white overflow-hidden">
-          <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/hero-banner.png')" }}></div>
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-30"
+            style={{ backgroundImage: "url('/images/hero-banner.png')" }}
+          ></div>
+
           <div className="relative z-10 px-6 py-32 max-w-7xl mx-auto text-center">
-            <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight" initial={{ opacity: 0, y: -40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+            <motion.h1
+              className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight"
+              initial={{ opacity: 0, y: -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
               Learn. Build. Deploy.<br />
               <span className="text-indigo-400">All in One Tech Ecosystem.</span>
             </motion.h1>
 
-            <motion.p className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8 }}>
-              Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers India’s first developer-focused cloud platform — built for real innovation.
+            <motion.p
+              className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers
+              India’s first developer-focused cloud platform — built for real innovation.
             </motion.p>
 
-            <motion.div className="flex flex-col sm:flex-row gap-4 justify-center items-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.6 }}>
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            >
               {user ? (
                 <>
-                  <Link to="/dashboard" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">👋 Welcome {user.name?.split(" ")[0]} — Dashboard</Link>
-                  <button onClick={logout} className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg">Logout</button>
+                  <Link
+                    to="/dashboard"
+                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
+                  >
+                    👋 Welcome {user.name?.split(" ")[0]} — Dashboard
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg"
+                  >
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
-                  <Link to="/courses" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">Explore Courses</Link>
-                  <Link to="/demo" className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg">Free Demo Class</Link>
-                  <Link to="/register" className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2">
+                  <Link
+                    to="/courses"
+                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg"
+                  >
+                    Explore Courses
+                  </Link>
+                  <Link
+                    to="/demo"
+                    className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg"
+                  >
+                    Free Demo Class
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2"
+                  >
                     <img src="/images/google.svg" className="w-5 h-5" />
                     Sign in with Google
                   </Link>
@@ -100,7 +144,6 @@ function App() {
           </div>
         </section>
 
-        {/* Remaining home content unchanged */}
         <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
             <div>
@@ -125,6 +168,7 @@ function App() {
         <section className="bg-gray-100 dark:bg-gray-900 py-20 px-6">
           <div className="max-w-7xl mx-auto text-center">
             <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">The Cybercode Advantage</h2>
+
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <FeatureItem icon="ai" title="AI-Powered Smart Learning" description="AI-driven learning support that assists you through concepts, workflows, and real production scenarios." />
               <FeatureItem icon="cloud" title="Hands-On Cloud Labs" description="Practice on real cloud infrastructure powered by Cybercode Cloud — VMs, containers, networks and more." />
@@ -135,6 +179,7 @@ function App() {
         </section>
 
         <Testimonials />
+
         <div id="register"><RegistrationCTA /></div>
       </>
     );
@@ -166,8 +211,20 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
             <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard/roadmap" element={<ProtectedRoute><RoadmapPage /></ProtectedRoute>} /> {/* NEW */}
+
+            {/* NESTED DASHBOARD ROUTES using your existing DashboardLayout (components) */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="roadmap" element={<RoadmapPage />} />
+            </Route>
+
             <Route path="/projects" element={<Projects />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />

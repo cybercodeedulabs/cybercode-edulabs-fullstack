@@ -1,9 +1,8 @@
 // src/pages/Dashboard.jsx
-import { useUser } from "../contexts/UserContext";
-import { useNavigate, Link } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import React, { Suspense, lazy } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useUser } from "../contexts/UserContext";
 import {
   PERSONAS_LIST,
   normalizePersonaScores,
@@ -14,13 +13,12 @@ import lessonsData from "../data/lessonsData";
 import GoalReminderBanner from "../components/GoalReminderBanner";
 import GoalSummaryCard from "../components/GoalSummaryCard";
 import GoalRoadmap from "../components/GoalRoadmap";
-import AIAssistant from "../components/AIAssistant";
+
+const AIAssistantLazy = lazy(() => import("../components/AIAssistant"));
 
 export default function Dashboard() {
-  // TAKE EVERYTHING FROM CONTEXT (do NOT call useUserData() here)
   const {
     user,
-    setUser,
     personaScores,
     getTopPersona,
     courseProgress = {},
@@ -32,94 +30,72 @@ export default function Dashboard() {
     userGoals,
   } = useUser();
 
-  const navigate = useNavigate();
-
-  // topPersona: prefer getTopPersona from context, otherwise derived
   const topPersona =
     typeof getTopPersona === "function"
       ? getTopPersona()
       : topPersonaFromScores(personaScores || {});
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      console.warn("SignOut failed:", err);
-    }
-    setUser && setUser(null);
-    navigate("/");
-  };
-
-  // UNAUTHORIZED VIEW
-  if (!user) {
-    return (
-      <motion.div
-        className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h1 className="text-4xl font-bold text-red-600 dark:text-red-400 mb-4">
-          Unauthorized Access
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Please log in to access your dashboard and learning resources.
-        </p>
-        <Link
-          to="/register"
-          className="inline-block px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition"
-        >
-          Go to Login
-        </Link>
-      </motion.div>
-    );
-  }
-
-  // Normalize persona scores for display
   const normalized = normalizePersonaScores(personaScores || {});
 
   const humanName =
     user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
 
-  // Build studyTimeMap from context courseProgress
   const sourceCourseProgress =
     courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
 
   return (
     <motion.section
-      className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200"
+      className="space-y-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
     >
-      {/* HEADER */}
-      <motion.div className="text-center mb-6" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-        <h1 className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-          Welcome, {humanName}
-        </h1>
+      {/* HERO */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-3xl shadow-lg border border-white/10">
+        <div className="flex items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold">Welcome back, {humanName}.</h1>
+            <p className="mt-2 text-indigo-100 max-w-2xl">
+              Your personalized learning engine is ready. Continue where you left off or ask your AI Career Mentor for a custom plan.
+            </p>
+          </div>
 
-        {user?.isPremium && (
-          <span className="inline-block mt-2 px-3 py-1 bg-yellow-300 text-yellow-900 rounded-full text-sm font-semibold shadow">
-            ⭐ Premium Member
-          </span>
-        )}
-
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Manage your learning progress, access real-time projects, and unlock certifications.
-        </p>
-      </motion.div>
+          <div className="min-w-[200px] bg-white/10 p-3 rounded-lg text-sm">
+            <div className="text-xs text-indigo-100">Current Goal</div>
+            {userGoals ? (
+              <div className="mt-2">
+                <div className="font-semibold">{userGoals.targetRole || "—"}</div>
+                <div className="text-xs text-indigo-100">{userGoals.hoursPerWeek} hrs/week • {userGoals.deadlineMonths} months</div>
+              </div>
+            ) : (
+              <div className="text-xs text-indigo-200">No goal set</div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* GOAL REMINDER OR SUMMARY */}
-      <div className="mb-8">
+      <div>
         {!userGoals ? <GoalReminderBanner /> : <GoalSummaryCard goals={userGoals} />}
       </div>
 
-      {/* GOAL ROADMAP + AI (two-column) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      {/* MAIN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left area: roadmap + courses/projects */}
         <div className="lg:col-span-2 space-y-6">
-          <GoalRoadmap goals={userGoals} />
+          <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow border">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Personalized Roadmap</h3>
+              <div className="text-sm">
+                <Link to="/dashboard/roadmap" className="text-indigo-600 hover:underline">Open Roadmap →</Link>
+              </div>
+            </div>
 
-          {/* COURSES & PROJECTS */}
+            <div className="mt-4">
+              {userGoals ? <GoalRoadmap goals={userGoals} /> : <GoalReminderBanner compact />}
+            </div>
+          </div>
+
+          {/* Courses & Projects */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
@@ -183,9 +159,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Persona + AI */}
+        {/* Right area: persona + AI + access */}
         <div className="space-y-6">
-          {/* PERSONA CARD */}
           <motion.div className="bg-white dark:bg-gray-900 border p-6 rounded-2xl shadow-lg" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <h2 className="text-xl font-semibold mb-3 text-indigo-600 dark:text-indigo-400">🧠 Your Learning Persona</h2>
 
@@ -221,14 +196,16 @@ export default function Dashboard() {
             )}
           </motion.div>
 
-          {/* EMBEDDED AI CAREER ADVISOR */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow">
+          <div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow">
             <h3 className="font-semibold text-indigo-600 mb-3">💡 Career Mentor</h3>
             <p className="text-sm text-gray-600 mb-3">Ask the AI about your roadmap, projects, and timelines.</p>
-            <AIAssistant embedMode="career" />
-          </motion.div>
+            <div className="mt-3">
+              <Suspense fallback={<div className="text-sm text-gray-500">Loading mentor...</div>}>
+                <AIAssistantLazy embedMode="career" />
+              </Suspense>
+            </div>
+          </div>
 
-          {/* ACCESS CARDS */}
           <div className="grid grid-cols-1 gap-4">
             <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow">
               <h2 className="text-lg font-semibold mb-2 text-indigo-600 dark:text-indigo-400">🎓 Certification Access</h2>
@@ -248,11 +225,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* LOGOUT */}
-      <motion.div className="text-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-        <button onClick={handleLogout} className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition">🔓 Logout</button>
-      </motion.div>
     </motion.section>
   );
 }
