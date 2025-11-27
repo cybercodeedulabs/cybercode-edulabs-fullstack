@@ -2,18 +2,17 @@
 // GROQ (Llama 3.1) backend for Cybercode AI Advisor
 // Requires GROQ_API_KEY in Netlify environment variables.
 
-// Optional: GROQ_MODEL (defaults to llama-3.1-70b-versatile)
-
 export async function handler(event) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
+
     const {
-      prompt,
+      prompt = "",
       messages = [],
       courseContext = "",
-      userGoals,
-      personaScores,
-      userStats,
+      userGoals = {},
+      personaScores = {},
+      userStats = {},
     } = body;
 
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -27,35 +26,47 @@ export async function handler(event) {
       };
     }
 
-    // Recommended default model
-    const model =
-      process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+    const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
-    // ---- SYSTEM PROMPT ----
+    // -------------------------------------------------------
+    // 🔥 SMART SYSTEM PROMPT — THIS FIXES ALL ISSUES
+    // -------------------------------------------------------
     const systemPrompt = `
-You are Cybercode EduLabs' official AI Advisor & Career Mentor.
+You are **Cybercode EduLabs AI Advisor**, an intelligent assistant that helps learners with:
 
-Your job:
-- Provide accurate, realistic roadmaps, plans, and suggestions
-- Use Cybercode EduLabs courses only (from courseContext)
-- Personalize based on persona, stats, goals
-- Motivate the learner at the end
-- Always return clean, readable plain text
+✔ Course explanations  
+✔ Career guidance (ONLY if requested)  
+✔ Roadmaps (ONLY when clearly asked)  
+✔ Doubt clarification  
+✔ Friendly conversational support  
 
-USER GOALS:
-${JSON.stringify(userGoals || {}, null, 2)}
+### 🔹 BEHAVIOR RULES
+- If user says: "hi", "hello", "hey" → Reply with a short friendly greeting.
+- If user asks about a course → Use courseContext to answer.
+- If user asks for a roadmap / guidance → Use userGoals, personaScores, and userStats.
+- If message is unclear → Ask for clarification politely.
+- NEVER assume career goals unless user explicitly asks.
+- ALWAYS return clean, readable **markdown**.
+- Use headings, bullet points, spacing.
+- Keep responses crisp unless user asks for deep detail.
 
-USER STATS:
-${JSON.stringify(userStats || {}, null, 2)}
+### 🔹 Dynamic Context (ONLY used when relevant)
+USER_GOALS:
+${JSON.stringify(userGoals, null, 2)}
 
-PERSONA SCORES:
-${JSON.stringify(personaScores || {}, null, 2)}
+USER_STATS:
+${JSON.stringify(userStats, null, 2)}
 
-COURSES (trimmed for context):
-${(courseContext || "").substring(0, 20000)}
+PERSONA_SCORES:
+${JSON.stringify(personaScores, null, 2)}
+
+COURSE_CONTEXT:
+${courseContext.substring(0, 20000)}
 `;
 
-    // ---- CONVERSATION HISTORY ----
+    // -------------------------------------------------------
+    // Build message chain
+    // -------------------------------------------------------
     const groqMessages = [
       { role: "system", content: systemPrompt },
 
@@ -64,35 +75,33 @@ ${(courseContext || "").substring(0, 20000)}
         content: m.content || m.text || "",
       })),
 
-      { role: "user", content: prompt || "No question provided." },
+      { role: "user", content: prompt },
     ];
 
-    // ---- REQUEST BODY ----
     const requestBody = {
       model,
       messages: groqMessages,
-      temperature: 0.2,
-      max_tokens: 1500,
+      temperature: 0.3,
+      max_tokens: 1800,
     };
 
-    // ---- SEND REQUEST ----
-    const res = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-        body: JSON.stringify(requestBody),
-      }
-    );
+    // -------------------------------------------------------
+    // Send to GROQ
+    // -------------------------------------------------------
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
 
     let data;
     try {
       data = await res.json();
-    } catch (e) {
-      console.error("Failed parsing Groq response:", e);
+    } catch (err) {
+      console.error("Groq JSON parse error:", err);
       return {
         statusCode: 502,
         body: JSON.stringify({ error: "Invalid response from Groq API." }),
@@ -100,9 +109,9 @@ ${(courseContext || "").substring(0, 20000)}
     }
 
     if (!res.ok) {
-      console.error("Groq API returned error:", data);
+      console.error("Groq error:", data);
       return {
-        statusCode: res.status || 500,
+        statusCode: res.status,
         body: JSON.stringify({
           error: data?.error?.message || "Groq API request failed.",
           raw: data,
@@ -110,59 +119,33 @@ ${(courseContext || "").substring(0, 20000)}
       };
     }
 
-    // ---- EXTRACT TEXT (handles all Groq formats) ----
-    let outText = null;
+    // -------------------------------------------------------
+    // Extract output
+    // -------------------------------------------------------
+    let outText = data?.choices?.[0]?.message?.content || "";
 
-    try {
-      const choice = data?.choices?.[0];
+    // Auto-beautify formatting
+    outText = outText
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
 
-      if (choice?.message?.content) {
-        outText = choice.message.content;
-      } else if (choice?.text) {
-        outText = choice.text;
-      } else if (Array.isArray(choice?.message?.content)) {
-        outText = choice.message.content
-          .map((c) => c.text || c.content || "")
-          .join("\n");
-      } else if (data.output) {
-        outText = data.output
-          .map((o) =>
-            typeof o === "string"
-              ? o
-              : o.text ||
-                o.content ||
-                (Array.isArray(o.content)
-                  ? o.content.map((x) => x.text || "").join("")
-                  : "") ||
-                JSON.stringify(o)
-          )
-          .join("\n\n");
-      }
-    } catch (err) {
-      console.warn("Error extracting model output:", err);
-    }
-
-    // Fallback
-    if (!outText) {
-      outText = JSON.stringify(data).slice(0, 20000);
-    }
-
-    // ---- Return in OpenAI-like format (frontend compatibility) ----
-    const result = {
-      choices: [
-        {
-          message: {
-            content: outText,
-          },
-        },
-      ],
-      raw: data,
-    };
-
+    // -------------------------------------------------------
+    // Return in OpenAI-compatible format (Frontend expects this)
+    // -------------------------------------------------------
     return {
       statusCode: 200,
-      body: JSON.stringify(result),
+      body: JSON.stringify({
+        choices: [
+          {
+            message: {
+              content: outText,
+            },
+          },
+        ],
+        raw: data,
+      }),
     };
+
   } catch (error) {
     console.error("ask-ai crashed:", error);
     return {
