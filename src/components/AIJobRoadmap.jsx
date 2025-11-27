@@ -6,7 +6,7 @@ import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Calendar, Star, ListChecks } from "lucide-react";
 
-const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v3_";
+const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v4_safe_";
 
 export default function AIJobRoadmap({ goals }) {
   const { personaScores, userStats, user } = useUser();
@@ -17,14 +17,27 @@ export default function AIJobRoadmap({ goals }) {
 
   const cacheKey = user ? `${LOCAL_KEY_PREFIX}${user.uid}` : LOCAL_KEY_PREFIX + "anon";
 
-  // Markdown → pure text parser
+  // Markdown → sanitized HTML
   const cleanMarkdown = (text) => {
-    return DOMPurify.sanitize(marked.parse(text || ""), { USE_PROFILES: { html: true } });
+    try {
+      return DOMPurify.sanitize(marked.parse(text || ""), {
+        USE_PROFILES: { html: true },
+      });
+    } catch {
+      return text || "";
+    }
   };
 
-  // Parse structured roadmap sections from markdown
+  /** -----------------------------
+   * STRUCTURED MARKDOWN PARSER
+   -------------------------------- */
   const parseRoadmap = (text) => {
-    if (!text) return {};
+    if (!text) return {
+      summary: "",
+      months: [],
+      projects: [],
+      actions: [],
+    };
 
     const lines = text.split("\n");
 
@@ -36,10 +49,11 @@ export default function AIJobRoadmap({ goals }) {
 
     let currentMonth = null;
 
-    for (let line of lines) {
-      line = line.trim();
+    for (let rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
 
-      // Detect section headers
+      // Detect sections
       if (/^#+\s*Outcome/i.test(line)) {
         section = "summary";
         continue;
@@ -48,7 +62,7 @@ export default function AIJobRoadmap({ goals }) {
         section = "months";
         continue;
       }
-      if (/^#+\s*Recommended Projects/i.test(line)) {
+      if (/^#+\s*Recommended/i.test(line)) {
         section = "projects";
         continue;
       }
@@ -57,9 +71,12 @@ export default function AIJobRoadmap({ goals }) {
         continue;
       }
 
-      // Fill sections
-      if (section === "summary") summary += line + " ";
+      // Fill summary
+      if (section === "summary") {
+        summary += line + " ";
+      }
 
+      // Month-by-month block
       if (section === "months") {
         if (/^Month\s+\d+/i.test(line)) {
           if (currentMonth) months.push(currentMonth);
@@ -69,34 +86,40 @@ export default function AIJobRoadmap({ goals }) {
         }
       }
 
-      if (section === "projects") {
-        if (line.startsWith("-") || line.startsWith("*")) {
-          projects.push(line.replace(/^[\-\*]\s*/, ""));
-        }
+      // Projects
+      if (section === "projects" && (line.startsWith("-") || line.startsWith("*"))) {
+        projects.push(line.replace(/^[\-\*]\s*/, ""));
       }
 
-      if (section === "actions") {
-        if (line.startsWith("-") || line.startsWith("*")) {
-          actions.push(line.replace(/^[\-\*]\s*/, ""));
-        }
+      // Actions
+      if (section === "actions" && (line.startsWith("-") || line.startsWith("*"))) {
+        actions.push(line.replace(/^[\-\*]\s*/, ""));
       }
     }
 
     if (currentMonth) months.push(currentMonth);
 
-    return { summary, months, projects, actions };
+    // FINAL SAFE RETURN
+    return {
+      summary: summary || "",
+      months: Array.isArray(months) ? months : [],
+      projects: Array.isArray(projects) ? projects : [],
+      actions: Array.isArray(actions) ? actions : [],
+    };
   };
 
-  // Load cached roadmap
+  /** -----------------------------
+   * LOAD FROM CACHE
+   -------------------------------- */
   useEffect(() => {
     if (!goals) return;
 
     try {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.ts && Date.now() - parsed.ts < 24 * 60 * 60 * 1000) {
-          setAiText(parsed.text);
+        const cached = JSON.parse(raw);
+        if (cached?.ts && Date.now() - cached.ts < 86400000) {
+          setAiText(cached.text);
           return;
         }
       }
@@ -105,34 +128,34 @@ export default function AIJobRoadmap({ goals }) {
     fetchRoadmap();
   }, [goals]);
 
-  // Fetch roadmap from AI
+  /** -----------------------------
+   * AI REQUEST
+   -------------------------------- */
   const fetchRoadmap = async () => {
     if (!goals) return;
-
     setLoading(true);
     setError(null);
 
     const prompt = `
-Generate a structured markdown roadmap with sections:
+Generate a structured markdown roadmap with these sections:
 
 ## Outcome Summary
-(short paragraph)
 
 ## Month-by-Month Roadmap
 Month 1
-- Week bullets
+- Weekly bullets
 Month 2
-- Week bullets
+- Weekly bullets
 Month 3
-- ...
+- Weekly bullets
 
 ## Recommended Projects
-- 3 listed projects
+- 3 projects
 
 ## Next 5 Action Items
-- short bullet list
+- bullets
 
-Do NOT wrap inside code blocks. Provide clean markdown.
+Do NOT wrap inside code blocks.
     `;
 
     try {
@@ -150,26 +173,27 @@ Do NOT wrap inside code blocks. Provide clean markdown.
       });
 
       const data = await res.json();
+
       const text =
         data?.choices?.[0]?.message?.content ||
         data?.error ||
-        "AI did not produce a roadmap.";
+        "";
 
       setAiText(text);
 
       try {
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({ ts: Date.now(), text })
-        );
+        localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), text }));
       } catch {}
-    } catch (e) {
+    } catch (err) {
       setError("Could not generate roadmap.");
     } finally {
       setLoading(false);
     }
   };
 
+  /** -----------------------------
+   * LOADING UI
+   -------------------------------- */
   if (!aiText && loading) {
     return (
       <div className="animate-pulse space-y-4 py-4">
@@ -179,76 +203,85 @@ Do NOT wrap inside code blocks. Provide clean markdown.
     );
   }
 
-  const parsed = parseRoadmap(aiText);
+  /** -----------------------------
+   * PARSE AI OUTPUT SAFELY
+   -------------------------------- */
+  const parsed = parseRoadmap(aiText || "");
 
   return (
     <div className="space-y-8">
 
-      {/* SUMMARY CARD */}
-      <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow border border-indigo-200/30 dark:border-indigo-700/30">
-        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-          <Star /> Outcome Summary
-        </h2>
-        <div
-          className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: cleanMarkdown(parsed.summary) }}
-        />
-      </div>
-
-      {/* MONTHLY TIMELINE */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-          <Calendar /> Month-by-Month Roadmap
-        </h2>
-
-        <div className="relative">
-
-          {/* Vertical line */}
-          <div className="absolute left-4 top-0 bottom-0 w-1 bg-indigo-200 dark:bg-indigo-700 rounded-full" />
-
-          {parsed.months.map((m, idx) => (
-            <MonthCard key={idx} month={m} />
-          ))}
+      {/* SUMMARY */}
+      {parsed.summary && (
+        <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow border border-indigo-200/30 dark:border-indigo-700/30">
+          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            <Star /> Outcome Summary
+          </h2>
+          <div
+            className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: cleanMarkdown(parsed.summary) }}
+          />
         </div>
-      </div>
+      )}
+
+      {/* MONTH TIMELINE */}
+      {Array.isArray(parsed.months) && parsed.months.length > 0 && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            <Calendar /> Month-by-Month Roadmap
+          </h2>
+
+          <div className="relative">
+            <div className="absolute left-4 top-0 bottom-0 w-1 bg-indigo-200 dark:bg-indigo-700 rounded-full" />
+
+            {parsed.months.map((m, idx) => (
+              <MonthCard key={idx} month={m} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PROJECTS */}
-      <div>
-        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-          <ListChecks /> Recommended Projects
-        </h2>
+      {Array.isArray(parsed.projects) && parsed.projects.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            <ListChecks /> Recommended Projects
+          </h2>
 
-        <div className="grid gap-4 mt-3">
-          {parsed.projects.map((p, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border shadow"
-            >
-              {p}
-            </motion.div>
-          ))}
+          <div className="grid gap-4 mt-3">
+            {parsed.projects.map((p, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border shadow"
+              >
+                {p}
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ACTION ITEMS */}
-      <div>
-        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-          🚀 Next 5 Action Items
-        </h2>
+      {Array.isArray(parsed.actions) && parsed.actions.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            🚀 Next 5 Action Items
+          </h2>
 
-        <div className="flex flex-wrap gap-2 mt-3">
-          {parsed.actions.map((a, i) => (
-            <span
-              key={i}
-              className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 rounded-full border border-indigo-300/40 dark:border-indigo-600/40"
-            >
-              {a}
-            </span>
-          ))}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {parsed.actions.map((a, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 rounded-full border border-indigo-300/40 dark:border-indigo-600/40"
+              >
+                {a}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* BUTTONS */}
       <div className="mt-6 flex gap-3">
@@ -273,14 +306,16 @@ Do NOT wrap inside code blocks. Provide clean markdown.
   );
 }
 
-/* 🔥 MONTH CARD COMPONENT — collapsible timeline card */
+/* ------------------------------------
+   MONTH CARD COMPONENT (collapsible)
+------------------------------------- */
 function MonthCard({ month }) {
   const [open, setOpen] = useState(true);
 
   return (
     <div className="relative ml-10 mb-6">
 
-      {/* Dot on the timeline */}
+      {/* Timeline Dot */}
       <div className="absolute -left-10 top-2 w-5 h-5 rounded-full bg-indigo-600 dark:bg-indigo-400 shadow-md border-2 border-white dark:border-gray-900"></div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border shadow p-4">
@@ -302,8 +337,11 @@ function MonthCard({ month }) {
               exit={{ opacity: 0, y: -6 }}
               className="mt-3 space-y-2 text-gray-700 dark:text-gray-300"
             >
-              {month.bullets.map((b, i) => (
-                <li key={i} className="bg-gray-50 dark:bg-gray-800 p-2 rounded-md border text-sm">
+              {(month.bullets || []).map((b, i) => (
+                <li
+                  key={i}
+                  className="bg-gray-50 dark:bg-gray-800 p-2 rounded-md border text-sm"
+                >
                   {b}
                 </li>
               ))}
