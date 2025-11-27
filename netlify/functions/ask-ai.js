@@ -29,7 +29,7 @@ export async function handler(event) {
 
     // Recommended default model
     const model =
-      process.env.GROQ_MODEL || "llama-3.1-70b-versatile";
+      process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 
     // ---- SYSTEM PROMPT ----
     const systemPrompt = `
