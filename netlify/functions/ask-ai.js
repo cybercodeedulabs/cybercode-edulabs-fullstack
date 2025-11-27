@@ -1,87 +1,175 @@
 // netlify/functions/ask-ai.js
+// GROQ (Llama 3.1) backend for Cybercode AI Advisor
+// Requires GROQ_API_KEY in Netlify environment variables.
+
+// Optional: GROQ_MODEL (defaults to llama-3.1-70b-versatile)
 
 export async function handler(event) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
-    const { prompt, messages, courseContext, userGoals, personaScores, userStats } = body;
+    const {
+      prompt,
+      messages = [],
+      courseContext = "",
+      userGoals,
+      personaScores,
+      userStats,
+    } = body;
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      console.error("Missing OpenRouter API key");
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      console.error("Missing GROQ_API_KEY");
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Server misconfigured: Missing API key." }),
-      };
-    }
-
-    // Build a rich system prompt that includes user goals and stats
-    const systemPrompt = `
-You are Cybercode EduLabs' official AI Advisor + Career Mentor.
-Use the course data below and the user's profile/goals to produce realistic, empathetic,
-and actionable learning roadmaps, weekly study plans, project suggestions, and motivational guidance.
-Always only recommend Cybercode EduLabs courses (use the course list) when recommending specific courses.
-
----- USER GOALS ----
-${JSON.stringify(userGoals || {}, null, 2)}
-
----- USER STATS ----
-${JSON.stringify(userStats || {}, null, 2)}
-
----- LEARNING PERSONA / SCORES ----
-${JSON.stringify(personaScores || {}, null, 2)}
-
----- COURSE DATA ----
-${courseContext}
-
-Rules:
-- Be realistic: match timeline to hours/week and skill gaps.
-- Provide a short summary (1-2 lines), followed by a 6-step roadmap, weekly plan, and 3 suggested projects.
-- Provide next-action CTA (which Cybercode course and which lesson to open next).
-- Provide a short motivational message at the end.
-- Return plain text; include URLs for courses (already present in courseContext).
-`;
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://cybercodeedulabs-platform.netlify.app",
-        "X-Title": "Cybercode EduLabs AI Advisor",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...(messages || []),
-          { role: "user", content: prompt || "No question provided." },
-        ],
-        temperature: 0.2,
-        max_tokens: 900,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("OpenRouter API Error:", data);
-      return {
-        statusCode: response.status,
         body: JSON.stringify({
-          error: data.error?.message || "OpenRouter API request failed.",
+          error: "Server misconfigured: Missing GROQ_API_KEY.",
         }),
       };
     }
 
+    // Recommended default model
+    const model =
+      process.env.GROQ_MODEL || "llama-3.1-70b-versatile";
+
+    // ---- SYSTEM PROMPT ----
+    const systemPrompt = `
+You are Cybercode EduLabs' official AI Advisor & Career Mentor.
+
+Your job:
+- Provide accurate, realistic roadmaps, plans, and suggestions
+- Use Cybercode EduLabs courses only (from courseContext)
+- Personalize based on persona, stats, goals
+- Motivate the learner at the end
+- Always return clean, readable plain text
+
+USER GOALS:
+${JSON.stringify(userGoals || {}, null, 2)}
+
+USER STATS:
+${JSON.stringify(userStats || {}, null, 2)}
+
+PERSONA SCORES:
+${JSON.stringify(personaScores || {}, null, 2)}
+
+COURSES (trimmed for context):
+${(courseContext || "").substring(0, 20000)}
+`;
+
+    // ---- CONVERSATION HISTORY ----
+    const groqMessages = [
+      { role: "system", content: systemPrompt },
+
+      ...messages.map((m) => ({
+        role: m.role || (m.from === "user" ? "user" : "assistant"),
+        content: m.content || m.text || "",
+      })),
+
+      { role: "user", content: prompt || "No question provided." },
+    ];
+
+    // ---- REQUEST BODY ----
+    const requestBody = {
+      model,
+      messages: groqMessages,
+      temperature: 0.2,
+      max_tokens: 1500,
+    };
+
+    // ---- SEND REQUEST ----
+    const res = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      console.error("Failed parsing Groq response:", e);
+      return {
+        statusCode: 502,
+        body: JSON.stringify({ error: "Invalid response from Groq API." }),
+      };
+    }
+
+    if (!res.ok) {
+      console.error("Groq API returned error:", data);
+      return {
+        statusCode: res.status || 500,
+        body: JSON.stringify({
+          error: data?.error?.message || "Groq API request failed.",
+          raw: data,
+        }),
+      };
+    }
+
+    // ---- EXTRACT TEXT (handles all Groq formats) ----
+    let outText = null;
+
+    try {
+      const choice = data?.choices?.[0];
+
+      if (choice?.message?.content) {
+        outText = choice.message.content;
+      } else if (choice?.text) {
+        outText = choice.text;
+      } else if (Array.isArray(choice?.message?.content)) {
+        outText = choice.message.content
+          .map((c) => c.text || c.content || "")
+          .join("\n");
+      } else if (data.output) {
+        outText = data.output
+          .map((o) =>
+            typeof o === "string"
+              ? o
+              : o.text ||
+                o.content ||
+                (Array.isArray(o.content)
+                  ? o.content.map((x) => x.text || "").join("")
+                  : "") ||
+                JSON.stringify(o)
+          )
+          .join("\n\n");
+      }
+    } catch (err) {
+      console.warn("Error extracting model output:", err);
+    }
+
+    // Fallback
+    if (!outText) {
+      outText = JSON.stringify(data).slice(0, 20000);
+    }
+
+    // ---- Return in OpenAI-like format (frontend compatibility) ----
+    const result = {
+      choices: [
+        {
+          message: {
+            content: outText,
+          },
+        },
+      ],
+      raw: data,
+    };
+
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error("Function crashed:", error);
+    console.error("ask-ai crashed:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Internal server error in ask-ai function." }),
+      body: JSON.stringify({
+        error: "Internal server error in ask-ai function.",
+      }),
     };
   }
 }
