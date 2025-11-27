@@ -1,32 +1,41 @@
 // src/components/AIAssistant.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, X, MessageSquare } from "lucide-react";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import courseData from "../data/courseData";
 import { useUser } from "../contexts/UserContext";
 
-const AIAssistant = ({ embedMode = "floating" /* "floating" or "embedded" or "career" */ }) => {
+// Cybercode Signature Theme colors (tailwind classes + plain CSS fallback)
+const AVATAR_BOT = "/images/logo-placeholder.png"; // optional logo for bot
+const MAX_COURSE_CONTEXT_CHARS = 20000;
+
+const AIAssistant = ({ embedMode = "floating" }) => {
+  const { user, userGoals, personaScores, userStats } = useUser();
+
   const [isOpen, setIsOpen] = useState(embedMode === "embedded");
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState(() => [
     {
-      from: "bot",
-      text: "👋 Hi! I'm Cybercode AI Advisor. Ask me about courses or your career roadmap!",
+      role: "assistant",
+      content: "👋 Hi! I'm Cybercode AI Advisor. Ask me about courses or your career roadmap!",
+      id: `m-init-1`,
     },
   ]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const chatEndRef = useRef(null);
 
-  const { user, userGoals, personaScores, userStats } = useUser();
+  // detect theme from html.dark (your App toggles this)
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
-  // Auto-scroll
+  // Auto-scroll when messages change or typing changes
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isOpen]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, isTyping, isOpen]);
 
-  // Generate course context for AI
+  // Build compact course context
   const getCourseContext = () => {
     return courseData
       .map(
@@ -36,116 +45,247 @@ const AIAssistant = ({ embedMode = "floating" /* "floating" or "embedded" or "ca
       .join("\n");
   };
 
+  // Safe markdown -> html
+  const renderMarkdown = (text) => {
+    try {
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+      });
+      const raw = marked.parse(text || "");
+      return DOMPurify.sanitize(raw);
+    } catch (e) {
+      return DOMPurify.sanitize(text);
+    }
+  };
+
+  // Prepare conversation payload (convert to OpenAI-like messages)
+  const buildConversation = (additionalUserMessage) => {
+    // include last N messages to preserve context (but not entire app state)
+    // We'll include all messages for now (small chat), convert roles to 'user'|'assistant'
+    const convo = messages.map((m) => ({
+      role: m.role || (m.from === "user" ? "user" : "assistant"),
+      content: m.content || m.text || "",
+    }));
+
+    // Append the new user message (the one we're sending now)
+    convo.push({ role: "user", content: additionalUserMessage });
+
+    return convo;
+  };
+
+  // Send message to backend
   const handleSend = async (overridePrompt) => {
     const promptText = overridePrompt !== undefined ? overridePrompt : input;
     if (!promptText || !promptText.trim()) return;
 
-    const userMessage = { from: "user", text: promptText };
-    setMessages((prev) => [...prev, userMessage]);
+    // Add user message locally immediately
+    const userMsg = {
+      role: "user",
+      content: promptText,
+      id: `u-${Date.now()}`,
+    };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setLoading(true);
+    setIsSending(true);
+    setIsTyping(true);
+
+    // Build payload with a snapshot of messages + this user message
+    const messagesForApi = buildConversation(promptText);
+    const courseContext = (getCourseContext() || "").substring(0, MAX_COURSE_CONTEXT_CHARS);
 
     try {
-      const response = await fetch("/.netlify/functions/ask-ai", {
+      const res = await fetch("/.netlify/functions/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: promptText,
-          messages: messages.map((m) => ({
-            role: m.from === "user" ? "user" : "assistant",
-            content: m.text,
-          })),
-          courseContext: getCourseContext(),
+          messages: messagesForApi,
+          courseContext,
           userGoals,
           personaScores,
           userStats,
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
       const aiText =
-        data.choices?.[0]?.message?.content ||
-        data.error ||
+        data?.choices?.[0]?.message?.content ||
+        data?.choices?.[0]?.text ||
+        data?.error ||
         "Sorry, I couldn't find an answer to that.";
 
-      // convert URLs to clickable links
-      const formatted = aiText.replace(
-        /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank" rel="noreferrer" class="text-blue-600 underline">$1</a>'
-      );
+      // small cleanup of extra newlines
+      const cleaned = aiText.replace(/\n{3,}/g, "\n\n").trim();
 
-      setMessages((prev) => [...prev, { from: "bot", text: formatted, html: true }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: cleaned, id: `a-${Date.now()}` },
+      ]);
     } catch (err) {
       console.error("AI Error:", err);
       setMessages((prev) => [
         ...prev,
         {
-          from: "bot",
-          text: "⚠️ Unable to connect to Cybercode AI service.",
+          role: "assistant",
+          content: "⚠️ Unable to connect to Cybercode AI service. Please try again later.",
+          id: `a-err-${Date.now()}`,
         },
       ]);
     } finally {
-      setLoading(false);
+      setIsTyping(false);
+      setIsSending(false);
     }
   };
 
-  // If embedded, always open and render without floating button
+  // Enter to send, Shift+Enter for newline
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!isSending) handleSend();
+    }
+  };
+
+  // Quick helpers: prefilled prompts for CTA buttons
+  const quickPrompts = [
+    "Show me a 3-month roadmap to become a Cloud/DevOps engineer using Cybercode courses.",
+    "Tell me about the Python Programming (Job-Focused) course — syllabus and duration.",
+    "I want a free demo class — how to register?",
+  ];
+
+  // Render each message bubble
+  const renderMessage = (m, i) => {
+    const isUser = m.role === "user";
+    const html = renderMarkdown(m.content);
+
+    return (
+      <div
+        key={m.id || `${i}-${m.role}`}
+        className={`chat-bubble ${isUser ? "chat-user" : "chat-bot"}`}
+        // accessibility
+        role="article"
+        aria-label={isUser ? "User message" : "Assistant message"}
+      >
+        {!isUser && (
+          <div className="bot-meta">
+            <img src={AVATAR_BOT} alt="Cybercode" className="bot-avatar" />
+            <div className="bot-name">Cybercode AI Advisor</div>
+          </div>
+        )}
+
+        <div
+          className="chat-content prose"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+
+        {isUser && <div className="user-tag">You</div>}
+      </div>
+    );
+  };
+
+  // Floating UI
   const renderChatWindow = () => (
-    <div className="w-full bg-white border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50">
+    <div
+      className={`ai-assistant-root ${isDark ? "theme-dark" : "theme-light"}`}
+      style={{ width: embedMode === "embedded" ? "100%" : undefined }}
+    >
       {/* Header */}
-      <div className="bg-indigo-600 text-white p-3 font-semibold flex items-center justify-between">
+      <div className="ai-header flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <MessageSquare />
-          <span>Cybercode AI Advisor</span>
+          <div>
+            <div className="text-lg font-semibold">Cybercode AI Advisor</div>
+            <div className="text-xs text-slate-400">Ask about courses, career roadmaps, and projects</div>
+          </div>
         </div>
-        {embedMode === "floating" && (
-          <button onClick={() => setIsOpen(false)}>
-            <X />
-          </button>
-        )}
+
+        <div className="flex items-center gap-2">
+          {isTyping && (
+            <div className="typing-indicator" aria-hidden>
+              <span /><span /><span />
+            </div>
+          )}
+
+          {embedMode === "floating" ? (
+            <button
+              onClick={() => setIsOpen(false)}
+              className="icon-btn"
+              aria-label="Close chat"
+            >
+              <X />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {/* Messages */}
-      <div
-        className="flex-1 overflow-y-auto p-3 space-y-2 text-sm"
-        style={{ maxHeight: "360px", overflowY: "auto", scrollbarWidth: "thin" }}
-      >
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`p-2 rounded-lg ${msg.from === "user" ? "bg-indigo-100 text-right ml-10" : "bg-gray-100 mr-10"}`}
-            dangerouslySetInnerHTML={msg.html ? { __html: msg.text } : { __html: msg.text }}
-          />
-        ))}
+      <div className="ai-messages flex-1 p-4" style={{ maxHeight: 360 }}>
+        <div className="space-y-3">
+          {messages.map((m, i) => renderMessage(m, i))}
+          {isTyping && (
+            <div className="chat-bubble chat-bot typing-bubble">
+              <div className="chat-content">
+                <div className="typing-indicator-inline"><span /><span /><span /></div>
+              </div>
+            </div>
+          )}
+        </div>
 
-        {loading && <div className="text-gray-400 text-xs">Thinking...</div>}
         <div ref={chatEndRef} />
       </div>
 
+      {/* Quick CTA */}
+      <div className="px-4 pt-2 pb-0">
+        <div className="quick-cta flex gap-2 overflow-x-auto">
+          {quickPrompts.map((q, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleSend(q)}
+              className="quick-chip"
+            >
+              {q.length > 40 ? q.slice(0, 40) + "…" : q}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Input */}
-      <div className="flex items-center p-2 border-t">
-        <input
-          className="flex-1 border rounded-lg px-2 py-1 text-sm"
+      <div className="ai-input px-3 py-3 border-t">
+        <textarea
+          className="input-textarea"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={embedMode === "career" ? "Ask about your roadmap, timeline, projects..." : "Ask about a course..."}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          placeholder="Ask about a course or request a roadmap... (Shift+Enter for new line)"
+          onKeyDown={handleKeyDown}
+          rows={1}
         />
-        <button onClick={() => handleSend()} className="ml-2 bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700">
-          <Send size={16} />
-        </button>
+
+        <div className="input-actions">
+          <button
+            className="send-btn"
+            aria-label="Send message"
+            onClick={() => !isSending && handleSend()}
+            disabled={isSending}
+            title="Send"
+          >
+            <Send />
+          </button>
+        </div>
       </div>
     </div>
   );
 
-  // Floating variant
+  // If floating mode, show button + panel
   if (embedMode === "floating") {
     return (
       <>
         <motion.button
-          className="fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 z-50"
-          onClick={() => setIsOpen(!isOpen)}
+          className="floating-toggle"
+          onClick={() => setIsOpen((s) => !s)}
+          initial={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Open Cybercode AI Advisor"
         >
           {isOpen ? <X /> : <MessageSquare />}
         </motion.button>
@@ -153,12 +293,15 @@ const AIAssistant = ({ embedMode = "floating" /* "floating" or "embedded" or "ca
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-20 right-6 w-80 z-50"
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.98 }}
+              transition={{ duration: 0.28 }}
+              className="fixed bottom-24 right-6 z-[9999] w-96 max-w-[calc(100vw-2rem)]"
             >
-              {renderChatWindow()}
+              <div className="rounded-2xl shadow-2xl overflow-hidden">
+                {renderChatWindow()}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -166,7 +309,7 @@ const AIAssistant = ({ embedMode = "floating" /* "floating" or "embedded" or "ca
     );
   }
 
-  // Embedded variant (inline)
+  // Embedded
   return <div className="w-full">{renderChatWindow()}</div>;
 };
 

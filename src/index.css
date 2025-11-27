@@ -215,3 +215,185 @@ button:focus-visible {
   position: relative;
   overflow: hidden; /* Prevent blurred highlight overflow */
 }
+
+/* ---------------------------
+   Cybercode AI Assistant Styles
+   Signature Theme (Cybercode)
+   --------------------------- */
+
+/* Root container for assistant */
+.ai-assistant-root {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  border: 1px solid rgba(79,70,229,0.06);
+  width: 100%;
+  height: 480px;
+  max-height: 80vh;
+}
+
+/* Dark theme override */
+.ai-assistant-root.theme-dark {
+  background: linear-gradient(180deg, #0b1220 0%, #08101a 100%);
+  color: #e6eefc;
+  border-color: rgba(79,70,229,0.14);
+}
+
+/* Header */
+.ai-header {
+  background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+  color: white;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ai-header .bot-name { font-weight: 600; font-size: 0.95rem; }
+.ai-header .text-xs { opacity: 0.9; font-size: 0.76rem; }
+
+/* Messages area */
+.ai-messages {
+  padding: 16px;
+  overflow-y: auto;
+  background: transparent;
+}
+
+/* Chat bubble base */
+.chat-bubble {
+  max-width: 84%;
+  padding: 12px;
+  border-radius: 14px;
+  position: relative;
+  display: block;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+/* Bot bubble */
+.chat-bot {
+  background: linear-gradient(180deg, #f8f9ff 0%, #f3f3ff 100%);
+  color: #0f172a;
+  border: 1px solid rgba(99,102,241,0.08);
+  margin-right: auto;
+}
+
+/* Bot dark variant */
+.theme-dark .chat-bot {
+  background: linear-gradient(180deg, #0f1724 0%, #0b1220 100%);
+  color: #dbeafe;
+  border: 1px solid rgba(99,102,241,0.12);
+}
+
+/* User bubble */
+.chat-user {
+  background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  margin-left: auto;
+  text-align: right;
+}
+
+/* Bot meta (avatar + name) */
+.bot-meta { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+.bot-avatar { width:28px; height:28px; border-radius:6px; object-fit:cover; }
+.bot-name { font-weight:700; font-size:0.86rem; color:inherit; }
+
+/* Chat content markdown styling uses .prose already in your CSS; keep consistent */
+.ai-assistant-root .prose { margin: 0; }
+
+/* Typing indicator (header small) */
+.typing-indicator { display:flex; gap:6px; align-items:center; }
+.typing-indicator span {
+  width:8px; height:8px; border-radius:999px; background:#fff; opacity:0.95;
+  transform-origin:center;
+  animation: cy-typing 1.2s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.12s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.24s; }
+@keyframes cy-typing {
+  0% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-6px); opacity: 1; }
+  60% { transform: translateY(0); opacity: 0.45; }
+  100% { transform: translateY(0); opacity: 0.35; }
+}
+
+/* Inline typing bubble */
+.typing-bubble { opacity: 0.95; pointer-events: none; }
+.typing-indicator-inline { display:flex; gap:6px; align-items:center; }
+.typing-indicator-inline span {
+  width:9px; height:9px; border-radius:50%; background:linear-gradient(90deg,#c7d2fe,#a78bfa);
+  animation: inline-blob 1.2s infinite ease-in-out;
+}
+@keyframes inline-blob {
+  0% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+  60% { transform: translateY(0); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 0.4; }
+}
+
+/* Input section */
+.ai-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: transparent;
+}
+.input-textarea {
+  flex: 1;
+  resize: none;
+  min-height: 40px;
+  max-height: 140px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  outline: none;
+  font-size: 14px;
+}
+.theme-dark .input-textarea {
+  background: rgba(255,255,255,0.02);
+  border-color: rgba(255,255,255,0.04);
+  color: #dbeafe;
+}
+.input-textarea:focus { box-shadow: 0 8px 20px rgba(99,102,241,0.08); }
+
+/* Send button */
+.send-btn {
+  background: linear-gradient(180deg,#6d28d9,#4f46e5);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  display:flex; align-items:center; justify-content:center;
+}
+.send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Floating toggle */
+.floating-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 18px;
+  z-index: 99999;
+  background: linear-gradient(90deg,#4f46e5,#8b5cf6);
+  color: white;
+  width:56px; height:56px; border-radius:999px;
+  box-shadow: 0 12px 30px rgba(79,70,229,0.24);
+  display:flex; align-items:center; justify-content:center;
+  border:none; cursor:pointer;
+}
+
+/* Quick chips */
+.quick-cta { margin-top:6px; padding-bottom:4px; }
+.quick-chip {
+  background: rgba(79,70,229,0.06);
+  color: #3730a3;
+  border-radius: 999px; padding:8px 12px; font-size:12px; border:1px solid rgba(99,102,241,0.08);
+}
+.theme-dark .quick-chip {
+  background: rgba(124,58,237,0.08);
+  color: #e9d5ff;
+}
+
+/* responsive */
+@media (max-width: 640px) {
+  .floating-toggle { right: 12px; bottom: 12px; width:50px; height:50px; }
+  .ai-assistant-root { width: calc(100vw - 20px); height: 70vh; }
+  .fixed.bottom-24.right-6 { right: 12px !important; bottom: 80px !important; }
+}
