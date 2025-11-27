@@ -115,8 +115,8 @@ export async function handler(event) {
     }));
 
     // Model routing based on explicit mode
-    const chatModel = process.env.GROQ_MODEL_CHAT || "llama-3.2-3b-instant";
-    const roadmapModel = process.env.GROQ_MODEL_ROADMAP || "llama-3.1-8b-instant";
+    const chatModel = process.env.GROQ_MODEL_CHAT || "llama-3.1-8b-instant";
+    const roadmapModel = process.env.GROQ_MODEL_ROADMAP || "llama-3.1-70b-versatile";
     const model = mode === "roadmap" ? roadmapModel : chatModel;
 
     // token limits: larger for roadmap
