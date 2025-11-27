@@ -1,87 +1,77 @@
 // netlify/functions/ask-ai.js
-// Optimized GROQ backend with in-memory caching, per-user rate limiting,
-// model routing (chat vs roadmap), retries, and graceful cache fallback.
-// Requires GROQ_API_KEY in Netlify env. Optional envs: GROQ_MODEL_CHAT, GROQ_MODEL_ROADMAP,
-// RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS, CACHE_TTL_MS
+// Stable + optimized GROQ backend
+// Features: model routing, caching, per-user rate-limit, retry, structured roadmap support.
 
 const crypto = require("crypto");
 
-// --- Warm lambda globals (persist while lambda is warm) ---
-const inMemoryCache = new Map(); // key -> { ts, value }
-const userRequestLog = new Map(); // userKey -> [timestamps]
+// Warm lambda globals
+const inMemoryCache = new Map();
+const userRequestLog = new Map();
 let lastGlobalCall = 0;
 
-// Default config (can be tuned via env)
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || "1500"); // window
-const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || "6"); // per window
-const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || String(24 * 60 * 60 * 1000)); // 24h
+// Env defaults
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || "1500");
+const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || "6");
+const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || String(24 * 60 * 60 * 1000));
 
-// helper: generate cache key
 function hashPayload(obj) {
   return crypto.createHash("sha256").update(JSON.stringify(obj)).digest("hex");
 }
 
-// helper: identify user key (prefer user.uid, fallback to IP)
 function userKeyFromEvent(event) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
-    const maybeUser = body.user || {};
-    if (maybeUser && maybeUser.uid) return `uid:${maybeUser.uid}`;
-  } catch (e) {}
-  // fallback to incoming header IPs
-  const headers = event.headers || {};
-  const ip =
-    headers["x-nf-client-connection-ip"] ||
-    headers["x-forwarded-for"] ||
-    headers["x-real-ip"] ||
-    headers["client-ip"] ||
-    "anon";
-  return `ip:${ip}`;
+    if (body.user?.uid) return `uid:${body.user.uid}`;
+  } catch {}
+
+  const h = event.headers || {};
+  return (
+    h["x-nf-client-connection-ip"] ||
+    h["x-forwarded-for"] ||
+    h["x-real-ip"] ||
+    h["client-ip"] ||
+    "anon"
+  );
 }
 
-// sliding window check for a key
 function allowRequestForKey(key) {
   const now = Date.now();
   const arr = userRequestLog.get(key) || [];
-  // remove old timestamps
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
+
   const filtered = arr.filter((t) => t > cutoff);
   if (filtered.length >= RATE_LIMIT_MAX_REQUESTS) {
-    // too many requests
     userRequestLog.set(key, filtered);
     return false;
   }
-  // allow and append
+
   filtered.push(now);
   userRequestLog.set(key, filtered);
   return true;
 }
 
-// clean old cache entries occasionally
 function cleanCache() {
   const now = Date.now();
   for (const [k, v] of inMemoryCache.entries()) {
-    if (!v || !v.ts || now - v.ts > CACHE_TTL_MS) {
+    if (!v || now - v.ts > CACHE_TTL_MS) {
       inMemoryCache.delete(k);
     }
   }
 }
 
-// main handler
 export async function handler(event) {
   try {
     const now = Date.now();
 
-    // small global throttle (prevent tight bursts)
-    if (now - lastGlobalCall < 300) {
+    // global burst throttle
+    if (now - lastGlobalCall < 250) {
       return {
         statusCode: 429,
-        body: JSON.stringify({ error: "Server busy. Please try again shortly." }),
+        body: JSON.stringify({ error: "Server busy. Slow down briefly." }),
       };
     }
     lastGlobalCall = now;
 
-    // parse input
     const body = event.body ? JSON.parse(event.body) : {};
     const {
       prompt = "",
@@ -90,49 +80,79 @@ export async function handler(event) {
       userGoals = {},
       personaScores = {},
       userStats = {},
-      mode = "chat", // required by frontend: "chat" | "roadmap"
-      user: userFromClient = null, // optional full user object for caching key
+      mode = "chat",
+      user: clientUser = null,
     } = body;
 
+    // check API key
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
     if (!GROQ_API_KEY) {
       console.error("Missing GROQ_API_KEY");
-      return { statusCode: 500, body: JSON.stringify({ error: "Server misconfigured: Missing GROQ_API_KEY" }) };
+      return { statusCode: 500, body: "Server missing API key" };
     }
 
-    // Compute user key for rate limiting
-    const ukey = userFromClient && userFromClient.uid ? `uid:${userFromClient.uid}` : userKeyFromEvent(event);
-
-    // check per-user rate limit
+    // Per-user limit
+    const ukey = clientUser?.uid ? `uid:${clientUser.uid}` : userKeyFromEvent(event);
     if (!allowRequestForKey(ukey)) {
-      return { statusCode: 429, body: JSON.stringify({ error: "Rate limit: too many requests. Slow down a bit." }) };
+      return {
+        statusCode: 429,
+        body: JSON.stringify({ error: "Too many requests. Try again shortly." }),
+      };
     }
 
-    // Build trimmed conversation
+    // Trim messages
     const trimmedMsgs = (messages || []).slice(-6).map((m) => ({
       role: m.role || (m.from === "user" ? "user" : "assistant"),
       content: (m.content || m.text || "").slice(0, 800),
     }));
 
-    // Model routing based on explicit mode
+    // models
     const chatModel = process.env.GROQ_MODEL_CHAT || "llama-3.1-8b-instant";
     const roadmapModel = process.env.GROQ_MODEL_ROADMAP || "llama-3.1-70b-versatile";
+
     const model = mode === "roadmap" ? roadmapModel : chatModel;
+    const maxTokens = mode === "roadmap" ? 950 : 400;
+    const temperature = mode === "roadmap" ? 0.2 : 0.05;
 
-    // token limits: larger for roadmap
-    const maxTokens = mode === "roadmap" ? 900 : 400;
-    const temperature = mode === "roadmap" ? 0.15 : 0.05;
+    // Proper system prompts
+    const systemPrompt =
+      mode === "roadmap"
+        ? `
+You are Cybercode EduLabs Roadmap Generator.
 
-    const systemPrompt = `
-Cybercode EduLabs AI Advisor. Reply in concise markdown.
+Return ONLY markdown with these exact sections:
 
-RULES:
-- Short answers unless user requests deep detail.
-- If user greets (hi/hello) reply briefly.
-- Use courseContext for course questions.
-- Use userGoals/persona/stats for roadmap requests.
-- When unclear, ask for clarification.
-    `.trim();
+## Outcome Summary
+
+## Month-by-Month Roadmap
+Month 1
+- Weekly learning bullets
+Month 2
+- Weekly bullets
+Month 3
+- Weekly bullets
+
+## Recommended Projects
+- 3 project bullets
+
+## Next 5 Action Items
+- bullets
+
+Do NOT use code blocks. Do NOT add any text outside sections.
+Use concise, structured formatting.
+
+USER GOALS:
+${JSON.stringify(userGoals)}
+USER PROFILE:
+${JSON.stringify(userStats)}
+        `.trim()
+        : `
+You are Cybercode EduLabs AI Advisor.
+Reply in clean markdown. Keep replies crisp unless user asks deep detail.
+Use courseContext for course questions.
+Use goals/persona/stats for guidance.
+Ask for clarification when question unclear.
+          `.trim();
 
     const payloadForCache = {
       model,
@@ -146,13 +166,11 @@ RULES:
       mode,
     };
 
-    // Cache key
     const cacheKey = hashPayload(payloadForCache);
 
-    // Check in-memory cache first
+    // check cache
     const cached = inMemoryCache.get(cacheKey);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      // Return cached result quickly
+    if (cached && now - cached.ts < CACHE_TTL_MS) {
       cleanCache();
       return {
         statusCode: 200,
@@ -163,7 +181,7 @@ RULES:
       };
     }
 
-    // Build message list for Groq
+    // Build message stack
     const groqMessages = [
       { role: "system", content: systemPrompt },
       ...trimmedMsgs,
@@ -178,8 +196,8 @@ RULES:
       top_p: 0.95,
     };
 
-    // attempt fetch with one retry on 429
-    const doFetch = async () => {
+    // perform fetch with retry
+    const fetchGroq = async () => {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -192,16 +210,14 @@ RULES:
       return { ok: res.ok, status: res.status, data };
     };
 
-    let result = await doFetch();
+    let result = await fetchGroq();
     if (!result.ok && result.status === 429) {
-      // wait and retry once
-      await new Promise((r) => setTimeout(r, 1000));
-      result = await doFetch();
+      await new Promise((r) => setTimeout(r, 1100));
+      result = await fetchGroq();
     }
 
     if (!result.ok) {
-      // if failure, try graceful fallback from cache if available
-      if (cached && cached.value) {
+      if (cached?.value) {
         return {
           statusCode: 200,
           body: JSON.stringify({
@@ -210,31 +226,29 @@ RULES:
           }),
         };
       }
+
       return {
-        statusCode: result.status || 502,
-        body: JSON.stringify({ error: result.data?.error?.message || "Groq API failure", raw: result.data }),
+        statusCode: result.status,
+        body: JSON.stringify({ error: result.data?.error?.message || "AI error" }),
       };
     }
 
-    // Extract output
-    const outText = (result.data?.choices?.[0]?.message?.content || "").replace(/\n{3,}/g, "\n\n").trim();
+    const out = (result.data?.choices?.[0]?.message?.content || "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
 
-    // Save to in-memory cache
-    try {
-      inMemoryCache.set(cacheKey, { ts: Date.now(), value: outText });
-    } catch (e) {
-      // ignore cache set errors
-    }
-
-    // Periodically clean old cache
-    if (Math.random() < 0.02) cleanCache();
+    inMemoryCache.set(cacheKey, { ts: now, value: out });
+    if (Math.random() < 0.04) cleanCache();
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ choices: [{ message: { content: outText } }], raw: result.data }),
+      body: JSON.stringify({
+        choices: [{ message: { content: out } }],
+        raw: result.data,
+      }),
     };
   } catch (err) {
-    console.error("ask-ai error", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Internal server error in ask-ai" }) };
+    console.error("ask-ai exception:", err);
+    return { statusCode: 500, body: JSON.stringify({ error: "Server internal error" }) };
   }
 }
