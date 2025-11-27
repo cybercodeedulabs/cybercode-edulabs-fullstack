@@ -1,13 +1,14 @@
 // src/components/TopBar.jsx
-import React, { useContext } from "react";
-import { UserContext } from "../contexts/UserContext";
+import React from "react";
+import { useUser } from "../contexts/UserContext";
 import { LogOut, User } from "lucide-react";
 
 const TopBar = () => {
-  const { user, handleLogout } = useContext(UserContext);
+  const { user, logout } = useUser(); // <-- CORRECT: invoke the hook
 
   return (
     <header className="flex items-center justify-between px-6 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-md">
+      
       {/* Left Section: Console Title */}
       <div className="flex items-center gap-2">
         <h1 className="text-lg font-semibold text-cyan-400 tracking-wide">
@@ -26,8 +27,9 @@ const TopBar = () => {
             {user?.iamUsername || user?.email?.split("@")[0] || "IAM User"}
           </span>
         </div>
+
         <button
-          onClick={handleLogout}
+          onClick={logout} // <-- CORRECT
           className="flex items-center gap-1 text-sm bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-600 px-3 py-1.5 rounded-md transition"
         >
           <LogOut size={16} />

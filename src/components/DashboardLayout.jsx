@@ -6,15 +6,13 @@ import TopBar from "./TopBar";
 
 const DashboardLayout = () => {
   return (
-    <div className="cloud-console flex min-h-screen">
-      {/* Sidebar */}
+    <div className="cloud-console flex min-h-screen bg-slate-100 dark:bg-slate-900">
       <Sidebar />
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col">
         <TopBar />
 
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
         </main>
       </div>

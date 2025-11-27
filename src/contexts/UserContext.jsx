@@ -139,7 +139,13 @@ export const UserProvider = ({ children }) => {
     setUser(null);
     setEnrolledCourses([]);
     setCourseProgress({});
-    localStorage.clear();
+    localStorage.removeItem("cybercodeUser");
+localStorage.removeItem("cybercode_user_personas_v1");
+// if you added roadmap cache:
+Object.keys(localStorage)
+  .filter(k => k.startsWith("cybercode_ai_roadmap_v1"))
+  .forEach(k => localStorage.removeItem(k));
+
     window.location.href = "/";
   };
 

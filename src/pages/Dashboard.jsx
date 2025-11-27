@@ -45,7 +45,7 @@ export default function Dashboard() {
 
   return (
     <motion.section
-      className="space-y-6"
+      className="space-y-6 max-w-6xl mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
