@@ -1,20 +1,96 @@
 // src/components/AIJobRoadmap.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useUser } from "../contexts/UserContext";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronRight, Calendar, Star, ListChecks } from "lucide-react";
 
-const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v1_";
+const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v3_";
 
 export default function AIJobRoadmap({ goals }) {
   const { personaScores, userStats, user } = useUser();
+
   const [loading, setLoading] = useState(false);
   const [aiText, setAiText] = useState(null);
   const [error, setError] = useState(null);
 
   const cacheKey = user ? `${LOCAL_KEY_PREFIX}${user.uid}` : LOCAL_KEY_PREFIX + "anon";
 
+  // Markdown → pure text parser
+  const cleanMarkdown = (text) => {
+    return DOMPurify.sanitize(marked.parse(text || ""), { USE_PROFILES: { html: true } });
+  };
+
+  // Parse structured roadmap sections from markdown
+  const parseRoadmap = (text) => {
+    if (!text) return {};
+
+    const lines = text.split("\n");
+
+    let section = "";
+    let summary = "";
+    let months = [];
+    let projects = [];
+    let actions = [];
+
+    let currentMonth = null;
+
+    for (let line of lines) {
+      line = line.trim();
+
+      // Detect section headers
+      if (/^#+\s*Outcome/i.test(line)) {
+        section = "summary";
+        continue;
+      }
+      if (/^#+\s*Month/i.test(line)) {
+        section = "months";
+        continue;
+      }
+      if (/^#+\s*Recommended Projects/i.test(line)) {
+        section = "projects";
+        continue;
+      }
+      if (/^#+\s*Next/i.test(line)) {
+        section = "actions";
+        continue;
+      }
+
+      // Fill sections
+      if (section === "summary") summary += line + " ";
+
+      if (section === "months") {
+        if (/^Month\s+\d+/i.test(line)) {
+          if (currentMonth) months.push(currentMonth);
+          currentMonth = { title: line, bullets: [] };
+        } else if (line.startsWith("-") || line.startsWith("*")) {
+          currentMonth?.bullets.push(line.replace(/^[\-\*]\s*/, ""));
+        }
+      }
+
+      if (section === "projects") {
+        if (line.startsWith("-") || line.startsWith("*")) {
+          projects.push(line.replace(/^[\-\*]\s*/, ""));
+        }
+      }
+
+      if (section === "actions") {
+        if (line.startsWith("-") || line.startsWith("*")) {
+          actions.push(line.replace(/^[\-\*]\s*/, ""));
+        }
+      }
+    }
+
+    if (currentMonth) months.push(currentMonth);
+
+    return { summary, months, projects, actions };
+  };
+
+  // Load cached roadmap
   useEffect(() => {
     if (!goals) return;
-    // check cache
+
     try {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
@@ -24,32 +100,47 @@ export default function AIJobRoadmap({ goals }) {
           return;
         }
       }
-    } catch (e) { /* ignore */ }
+    } catch {}
 
     fetchRoadmap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goals]);
 
+  // Fetch roadmap from AI
   const fetchRoadmap = async () => {
     if (!goals) return;
+
     setLoading(true);
     setError(null);
 
-    const userPrompt = `
-Generate a concise, step-by-step career roadmap for the user. Use the user's goals and stats to:
-1) Provide a 1-paragraph outcome summary.
-2) Provide a month-by-month roadmap (months based on deadlineMonths).
-3) Provide 3 recommended projects.
-4) Suggest next 5 action items (courses/lessons with links).
-Be realistic about timeline based on hoursPerWeek. Output clearly separated sections.
-`;
+    const prompt = `
+Generate a structured markdown roadmap with sections:
+
+## Outcome Summary
+(short paragraph)
+
+## Month-by-Month Roadmap
+Month 1
+- Week bullets
+Month 2
+- Week bullets
+Month 3
+- ...
+
+## Recommended Projects
+- 3 listed projects
+
+## Next 5 Action Items
+- short bullet list
+
+Do NOT wrap inside code blocks. Provide clean markdown.
+    `;
 
     try {
-      const resp = await fetch("/.netlify/functions/ask-ai", {
+      const res = await fetch("/.netlify/functions/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: userPrompt,
+          prompt,
           messages: [],
           courseContext: "",
           userGoals: goals,
@@ -58,64 +149,167 @@ Be realistic about timeline based on hoursPerWeek. Output clearly separated sect
         }),
       });
 
-      const data = await resp.json();
-      const aiTextRaw = data.choices?.[0]?.message?.content || data.error || "AI did not return a roadmap.";
-      setAiText(aiTextRaw);
+      const data = await res.json();
+      const text =
+        data?.choices?.[0]?.message?.content ||
+        data?.error ||
+        "AI did not produce a roadmap.";
+
+      setAiText(text);
 
       try {
-        localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), text: aiTextRaw }));
-      } catch (e) {}
-    } catch (err) {
-      console.error("AI roadmap error", err);
-      setError("Unable to generate AI roadmap. Showing fallback.");
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ ts: Date.now(), text })
+        );
+      } catch {}
+    } catch (e) {
+      setError("Could not generate roadmap.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!goals) {
+  if (!aiText && loading) {
     return (
-      <div className="text-center py-8">
-        <div className="text-lg font-semibold text-gray-700">No goals yet</div>
-        <div className="text-sm text-gray-500 mt-2">Set your goal to get a personalized AI roadmap.</div>
+      <div className="animate-pulse space-y-4 py-4">
+        <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        <div className="h-4 w-1/3 bg-gray-200 dark:bg-gray-700 rounded"></div>
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <div className="py-8">
-        <div className="h-4 bg-gray-200 rounded w-3/5 mb-3 animate-pulse" />
-        <div className="h-4 bg-gray-200 rounded w-2/5 mb-3 animate-pulse" />
-        <div className="mt-6 space-y-2">
-          <div className="h-3 bg-gray-200 rounded w-full animate-pulse" />
-          <div className="h-3 bg-gray-200 rounded w-full animate-pulse" />
-          <div className="h-3 bg-gray-200 rounded w-full animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !aiText) {
-    return (
-      <div>
-        <div className="text-sm text-red-500 mb-3">{error}</div>
-        <div className="text-sm text-gray-600">We couldn't reach AI. Please try again later, or use the default roadmap below.</div>
-      </div>
-    );
-  }
-
-  const formatted = (aiText || "").split("\n\n").map((p, i) => {
-    const html = (p || "").replace(/(https?:\/\/[^\s]+)/g, (m) => `<a href="${m}" target="_blank" rel="noreferrer" class="text-indigo-600 underline">${m}</a>`);
-    return (<div key={i} className="mt-3 text-sm text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: html }} />);
-  });
+  const parsed = parseRoadmap(aiText);
 
   return (
-    <div>
-      {formatted}
-      <div className="mt-6">
-        <button onClick={fetchRoadmap} className="px-4 py-2 bg-indigo-600 text-white rounded">Regenerate Roadmap</button>
-        <button onClick={() => { localStorage.removeItem(cacheKey); fetchRoadmap(); }} className="ml-2 px-4 py-2 border rounded">Clear Cache & Regenerate</button>
+    <div className="space-y-8">
+
+      {/* SUMMARY CARD */}
+      <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow border border-indigo-200/30 dark:border-indigo-700/30">
+        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+          <Star /> Outcome Summary
+        </h2>
+        <div
+          className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: cleanMarkdown(parsed.summary) }}
+        />
+      </div>
+
+      {/* MONTHLY TIMELINE */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+          <Calendar /> Month-by-Month Roadmap
+        </h2>
+
+        <div className="relative">
+
+          {/* Vertical line */}
+          <div className="absolute left-4 top-0 bottom-0 w-1 bg-indigo-200 dark:bg-indigo-700 rounded-full" />
+
+          {parsed.months.map((m, idx) => (
+            <MonthCard key={idx} month={m} />
+          ))}
+        </div>
+      </div>
+
+      {/* PROJECTS */}
+      <div>
+        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+          <ListChecks /> Recommended Projects
+        </h2>
+
+        <div className="grid gap-4 mt-3">
+          {parsed.projects.map((p, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border shadow"
+            >
+              {p}
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ACTION ITEMS */}
+      <div>
+        <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+          🚀 Next 5 Action Items
+        </h2>
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          {parsed.actions.map((a, i) => (
+            <span
+              key={i}
+              className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 rounded-full border border-indigo-300/40 dark:border-indigo-600/40"
+            >
+              {a}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* BUTTONS */}
+      <div className="mt-6 flex gap-3">
+        <button
+          onClick={fetchRoadmap}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow"
+        >
+          Regenerate Roadmap
+        </button>
+
+        <button
+          onClick={() => {
+            localStorage.removeItem(cacheKey);
+            fetchRoadmap();
+          }}
+          className="px-4 py-2 bg-white dark:bg-gray-900 border rounded-lg shadow"
+        >
+          Clear Cache & Regenerate
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* 🔥 MONTH CARD COMPONENT — collapsible timeline card */
+function MonthCard({ month }) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <div className="relative ml-10 mb-6">
+
+      {/* Dot on the timeline */}
+      <div className="absolute -left-10 top-2 w-5 h-5 rounded-full bg-indigo-600 dark:bg-indigo-400 shadow-md border-2 border-white dark:border-gray-900"></div>
+
+      <div className="bg-white dark:bg-gray-900 rounded-xl border shadow p-4">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex justify-between items-center text-left"
+        >
+          <span className="font-semibold text-indigo-700 dark:text-indigo-300 text-lg">
+            {month.title}
+          </span>
+          {open ? <ChevronDown /> : <ChevronRight />}
+        </button>
+
+        <AnimatePresence>
+          {open && (
+            <motion.ul
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mt-3 space-y-2 text-gray-700 dark:text-gray-300"
+            >
+              {month.bullets.map((b, i) => (
+                <li key={i} className="bg-gray-50 dark:bg-gray-800 p-2 rounded-md border text-sm">
+                  {b}
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
