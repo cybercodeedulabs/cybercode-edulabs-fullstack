@@ -245,6 +245,76 @@ export const UserProvider = ({ children }) => {
 
     window.location.href = "/";
   };
+  // -----------------------------------------------------
+  // LESSON PROGRESS MANAGEMENT (RESTORED & COMPATIBLE)
+  // -----------------------------------------------------
+
+  /**
+   * Mark a lesson as complete.
+   * Saves locally + Firestore.
+   * (Name preserved for backward compatibility in CourseDetail & LessonDetail)
+   */
+  const completeLessonFS = async (courseSlug, lessonSlug) => {
+    try {
+      // Update local state immediately
+      setCourseProgress((prev) => {
+        const existing = prev[courseSlug] || { completedLessons: [] };
+
+        const updatedLessons = Array.from(
+          new Set([...existing.completedLessons, lessonSlug])
+        );
+
+        return {
+          ...prev,
+          [courseSlug]: { completedLessons: updatedLessons },
+        };
+      });
+
+      // Persist to Firestore
+      if (user?.uid) {
+        const ref = doc(db, "users", user.uid);
+
+        const previousLessons =
+          courseProgress?.[courseSlug]?.completedLessons || [];
+
+        const updatedFromFS = Array.from(
+          new Set([...previousLessons, lessonSlug])
+        );
+
+        await setDoc(
+          ref,
+          {
+            courseProgress: {
+              ...(courseProgress || {}),
+              [courseSlug]: {
+                completedLessons: updatedFromFS,
+              },
+            },
+          },
+          { merge: true }
+        );
+      }
+    } catch (err) {
+      console.error("completeLessonFS failed:", err);
+    }
+  };
+
+  /** Check if a lesson is completed */
+  const isLessonCompleted = (courseSlug, lessonSlug) => {
+    return (
+      courseProgress?.[courseSlug]?.completedLessons?.includes(
+        lessonSlug
+      ) || false
+    );
+  };
+
+  /** Get completion percentage */
+  const getCourseCompletion = (courseSlug, totalLessons) => {
+    const completed =
+      courseProgress?.[courseSlug]?.completedLessons || [];
+    if (!totalLessons) return 0;
+    return Math.round((completed.length / totalLessons) * 100);
+  };
 
   // -----------------------------------------------------
   // PROVIDER
@@ -274,6 +344,10 @@ export const UserProvider = ({ children }) => {
         generatedProjects,
         saveGeneratedProject,
         loadGeneratedProjects,
+        completeLessonFS,
+        isLessonCompleted,
+        getCourseCompletion,
+
       }}
     >
       {children}
