@@ -51,6 +51,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Podcast from "./pages/Podcast";
 import Community from "./pages/Community";
 import StudentProjects from "./pages/StudentProjects";
+import StudentProjectDetail from "./pages/StudentProjectDetail";
 import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
