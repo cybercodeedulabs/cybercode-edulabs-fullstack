@@ -1,6 +1,8 @@
 // src/pages/Projects.jsx
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import AIProjectGeneratorModal from "../components/AIProjectGeneratorModal";
 
 // ===============================
 //  CYBERCODE OFFICIAL PROJECTS
@@ -60,27 +62,41 @@ const officialProjects = [
 //  MAIN PAGE
 // ===============================
 export default function Projects() {
+  const [showGenerator, setShowGenerator] = useState(false);
+
   return (
     <section className="max-w-7xl mx-auto px-6 py-20 text-gray-800 dark:text-gray-200">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+        <div>
+          <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-2">
+            Real-Time Projects Showcase
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl text-lg leading-relaxed">
+            Explore <span className="font-semibold">Cybercode EduLabs</span>
+            ’ official projects and discover student creations across AI, Cloud,
+            DevOps, Security, and Full-Stack Engineering.
+          </p>
+        </div>
 
-      {/* ===========================
-          HEADER
-      ============================ */}
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
-          Real-Time Projects Showcase
-        </h1>
+        <div className="flex gap-3 items-center">
+          <button
+            onClick={() => setShowGenerator(true)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
+          >
+            Generate Project (AI)
+          </button>
 
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">
-          Explore <span className="font-semibold">Cybercode EduLabs</span>
-          ’ official projects and discover student creations across AI, Cloud,
-          DevOps, Security, and Full-Stack Engineering.
-        </p>
+          <Link
+            to="/student-projects"
+            className="px-4 py-2 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-indigo-600 rounded-lg shadow-sm hover:opacity-95 transition"
+          >
+            Student Projects
+          </Link>
+        </div>
       </div>
 
-      {/* ===========================
-          OFFICIAL PROJECT GRID
-      ============================ */}
+      {/* OFFICIAL PROJECT GRID */}
       <h2 className="text-2xl font-bold text-indigo-500 dark:text-indigo-400 mb-6">
         ⭐ Cybercode Official Projects
       </h2>
@@ -147,9 +163,7 @@ export default function Projects() {
         ))}
       </div>
 
-      {/* ===========================
-          STUDENT PROJECTS SHOWCASE
-      ============================ */}
+      {/* STUDENT PROJECTS SHOWCASE CTA */}
       <div className="mb-20 text-center">
         <h2 className="text-2xl font-bold text-indigo-500 dark:text-indigo-400 mb-4">
           🎓 Student Project Showcase
@@ -167,9 +181,7 @@ export default function Projects() {
         </Link>
       </div>
 
-      {/* ===========================
-          CTA TO DASHBOARD PROJECTS
-      ============================ */}
+      {/* CTA TO DASHBOARD PROJECTS */}
       <div className="text-center mt-10">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
           Want to Build Your Own Projects?
@@ -189,15 +201,16 @@ export default function Projects() {
         </Link>
       </div>
 
-      {/* ===========================
-          FOOTER NOTE
-      ============================ */}
+      {/* FOOTER NOTE */}
       <div className="text-center mt-16">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           🚀 More live, production-ready projects launching soon under  
           <span className="font-semibold"> Cybercode Real-Time Labs</span>.
         </p>
       </div>
+
+      {/* AI Project Generator Modal */}
+      <AIProjectGeneratorModal open={showGenerator} onClose={() => setShowGenerator(false)} />
     </section>
   );
 }

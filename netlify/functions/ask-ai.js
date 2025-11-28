@@ -1,6 +1,6 @@
 // netlify/functions/ask-ai.js
 // Stable + optimized GROQ backend
-// Features: model routing, caching, per-user rate-limit, retry, structured roadmap support.
+// Features: model routing (chat / roadmap / project), caching, per-user rate-limit, retry, structured roadmap support.
 
 const crypto = require("crypto");
 
@@ -82,6 +82,7 @@ export async function handler(event) {
       userStats = {},
       mode = "chat",
       user: clientUser = null,
+      projectSpec = null, // optional extra for project generation
     } = body;
 
     // check API key
@@ -106,15 +107,26 @@ export async function handler(event) {
       content: (m.content || m.text || "").slice(0, 800),
     }));
 
-    // models
+    // Model routing defaults (overridable via env)
     const chatModel = process.env.GROQ_MODEL_CHAT || "llama-3.1-8b-instant";
     const roadmapModel = process.env.GROQ_MODEL_ROADMAP || "llama-3.1-70b-versatile";
+    const projectModel = process.env.GROQ_MODEL_PROJECT || process.env.GROQ_MODEL_CHAT || chatModel;
 
-    const model = mode === "roadmap" ? roadmapModel : chatModel;
-    const maxTokens = mode === "roadmap" ? 950 : 400;
-    const temperature = mode === "roadmap" ? 0.2 : 0.05;
+    // set model and params by mode
+    let model = chatModel;
+    let maxTokens = 400;
+    let temperature = 0.05;
+    if (mode === "roadmap") {
+      model = roadmapModel;
+      maxTokens = 950;
+      temperature = 0.2;
+    } else if (mode === "project") {
+      model = projectModel;
+      maxTokens = 700;
+      temperature = 0.15;
+    }
 
-    // Proper system prompts
+    // Build system prompt based on mode
     const systemPrompt =
       mode === "roadmap"
         ? `
@@ -146,6 +158,41 @@ ${JSON.stringify(userGoals)}
 USER PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
+        : mode === "project"
+        ? `
+You are Cybercode EduLabs Project Designer.
+
+Given the user's goals and optional projectSpec, produce a concise, structured project brief with the following sections:
+
+## Project Title
+A short, marketable title.
+
+## Summary
+1-2 sentence summary.
+
+## Scope & Objectives
+- Bulleted scope items and explicit objectives.
+
+## Tech Stack
+- Primary technologies and why.
+
+## Milestones (3)
+- Week-by-week or milestone-by-milestone tasks with estimated effort.
+
+## Deliverables & Acceptance Criteria
+- What must be delivered and how success will be measured.
+
+## Quick Setup Steps
+- 5 concise steps to get a minimal working demo.
+
+Use the user's goals and persona to make the project relevant. Return ONLY markdown with the sections above. Keep output concise and practical.
+USER GOALS:
+${JSON.stringify(userGoals)}
+PROJECT_SPEC:
+${JSON.stringify(projectSpec || {})}
+USER_PROFILE:
+${JSON.stringify(userStats)}
+        `.trim()
         : `
 You are Cybercode EduLabs AI Advisor.
 Reply in clean markdown. Keep replies crisp unless user asks deep detail.
@@ -164,6 +211,7 @@ Ask for clarification when question unclear.
       personaScores,
       userStats,
       mode,
+      projectSpec,
     };
 
     const cacheKey = hashPayload(payloadForCache);

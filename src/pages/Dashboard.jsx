@@ -17,16 +17,12 @@ import GoalRoadmap from "../components/GoalRoadmap";
 // lazy chat assistant (floating)
 const AIAssistantLazy = lazy(() => import("../components/AIAssistant"));
 
-/* ---------------------------
-   Small helper UI components
-   - ProgressRibbon : small horizontal metrics bar
-   - QuickActions    : set of action buttons under hero
-   - CollapsibleCard : wrapper with collapse
-   - AIMentorPanel  : compact AI suggestions (uses userGoals & persona)
-----------------------------*/
+/* small helper components are kept inline for clarity (ProgressRibbon, QuickActions, CollapsibleCard, AIMentorPanel)
+   — these are unchanged from the earlier version you've already reviewed and purposely kept compact here to
+   reduce duplication across codebase when copy-pasting into your repo. If you prefer, split them into their own files.
+*/
 
 function ProgressRibbon({ stats = {} }) {
-  // stats: { streakDays, weeklyPct, readinessPct }
   const streak = stats.streakDays || 0;
   const weekly = Math.round(stats.weeklyPct || 0);
   const ready = Math.round(stats.readinessPct || 0);
@@ -63,33 +59,13 @@ function ProgressRibbon({ stats = {} }) {
   );
 }
 
-function QuickActions({ onAction = () => {} }) {
+function QuickActions({ onAction = () => { } }) {
   return (
     <div className="mt-4 flex gap-3 flex-wrap">
-      <button
-        onClick={() => onAction("resume")}
-        className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:opacity-95 transition"
-      >
-        ▶ Resume Last Lesson
-      </button>
-
-      <button
-        onClick={() => onAction("practice")}
-        className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition"
-      >
-        📝 Start Practice Exam
-      </button>
-
-      <button
-        onClick={() => onAction("project")}
-        className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition"
-      >
-        ⚙ Start Project
-      </button>
-
-      <Link to="/cloud" className="px-4 py-2 rounded-lg bg-emerald-600 text-white shadow-sm hover:opacity-95 transition">
-        ☁️ Open Cloud Console
-      </Link>
+      <button onClick={() => onAction("resume")} className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:opacity-95 transition">▶ Resume Last Lesson</button>
+      <button onClick={() => onAction("practice")} className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition">📝 Start Practice Exam</button>
+      <button onClick={() => onAction("project")} className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition">⚙ Start Project</button>
+      <Link to="/cloud" className="px-4 py-2 rounded-lg bg-emerald-600 text-white shadow-sm hover:opacity-95 transition">☁️ Open Cloud Console</Link>
     </div>
   );
 }
@@ -104,20 +80,12 @@ function CollapsibleCard({ title, children, defaultOpen = true, hint }) {
           {hint && <div className="text-xs text-gray-500 dark:text-gray-400">{hint}</div>}
         </div>
 
-        <button
-          onClick={() => setOpen((s) => !s)}
-          className="px-3 py-1 text-sm rounded border bg-white/0 dark:bg-transparent"
-        >
+        <button onClick={() => setOpen((s) => !s)} className="px-3 py-1 text-sm rounded border bg-white/0 dark:bg-transparent">
           {open ? "Collapse" : "Open"}
         </button>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }}
-        transition={{ duration: 0.28 }}
-        style={{ overflow: "hidden" }}
-      >
+      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }} transition={{ duration: 0.28 }} style={{ overflow: "hidden" }}>
         <div className="pt-2">{children}</div>
       </motion.div>
     </div>
@@ -125,19 +93,15 @@ function CollapsibleCard({ title, children, defaultOpen = true, hint }) {
 }
 
 function AIMentorPanel({ userGoals, persona, onSuggest }) {
-  // lightweight panel that shows 2-3 AI-generated next steps (placeholders; in future can call ask-ai)
   const suggestions = useMemo(() => {
-    // derive a few suggestions from goals/persona
     const s = [];
     if (userGoals?.targetRole) {
       s.push(`Complete a focused module on ${userGoals.targetRole} fundamentals (2 weeks)`);
     } else {
       s.push("Set your career goal to get a personalized roadmap.");
     }
-
     s.push("Finish one hands-on project (infra + app) this month.");
     s.push("Take a timed practice exam to benchmark progress.");
-
     return s;
   }, [userGoals]);
 
@@ -153,12 +117,7 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
               <li key={i} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
                 <div className="flex-1 text-gray-700 dark:text-gray-200">{t}</div>
                 <div className="ml-3">
-                  <button
-                    onClick={() => onSuggest && onSuggest(t)}
-                    className="text-xs px-2 py-1 bg-indigo-600 text-white rounded"
-                  >
-                    Do
-                  </button>
+                  <button onClick={() => onSuggest && onSuggest(t)} className="text-xs px-2 py-1 bg-indigo-600 text-white rounded">Do</button>
                 </div>
               </li>
             ))}
@@ -183,7 +142,6 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
 /* ---------------------------
    Main Dashboard page
 ----------------------------*/
-
 export default function Dashboard() {
   const {
     user,
@@ -198,32 +156,19 @@ export default function Dashboard() {
     userGoals,
   } = useUser();
 
-  const topPersona =
-    typeof getTopPersona === "function"
-      ? getTopPersona()
-      : topPersonaFromScores(personaScores || {});
-
+  const topPersona = typeof getTopPersona === "function" ? getTopPersona() : topPersonaFromScores(personaScores || {});
   const normalized = normalizePersonaScores(personaScores || {});
+  const humanName = user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
+  const sourceCourseProgress = courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
 
-  const humanName =
-    user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
-
-  const sourceCourseProgress =
-    courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
-
-  // derive simple stats for ribbon
-  const ribbonStats = useMemo(() => {
-    return {
-      streakDays: userStats?.streakDays || 3,
-      weeklyPct: userStats?.weeklyPct || 42,
-      readinessPct: userStats?.readinessPct || 68,
-    };
-  }, [userStats]);
+  const ribbonStats = useMemo(() => ({
+    streakDays: userStats?.streakDays || 3,
+    weeklyPct: userStats?.weeklyPct || 42,
+    readinessPct: userStats?.readinessPct || 68,
+  }), [userStats]);
 
   const handleQuickAction = (act) => {
-    // small client-side handlers (expand later)
     if (act === "resume") {
-      // navigate to last active course if available
       const last = enrolledCourses[0];
       if (last) window.location.href = `/courses/${last}`;
       else window.location.href = "/courses";
@@ -236,16 +181,13 @@ export default function Dashboard() {
 
   const handleMentorAction = (cmd) => {
     if (cmd === "ask_ai") {
-      // show floating assistant quickly (it is loaded globally on app)
       const e = new CustomEvent("open-ai-assistant", { detail: { focus: true } });
       window.dispatchEvent(e);
     } else {
-      // fallback: treat as navigation
       console.log("mentor action:", cmd);
     }
   };
 
-  // Listen for dashboard-scroll-to events (sidebar triggers)
   useEffect(() => {
     const handler = (e) => {
       const target = e?.detail?.target;
@@ -269,7 +211,6 @@ export default function Dashboard() {
                 Your personalized learning engine is ready. Continue where you left off or ask your AI Career Mentor for a custom plan.
               </p>
 
-              {/* quick actions */}
               <div className="mt-4 md:mt-6">
                 <QuickActions onAction={handleQuickAction} />
               </div>
@@ -291,7 +232,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* progress ribbon */}
         <ProgressRibbon stats={ribbonStats} />
       </div>
 
@@ -302,7 +242,7 @@ export default function Dashboard() {
 
       {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT: Roadmap, Courses, Projects */}
+        {/* LEFT */}
         <div className="lg:col-span-2 space-y-6">
           <div id="roadmap">
             <CollapsibleCard title="Personalized Roadmap" hint="A concise month-by-month plan">
@@ -344,25 +284,48 @@ export default function Dashboard() {
             </div>
 
             <div id="projects">
-              <CollapsibleCard title="📁 My Projects" hint="Track your project work" defaultOpen={false}>
-                {projects && projects.length ? (
+              <CollapsibleCard
+                title="📁 My Projects"
+                hint="AI-generated & student-created projects"
+                defaultOpen={false}
+              >
+                {generatedProjects && generatedProjects.length ? (
                   <ul className="space-y-3">
-                    {projects.map((p) => (
-                      <li key={p} className="flex items-center justify-between">
-                        <div>{p}</div>
-                        <Link to={`/projects/${p}`} className="text-indigo-600 hover:underline text-sm">Open →</Link>
+                    {generatedProjects.map((proj) => (
+                      <li
+                        key={proj.id}
+                        className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
+                        <div>
+                          <div className="font-semibold text-sm text-indigo-600 dark:text-indigo-300">
+                            {proj.title}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(proj.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        <Link
+                          to={`/student-projects/${proj.id}`}
+                          className="text-indigo-600 hover:underline text-sm"
+                        >
+                          Open →
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-gray-600">Your project progress will appear here once you start learning.</p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No projects yet. Generate your first AI project using the dashboard.
+                  </p>
                 )}
               </CollapsibleCard>
             </div>
+
           </div>
         </div>
 
-        {/* RIGHT: persona, AI mentor, access */}
+        {/* RIGHT */}
         <div className="space-y-6">
           <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center justify-between">
@@ -413,22 +376,14 @@ export default function Dashboard() {
             <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <h4 className="font-semibold text-indigo-600">🎓 Certification Access</h4>
               <div className="mt-2">
-                {hasCertificationAccess ? (
-                  <div className="text-green-600">Access granted.</div>
-                ) : (
-                  <Link to="/payment?type=certification" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Unlock Certification</Link>
-                )}
+                {hasCertificationAccess ? <div className="text-green-600">Access granted.</div> : <Link to="/payment?type=certification" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Unlock Certification</Link>}
               </div>
             </motion.div>
 
             <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <h4 className="font-semibold text-indigo-600">🖥️ 1-Year Server Access</h4>
               <div className="mt-2">
-                {hasServerAccess ? (
-                  <div className="text-green-600">Server Access Active.</div>
-                ) : (
-                  <Link to="/payment?type=server" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Activate Server Access</Link>
-                )}
+                {hasServerAccess ? <div className="text-green-600">Server Access Active.</div> : <Link to="/payment?type=server" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Activate Server Access</Link>}
               </div>
             </motion.div>
 
@@ -443,9 +398,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* floating assistant is loaded app-wide; we keep a lazy import usage for the dashboard */}
+      {/* prefetch assistant */}
       <div style={{ display: "none" }}>
-        {/* keep suspense import to prefetch code-split chunk without rendering */}
         <Suspense fallback={null}>
           <AIAssistantLazy embedMode="floating" />
         </Suspense>

@@ -1,31 +1,66 @@
-// src/pages/StudentProjects.jsx
-import React from "react";
+import { useUser } from "../contexts/UserContext";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 export default function StudentProjects() {
+  const { generatedProjects } = useUser();
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-16">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-        Student Projects
+    <section className="max-w-6xl mx-auto px-6 py-16">
+      <h1 className="text-3xl font-bold text-indigo-600 mb-8">
+        Student Project Showcase
       </h1>
 
-      <p className="text-gray-600 dark:text-gray-300 max-w-3xl mb-10">
-        A showcase of hands-on research, cloud architecture builds, cybersecurity
-        implementations, automation workflows, and real-world solutions
-        created by Cybercode EduLabs learners.
-      </p>
+      {/* AI PROJECTS SECTION */}
+      <h2 className="text-xl font-semibold text-indigo-500 mb-4">
+        🔥 AI-Generated Projects (from Dashboard)
+      </h2>
 
-      {/* Grid (empty state for now) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {!generatedProjects.length && (
+        <p className="text-gray-500 mb-10">
+          No AI-generated projects yet. Create one from your dashboard →
+        </p>
+      )}
 
-        <div className="p-6 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-center shadow-sm">
-          <div className="h-36 bg-gray-200 dark:bg-gray-700 rounded-md mb-4"></div>
-          <h3 className="text-lg font-semibold">Projects Coming Soon</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Our students are currently building innovative real-world solutions.
-          </p>
-        </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        {generatedProjects.map((p) => (
+          <motion.div
+            key={p.id}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
+          >
+            <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
+            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">{p.description}</p>
 
+            <div className="mt-3 text-xs text-gray-500">
+              {p.tech_stack?.length ? (
+                <div>Tech: {p.tech_stack.join(", ")}</div>
+              ) : null}
+            </div>
+
+            <div className="mt-4">
+              <Link
+                to={`/student-projects/${p.id}`}
+                className="text-sm text-indigo-600 hover:underline"
+              >
+                View Details →
+              </Link>
+            </div>
+          </motion.div>
+        ))}
       </div>
-    </div>
+
+      {/* CTA */}
+      <div className="text-center mt-12">
+        <Link
+          to="/dashboard#projects"
+          className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700"
+        >
+          Create a New AI Project →
+        </Link>
+      </div>
+    </section>
   );
 }
