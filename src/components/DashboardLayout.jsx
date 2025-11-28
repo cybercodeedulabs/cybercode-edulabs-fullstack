@@ -1,5 +1,5 @@
 // src/components/DashboardLayout.jsx
-import React from "react";
+import React, { memo } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
@@ -20,4 +20,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout;
+export default memo(DashboardLayout);

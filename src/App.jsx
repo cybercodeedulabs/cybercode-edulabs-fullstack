@@ -57,6 +57,15 @@ import CertificatePage from "./pages/CertificatePage";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+  const [showAI, setShowAI] = useState(false);
+
+    useEffect(() => {
+    setTimeout(() => setShowAI(true), 300); // ✅ safe delay avoids memory spike
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -202,7 +211,7 @@ function App() {
 
         <CookieBanner />
         <Footer />
-        <AIAssistant /> {/* floating assistant available site-wide */}
+        {showAI && <AIAssistant />} {/* floating assistant available site-wide */}
       </div>
     </Router>
   );

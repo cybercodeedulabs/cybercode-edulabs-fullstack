@@ -1,5 +1,5 @@
 // src/components/AIJobRoadmap.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useUser } from "../contexts/UserContext";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -17,6 +17,8 @@ export default function AIJobRoadmap({ goals }) {
 
   const cacheKey = user ? `${LOCAL_KEY_PREFIX}${user.uid}` : LOCAL_KEY_PREFIX + "anon";
 
+  const loadedOnce = useRef(false); // ✅ Prevent duplicate triggers
+
   const cleanMarkdown = (text) => {
     try {
       return DOMPurify.sanitize(marked.parse(text || ""), { USE_PROFILES: { html: true } });
@@ -26,7 +28,9 @@ export default function AIJobRoadmap({ goals }) {
   };
 
   useEffect(() => {
-    if (!goals) return;
+    if (!goals || loadedOnce.current) return;
+    loadedOnce.current = true; // 🛑 prevents multiple executions
+
     try {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
@@ -37,6 +41,7 @@ export default function AIJobRoadmap({ goals }) {
         }
       }
     } catch {}
+
     fetchRoadmap();
   }, [goals]);
 
@@ -86,7 +91,6 @@ Do NOT wrap inside code blocks.
       const data = await res.json();
 
       if (res.status === 429 || data?.error?.toLowerCase?.().includes("rate")) {
-        // if rate-limited and we have cached localStorage, keep it; else show message
         const raw = localStorage.getItem(cacheKey);
         if (raw) {
           const parsed = JSON.parse(raw);
@@ -136,6 +140,7 @@ Do NOT wrap inside code blocks.
     for (const rawLine of lines) {
       const line = rawLine.trim();
       if (!line) continue;
+
       if (/^#+\s*Outcome/i.test(line)) {
         section = "summary";
         continue;
@@ -171,7 +176,7 @@ Do NOT wrap inside code blocks.
     }
     if (currentMonth) months.push(currentMonth);
 
-    return { summary: summary || "", months: months || [], projects: projects || [], actions: actions || [] };
+    return { summary, months, projects, actions };
   }, [aiText]);
 
   return (
@@ -181,10 +186,14 @@ Do NOT wrap inside code blocks.
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
             <Star /> Outcome Summary
           </h2>
-          <div className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: cleanMarkdown(parsed.summary) }} />
+          <div
+            className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: cleanMarkdown(parsed.summary) }}
+          />
         </div>
       )}
 
+      {/* Months */}
       {Array.isArray(parsed.months) && parsed.months.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -200,6 +209,7 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
+      {/* Projects */}
       {Array.isArray(parsed.projects) && parsed.projects.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -216,9 +226,12 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
+      {/* Actions */}
       {Array.isArray(parsed.actions) && parsed.actions.length > 0 && (
         <div>
-          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">🚀 Next 5 Action Items</h2>
+          <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+            🚀 Next 5 Action Items
+          </h2>
 
           <div className="flex flex-wrap gap-2 mt-3">
             {parsed.actions.map((a, i) => (
@@ -238,6 +251,7 @@ Do NOT wrap inside code blocks.
         <button
           onClick={() => {
             localStorage.removeItem(cacheKey);
+            loadedOnce.current = false; // allow regeneration again
             fetchRoadmap();
           }}
           className="px-4 py-2 bg-white dark:bg-gray-900 border rounded-lg shadow"
@@ -249,7 +263,7 @@ Do NOT wrap inside code blocks.
   );
 }
 
-/* MONTH CARD component */
+/* MONTH CARD */
 function MonthCard({ month }) {
   const [open, setOpen] = useState(true);
   return (
