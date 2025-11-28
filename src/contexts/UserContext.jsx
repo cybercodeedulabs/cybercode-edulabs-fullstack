@@ -256,9 +256,11 @@ export const UserProvider = ({ children }) => {
    */
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     try {
-      // Update local state immediately
       setCourseProgress((prev) => {
-        const existing = prev[courseSlug] || { completedLessons: [] };
+        const existing = prev[courseSlug] || {
+          completedLessons: [],
+          currentLessonIndex: 0,
+        };
 
         const updatedLessons = Array.from(
           new Set([...existing.completedLessons, lessonSlug])
@@ -266,28 +268,32 @@ export const UserProvider = ({ children }) => {
 
         return {
           ...prev,
-          [courseSlug]: { completedLessons: updatedLessons },
+          [courseSlug]: {
+            completedLessons: updatedLessons,
+            currentLessonIndex: updatedLessons.length, // ✅ REQUIRED
+            updatedAt: new Date().toISOString(),
+          },
         };
       });
 
-      // Persist to Firestore
       if (user?.uid) {
         const ref = doc(db, "users", user.uid);
-
-        const previousLessons =
-          courseProgress?.[courseSlug]?.completedLessons || [];
-
-        const updatedFromFS = Array.from(
-          new Set([...previousLessons, lessonSlug])
-        );
-
         await setDoc(
           ref,
           {
             courseProgress: {
               ...(courseProgress || {}),
               [courseSlug]: {
-                completedLessons: updatedFromFS,
+                completedLessons: [
+                  ...new Set([
+                    ...(courseProgress?.[courseSlug]?.completedLessons || []),
+                    lessonSlug,
+                  ]),
+                ],
+                currentLessonIndex:
+                  (courseProgress?.[courseSlug]?.completedLessons?.length || 0) +
+                  1, // ✅ REQUIRED
+                updatedAt: new Date().toISOString(),
               },
             },
           },
@@ -298,6 +304,7 @@ export const UserProvider = ({ children }) => {
       console.error("completeLessonFS failed:", err);
     }
   };
+
 
   /** Check if a lesson is completed */
   const isLessonCompleted = (courseSlug, lessonSlug) => {
