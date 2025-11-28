@@ -11,6 +11,43 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  /** ---------------------------------------
+   *  Normalizes AI JSON → camelCase for UI
+   ---------------------------------------- */
+  const normalizeProject = (raw) => {
+    if (!raw || typeof raw !== "object") return {};
+
+    return {
+      id: raw.id || crypto.randomUUID(),
+
+      title: raw.title || raw.project_title || "Untitled Project",
+
+      description:
+        raw.description ||
+        raw.summary ||
+        raw["Project Summary"] ||
+        "No description provided.",
+
+      techStack:
+        raw.techStack ||
+        raw.tech_stack ||
+        raw["tech-stack"] ||
+        [],
+
+      difficulty: raw.difficulty || raw.level || "Intermediate",
+
+      steps:
+        raw.steps ||
+        raw.tasks ||
+        raw.milestones ||
+        raw["quick_steps"] ||
+        [],
+
+      // timestamp normalization
+      timestamp: Date.now(),
+    };
+  };
+
   const generateProject = async () => {
     if (!topic.trim()) return;
     setLoading(true);
@@ -25,7 +62,7 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
           - title
           - description
           - tech_stack (array)
-          - difficulty (Beginner/Intermediate/Advanced)
+          - difficulty
           - tasks (5 items)
           Topic: ${topic}`,
           user,
@@ -35,11 +72,18 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content || "{}";
 
-      const parsed = JSON.parse(text);
+      let parsed = {};
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        console.error("JSON parse failed, raw text:", text);
+      }
+
+      // ⭐ FIX: Normalize shape for UI
+      const finalProject = normalizeProject(parsed);
 
       const saved = await saveGeneratedProject({
-        ...parsed,
-        createdAt: Date.now(),
+        ...finalProject,
         type: "ai",
       });
 
@@ -68,7 +112,9 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb size={22} className="text-indigo-500" />
-          <h2 className="text-xl font-bold text-indigo-600">AI Project Generator</h2>
+          <h2 className="text-xl font-bold text-indigo-600">
+            AI Project Generator
+          </h2>
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">
@@ -94,7 +140,9 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
         {generated && (
           <div className="mt-6 p-4 rounded-xl bg-indigo-50 dark:bg-gray-800 border border-indigo-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-indigo-600">{generated.title}</h3>
+            <h3 className="text-lg font-semibold text-indigo-600">
+              {generated.title}
+            </h3>
             <p className="text-sm mt-1 text-gray-700 dark:text-gray-300">
               {generated.description}
             </p>

@@ -1,6 +1,7 @@
 // netlify/functions/ask-ai.js
 // Stable + optimized GROQ backend
-// Features: model routing (chat / roadmap / project), caching, per-user rate-limit, retry, structured roadmap support.
+// Features: model routing (chat / roadmap / project), caching, per-user rate-limit, retry,
+// structured roadmap support, and FIXED project-mode JSON output.
 
 const crypto = require("crypto");
 
@@ -22,7 +23,7 @@ function userKeyFromEvent(event) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
     if (body.user?.uid) return `uid:${body.user.uid}`;
-  } catch {}
+  } catch (_) {}
 
   const h = event.headers || {};
   return (
@@ -40,6 +41,7 @@ function allowRequestForKey(key) {
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
 
   const filtered = arr.filter((t) => t > cutoff);
+
   if (filtered.length >= RATE_LIMIT_MAX_REQUESTS) {
     userRequestLog.set(key, filtered);
     return false;
@@ -82,7 +84,7 @@ export async function handler(event) {
       userStats = {},
       mode = "chat",
       user: clientUser = null,
-      projectSpec = null, // optional extra for project generation
+      projectSpec = null,
     } = body;
 
     // check API key
@@ -107,15 +109,15 @@ export async function handler(event) {
       content: (m.content || m.text || "").slice(0, 800),
     }));
 
-    // Model routing defaults (overridable via env)
+    // Model routing defaults
     const chatModel = process.env.GROQ_MODEL_CHAT || "llama-3.1-8b-instant";
     const roadmapModel = process.env.GROQ_MODEL_ROADMAP || "llama-3.1-70b-versatile";
-    const projectModel = process.env.GROQ_MODEL_PROJECT || process.env.GROQ_MODEL_CHAT || chatModel;
+    const projectModel = process.env.GROQ_MODEL_PROJECT || chatModel;
 
-    // set model and params by mode
     let model = chatModel;
     let maxTokens = 400;
     let temperature = 0.05;
+
     if (mode === "roadmap") {
       model = roadmapModel;
       maxTokens = 950;
@@ -126,7 +128,7 @@ export async function handler(event) {
       temperature = 0.15;
     }
 
-    // Build system prompt based on mode
+    // SYSTEM PROMPTS
     const systemPrompt =
       mode === "roadmap"
         ? `
@@ -160,47 +162,48 @@ ${JSON.stringify(userStats)}
         `.trim()
         : mode === "project"
         ? `
-You are Cybercode EduLabs Project Designer.
+You are Cybercode EduLabs Project Generator.
 
-Given the user's goals and optional projectSpec, produce a concise, structured project brief with the following sections:
+Return ONLY VALID JSON.
+NO markdown.
+NO code fences.
+NO headings.
+NO explanations.
+JSON ONLY.
 
-## Project Title
-A short, marketable title.
+Use EXACT structure:
 
-## Summary
-1-2 sentence summary.
+{
+  "title": "",
+  "description": "",
+  "tech_stack": [],
+  "difficulty": "",
+  "tasks": []
+}
 
-## Scope & Objectives
-- Bulleted scope items and explicit objectives.
+Rules:
+- "difficulty" must be one of: "Beginner", "Intermediate", "Advanced".
+- "tasks" must contain exactly 5 actionable tasks.
+- "tech_stack" must be an array.
 
-## Tech Stack
-- Primary technologies and why.
-
-## Milestones (3)
-- Week-by-week or milestone-by-milestone tasks with estimated effort.
-
-## Deliverables & Acceptance Criteria
-- What must be delivered and how success will be measured.
-
-## Quick Setup Steps
-- 5 concise steps to get a minimal working demo.
-
-Use the user's goals and persona to make the project relevant. Return ONLY markdown with the sections above. Keep output concise and practical.
 USER GOALS:
 ${JSON.stringify(userGoals)}
+
 PROJECT_SPEC:
 ${JSON.stringify(projectSpec || {})}
+
 USER_PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
         : `
 You are Cybercode EduLabs AI Advisor.
-Reply in clean markdown. Keep replies crisp unless user asks deep detail.
-Use courseContext for course questions.
-Use goals/persona/stats for guidance.
-Ask for clarification when question unclear.
-          `.trim();
+Reply in clean markdown.
+Be crisp unless deep detail is asked.
+Use courseContext if relevant.
+Use userGoals/persona/stats for guidance.
+        `.trim();
 
+    // Cache payload
     const payloadForCache = {
       model,
       systemPrompt,
@@ -229,7 +232,7 @@ Ask for clarification when question unclear.
       };
     }
 
-    // Build message stack
+    // Build message array for Groq
     const groqMessages = [
       { role: "system", content: systemPrompt },
       ...trimmedMsgs,
@@ -244,7 +247,7 @@ Ask for clarification when question unclear.
       top_p: 0.95,
     };
 
-    // perform fetch with retry
+    // Helper fetch
     const fetchGroq = async () => {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -259,6 +262,8 @@ Ask for clarification when question unclear.
     };
 
     let result = await fetchGroq();
+
+    // soft retry on 429
     if (!result.ok && result.status === 429) {
       await new Promise((r) => setTimeout(r, 1100));
       result = await fetchGroq();
@@ -285,9 +290,11 @@ Ask for clarification when question unclear.
       .replace(/\n{3,}/g, "\n\n")
       .trim();
 
+    // Save to cache
     inMemoryCache.set(cacheKey, { ts: now, value: out });
     if (Math.random() < 0.04) cleanCache();
 
+    // Respond
     return {
       statusCode: 200,
       body: JSON.stringify({
