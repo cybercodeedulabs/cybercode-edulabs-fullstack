@@ -7,6 +7,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PERSONAS_LIST } from "../utils/personaEngine";
+import { Camera } from "lucide-react";
 
 export default function EditProfile() {
   const { user, setUser, getTopPersona } = useUser();
@@ -24,8 +25,9 @@ export default function EditProfile() {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Prefill form with existing user data
+  // Prefill existing user data
   useEffect(() => {
     if (user) {
       setForm({
@@ -42,11 +44,10 @@ export default function EditProfile() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   // ==========================
-  // 📌 Upload Profile Photo
+  // 📸 Upload Profile Photo
   // ==========================
   const handlePhotoUpload = async (e) => {
     if (!user) return;
-
     const file = e.target.files[0];
     if (!file) return;
 
@@ -57,27 +58,27 @@ export default function EditProfile() {
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
-      // Update local form
       setForm((prev) => ({ ...prev, photo: url }));
 
-      // Update Firestore immediately
       await setDoc(
         doc(db, "users", user.uid),
         { photo: url, updatedAt: new Date().toISOString() },
         { merge: true }
       );
-    } catch (error) {
-      console.error("Photo upload failed:", error);
+    } catch (err) {
+      console.error("Photo upload failed:", err);
     }
 
     setUploading(false);
   };
 
   // ==========================
-  // 📌 Save Profile
+  // 💾 SAVE PROFILE
   // ==========================
   const saveProfile = async () => {
     if (!user) return;
+
+    setSaving(true);
 
     const refUser = doc(db, "users", user.uid);
 
@@ -95,77 +96,89 @@ export default function EditProfile() {
         { merge: true }
       );
 
-      // Update local context
       setUser({ ...user, ...form });
 
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
     } catch (err) {
       console.error("Profile update failed:", err);
     }
+
+    setSaving(false);
   };
 
-  // Profile Completion %
+  // Completion %
   const fields = ["name", "phone", "role", "about", "photo"];
   const filled = fields.filter((f) => form[f] && form[f] !== "").length;
   const percent = Math.round((filled / fields.length) * 100);
 
   return (
     <motion.div
-      className="min-h-screen px-6 py-14 bg-gray-100 dark:bg-gray-900"
+      className="min-h-screen px-6 py-14 bg-gray-100 dark:bg-gray-900 flex justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl">
+      <div className="w-full max-w-3xl bg-white dark:bg-gray-800 p-10 rounded-2xl shadow-xl">
 
-        {/* Header */}
-        <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-6">
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-8">
           Edit Your Profile
         </h1>
 
-        {/* Avatar */}
-        <div className="flex flex-col items-center mb-8">
-          <img
-            src={form.photo}
-            className="w-28 h-28 rounded-full object-cover border-4 border-indigo-500 dark:border-indigo-400 shadow-md"
-          />
+        {/* Avatar Section */}
+        <div className="flex flex-col items-center mb-10">
+          <div className="relative">
+            <img
+              src={form.photo}
+              className="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 dark:border-indigo-400 shadow-lg"
+            />
 
-          <label className="mt-4 text-sm font-medium bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-            {uploading ? "Uploading..." : "Change Photo"}
-            <input type="file" hidden onChange={handlePhotoUpload} />
-          </label>
+            <label
+              className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition"
+              title="Upload new photo"
+            >
+              <Camera size={18} />
+              <input type="file" hidden onChange={handlePhotoUpload} />
+            </label>
+          </div>
+
+          {uploading && (
+            <p className="text-sm text-indigo-500 mt-3">Uploading...</p>
+          )}
         </div>
 
-        {/* Persona Block */}
+        {/* Persona Display */}
         {topPersona && (
-          <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-4 rounded-xl mb-8">
+          <div className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 p-4 rounded-xl mb-8 text-center">
             <p className="text-sm text-indigo-500 font-semibold">
               Your Learning Persona
             </p>
-            <p className="text-lg font-bold mt-1 text-gray-900 dark:text-gray-100">
+            <p className="text-xl font-bold mt-2 text-gray-900 dark:text-gray-100">
               {PERSONAS_LIST[topPersona.persona]}
             </p>
           </div>
         )}
 
-        {/* FORM FIELDS */}
-        <div className="grid grid-cols-1 gap-5">
+        {/* FORM */}
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <label className="text-sm font-medium">Full Name</label>
             <input
               name="name"
               value={form.name}
               onChange={updateField}
-              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-md"
+              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Phone</label>
+            <label className="text-sm font-medium">Phone Number</label>
             <input
               name="phone"
               value={form.phone}
               onChange={updateField}
-              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-md"
+              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -175,7 +188,7 @@ export default function EditProfile() {
               name="role"
               value={form.role}
               onChange={updateField}
-              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-md"
+              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
@@ -185,31 +198,34 @@ export default function EditProfile() {
               name="about"
               value={form.about}
               onChange={updateField}
-              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-md min-h-[120px]"
+              className="w-full border dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg min-h-[120px] focus:ring-2 focus:ring-indigo-500"
             />
           </div>
         </div>
 
-        {/* Profile Meter */}
-        <div className="mt-6">
-          <p className="text-sm mb-1 text-gray-600 dark:text-gray-400">
+        {/* Completion Meter */}
+        <div className="mt-8">
+          <p className="text-sm mb-2 text-gray-600 dark:text-gray-400">
             Profile Completion
           </p>
+
           <div className="w-full bg-gray-200 dark:bg-gray-700 h-3 rounded-full">
             <div
               className="bg-indigo-600 h-3 rounded-full transition-all"
               style={{ width: `${percent}%` }}
             ></div>
           </div>
-          <p className="text-sm mt-1 font-semibold">{percent}% Completed</p>
+
+          <p className="text-sm mt-2 font-semibold">{percent}% Completed</p>
         </div>
 
         {/* Save Button */}
         <button
           onClick={saveProfile}
-          className="mt-8 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg text-lg font-semibold transition"
+          disabled={saving}
+          className="mt-10 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg text-lg font-semibold transition disabled:opacity-50"
         >
-          Save Changes
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </motion.div>

@@ -1,40 +1,63 @@
 // src/components/TopBar.jsx
-import React from "react";
+import React, { useState } from "react";
 import { useUser } from "../contexts/UserContext";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, ChevronDown } from "lucide-react";
 
 const TopBar = () => {
-  const { user, logout } = useUser(); // <-- CORRECT: invoke the hook
+  const { user, logout } = useUser();
+  const [open, setOpen] = useState(false);
 
   return (
-    <header className="flex items-center justify-between px-6 py-3 border-b border-slate-700 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-md">
-      
-      {/* Left Section: Console Title */}
-      <div className="flex items-center gap-2">
-        <h1 className="text-lg font-semibold text-cyan-400 tracking-wide">
-          C3 Cloud Console
-        </h1>
-        <span className="text-xs text-slate-400 italic">
-          powered by Cybercode EduLabs
-        </span>
+    <header className="relative flex items-center justify-between px-6 py-3 
+      border-b border-slate-700 bg-slate-900 shadow-md">
+
+      {/* Left */}
+      <div>
+        <h1 className="text-lg font-semibold text-cyan-400">C3 Cloud Console</h1>
+        <span className="text-xs text-slate-400">powered by Cybercode EduLabs</span>
       </div>
 
-      {/* Right Section: IAM User Info */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-slate-300">
-          <User size={18} className="text-cyan-400" />
-          <span className="text-sm">
-            {user?.iamUsername || user?.email?.split("@")[0] || "IAM User"}
-          </span>
-        </div>
-
+      {/* Right */}
+      <div className="flex items-center gap-4 relative">
         <button
-          onClick={logout} // <-- CORRECT
-          className="flex items-center gap-1 text-sm bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-600 px-3 py-1.5 rounded-md transition"
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-2 text-slate-200 hover:text-cyan-300 transition"
         >
-          <LogOut size={16} />
-          <span>Sign Out</span>
+          <img
+            src={user?.photo || "/images/default-avatar.png"}
+            className="w-9 h-9 rounded-full border border-cyan-400 object-cover"
+          />
+          <ChevronDown size={18} />
         </button>
+
+        {/* Dropdown */}
+        {open && (
+          <div
+            className="absolute right-0 top-14 w-52 bg-slate-800 border border-slate-700 
+            rounded-xl shadow-xl p-2 animate-fadeIn z-50"
+          >
+            <div className="p-3">
+              <p className="font-semibold text-slate-200">{user?.name}</p>
+              <p className="text-xs text-slate-400">{user?.email}</p>
+            </div>
+
+            <button
+              onClick={() => (window.location.href = "/edit-profile")}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md 
+              hover:bg-slate-700 text-slate-300"
+            >
+              <User size={16} /> Edit Profile
+            </button>
+
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md 
+              hover:bg-red-700 text-red-300"
+            >
+              <LogOut size={16} /> Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -20,7 +20,7 @@ import { useUser } from "../contexts/UserContext";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const { logout } = useUser();
+  const { user, logout } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,7 +28,8 @@ const Sidebar = () => {
     { name: "Home", path: "/", icon: <Home size={18} /> },
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "My Roadmap", path: "/dashboard/roadmap", icon: <Map size={18} /> },
-    // The below two will be handled specially to scroll to sections inside dashboard:
+
+    // Dashboard internal anchors
     { name: "My Courses", path: "/dashboard#courses", icon: <BookOpen size={18} />, anchor: "courses" },
     { name: "My Projects", path: "/dashboard#projects", icon: <FolderKanban size={18} />, anchor: "projects" },
   ];
@@ -41,13 +42,10 @@ const Sidebar = () => {
   ];
 
   const handleNav = (item) => {
-    // if item has an anchor, we try to scroll inside dashboard
     if (item.anchor) {
       if (location.pathname.startsWith("/dashboard")) {
-        // dispatch custom event to dashboard to scroll
         window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
       } else {
-        // navigate to dashboard first, then scroll after small delay
         navigate("/dashboard");
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
@@ -56,21 +54,22 @@ const Sidebar = () => {
       return;
     }
 
-    // otherwise do regular navigation
     navigate(item.path);
   };
 
   return (
     <aside
-      className={`h-screen bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 shadow-xl transition-all duration-300 flex flex-col
+      className={`h-screen bg-gradient-to-b from-slate-900 to-slate-800 
+      border-r border-slate-700 shadow-xl transition-all duration-300 flex flex-col
       ${collapsed ? "w-20" : "w-64"}`}
     >
-      {/* Logo & collapse button */}
+      {/* Logo & collapse */}
       <div className="flex items-center justify-between p-4 border-b border-slate-700">
         <div className="flex items-center gap-2 text-cyan-400 font-semibold text-lg">
           <Cloud size={22} />
           {!collapsed && <span>Cybercode</span>}
         </div>
+
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="text-slate-300 hover:text-cyan-400 transition"
@@ -79,21 +78,40 @@ const Sidebar = () => {
         </button>
       </div>
 
-      {/* LEARNING SECTION */}
+      {/* Profile section */}
+      {!collapsed && (
+        <div className="p-4 border-b border-slate-700 flex items-center gap-3">
+          <img
+            src={user?.photo || "/images/default-avatar.png"}
+            className="w-10 h-10 rounded-full object-cover border border-cyan-400"
+          />
+          <div className="text-slate-200 text-sm">
+            <p className="font-semibold">{user?.name || "User"}</p>
+            <button
+              onClick={() => navigate("/edit-profile")}
+              className="text-cyan-300 text-xs hover:underline mt-1"
+            >
+              Edit Profile
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LEARNING */}
       <div className="mt-3">
         {!collapsed && (
           <p className="text-xs px-4 mb-2 text-slate-400 uppercase tracking-wide">Learning</p>
         )}
+
         <nav className="px-2 space-y-1">
           {learningMenu.map((item) => {
-            const isSpecialAnchor = !!item.anchor;
-            if (isSpecialAnchor) {
+            if (item.anchor) {
               return (
                 <button
                   key={item.name}
                   onClick={() => handleNav(item)}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-colors
-                    ${location.pathname === item.path.split("#")[0] && !collapsed ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`}
+                  className={`w-full flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium
+                    ${location.pathname.startsWith("/dashboard") ? "text-slate-300 hover:bg-slate-800 hover:text-cyan-200" : "text-slate-300"}`}
                 >
                   {item.icon}
                   {!collapsed && <span>{item.name}</span>}
@@ -106,7 +124,7 @@ const Sidebar = () => {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                  `flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium
                   ${isActive ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
                 }
               >
@@ -118,18 +136,17 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* CLOUD SECTION */}
+      {/* CLOUD */}
       <div className="mt-6">
-        {!collapsed && (
-          <p className="text-xs px-4 mb-2 text-slate-400 uppercase tracking-wide">C3 Cloud</p>
-        )}
+        {!collapsed && <p className="text-xs px-4 mb-2 text-slate-400 uppercase tracking-wide">C3 Cloud</p>}
+
         <nav className="px-2 space-y-1">
           {cloudMenu.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                `flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium
                 ${isActive ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
               }
             >
@@ -140,18 +157,12 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* FOOTER / LOGOUT */}
-      <div className="mt-auto p-4 border-t border-slate-700 flex flex-col gap-3">
-        {!collapsed && (
-          <div className="flex items-center gap-2 text-slate-300 text-sm">
-            <User size={16} className="text-cyan-400" />
-            <span>Account</span>
-          </div>
-        )}
-
+      {/* Logout */}
+      <div className="mt-auto p-4 border-t border-slate-700">
         <button
           onClick={logout}
-          className="flex items-center gap-2 text-sm px-4 py-2 rounded-md bg-slate-800 hover:bg-red-700 text-red-300 border border-slate-600 transition"
+          className="flex items-center gap-2 text-sm w-full px-4 py-2 rounded-md bg-slate-800 hover:bg-red-700 
+          text-red-300 border border-slate-600 transition"
         >
           <LogOut size={16} />
           {!collapsed && <span>Logout</span>}
