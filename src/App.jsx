@@ -1,9 +1,16 @@
 // src/App.jsx
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from "react-router-dom";
 import { motion } from "framer-motion";
 
 import AIAssistant from "./components/AIAssistant";
+import AIProjectGeneratorModal from "./components/AIProjectGeneratorModal";
 
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
@@ -56,7 +63,6 @@ import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-
 // ----------------------------
 // Hide Global Navbar inside Dashboard
 // ----------------------------
@@ -76,6 +82,7 @@ const LayoutWrapper = ({ children }) => {
     </>
   );
 };
+
 
 
 // ----------------------------
@@ -208,6 +215,16 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [showAI, setShowAI] = useState(false);
 
+  const [showProjectGenerator, setShowProjectGenerator] = useState(false);
+
+  // GLOBAL EVENT → open generator from anywhere
+  useEffect(() => {
+    const handler = () => setShowProjectGenerator(true);
+    window.addEventListener("open-ai-project-generator", handler);
+    return () =>
+      window.removeEventListener("open-ai-project-generator", handler);
+  }, []);
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
@@ -224,7 +241,6 @@ function App() {
       <LayoutWrapper>
         <main className="flex-grow">
           <Routes>
-
             {/* PUBLIC ROUTES */}
             <Route path="/" element={<HomePage />} />
             <Route path="/demo" element={<DemoClass />} />
@@ -233,8 +249,13 @@ function App() {
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/podcast/:id" element={<PodcastEpisode />} />
             <Route path="/community" element={<Community />} />
+
             <Route path="/student-projects" element={<StudentProjects />} />
-            <Route path="/student-projects/:id" element={<StudentProjectDetail />} />
+            <Route
+              path="/student-projects/:id"
+              element={<StudentProjectDetail />}
+            />
+
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/register" element={<Register />} />
@@ -250,22 +271,51 @@ function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/support" element={<Support />} />
             <Route path="/payment" element={<Payment />} />
-            
 
-            {/* PROTECTED COURSE ROUTES */}
-            <Route path="/courses/:courseSlug"
-              element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-            <Route path="/courses/:courseSlug/lessons/:lessonSlug"
-              element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
-            <Route path="/certificate/:courseSlug"
-              element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
+            {/* PROTECTED ROUTES */}
+            <Route
+              path="/courses/:courseSlug"
+              element={
+                <ProtectedRoute>
+                  <CourseDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courses/:courseSlug/lessons/:lessonSlug"
+              element={
+                <ProtectedRoute>
+                  <LessonDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/certificate/:courseSlug"
+              element={
+                <ProtectedRoute>
+                  <CertificatePage />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/labs"
-              element={<ProtectedRoute><Labs /></ProtectedRoute>} />
-            <Route path="/enroll/:courseSlug"
-              element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
+            <Route
+              path="/labs"
+              element={
+                <ProtectedRoute>
+                  <Labs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/enroll/:courseSlug"
+              element={
+                <ProtectedRoute>
+                  <Enroll />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* DASHBOARD ROUTES */}
+            {/* DASHBOARD */}
             <Route
               path="/dashboard/*"
               element={
@@ -276,22 +326,30 @@ function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="roadmap" element={<RoadmapPage />} />
-              <Route path="instances" element={<div>Instances coming soon</div>} />
-              <Route path="users" element={<div>Users coming soon</div>} />
-              <Route path="settings" element={<div>Settings coming soon</div>} />
             </Route>
 
             {/* GOAL SETUP */}
-            <Route path="/set-goals"
-              element={<ProtectedRoute><GoalSetupWizard /></ProtectedRoute>} />
+            <Route
+              path="/set-goals"
+              element={
+                <ProtectedRoute>
+                  <GoalSetupWizard />
+                </ProtectedRoute>
+              }
+            />
 
-            {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
         <CookieBanner />
       </LayoutWrapper>
+
+      {/* GLOBAL MODAL */}
+      <AIProjectGeneratorModal
+        isOpen={showProjectGenerator}
+        onClose={() => setShowProjectGenerator(false)}
+      />
 
       {showAI && <AIAssistant />}
     </Router>

@@ -66,6 +66,7 @@ export default function Projects() {
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-20 text-gray-800 dark:text-gray-200">
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
         <div>
@@ -73,13 +74,11 @@ export default function Projects() {
             Real-Time Projects Showcase
           </h1>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl text-lg leading-relaxed">
-            Explore <span className="font-semibold">Cybercode EduLabs</span>
-            ’ official projects and discover student creations across AI, Cloud,
-            DevOps, Security, and Full-Stack Engineering.
+            Explore <span className="font-semibold">Cybercode EduLabs</span>’ official projects...
           </p>
         </div>
 
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3">
           <button
             onClick={() => setShowGenerator(true)}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
@@ -89,7 +88,7 @@ export default function Projects() {
 
           <Link
             to="/student-projects"
-            className="px-4 py-2 bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-indigo-600 rounded-lg shadow-sm hover:opacity-95 transition"
+            className="px-4 py-2 bg-white border dark:bg-gray-800 dark:border-gray-700 text-indigo-600 rounded-lg shadow-sm"
           >
             Student Projects
           </Link>
@@ -204,13 +203,23 @@ export default function Projects() {
       {/* FOOTER NOTE */}
       <div className="text-center mt-16">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          🚀 More live, production-ready projects launching soon under  
+          🚀 More live, production-ready projects launching soon under
           <span className="font-semibold"> Cybercode Real-Time Labs</span>.
         </p>
       </div>
 
       {/* AI Project Generator Modal */}
-      <AIProjectGeneratorModal open={showGenerator} onClose={() => setShowGenerator(false)} />
+      <AIProjectGeneratorModal
+        isOpen={showGenerator}
+        onClose={() => setShowGenerator(false)}
+      />
+
+
+      {/* MODAL FIXED HERE */}
+      <AIProjectGeneratorModal
+        isOpen={showGenerator}
+        onClose={() => setShowGenerator(false)}
+      />
     </section>
   );
 }
