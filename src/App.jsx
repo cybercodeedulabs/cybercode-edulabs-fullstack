@@ -228,6 +228,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/demo" element={<DemoClass />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/projects" element={<Projects />} />
             <Route path="/podcast" element={<Podcast />} />
             <Route path="/podcast/:id" element={<PodcastEpisode />} />
             <Route path="/community" element={<Community />} />
@@ -247,6 +248,7 @@ function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/support" element={<Support />} />
             <Route path="/payment" element={<Payment />} />
+            
 
             {/* PROTECTED COURSE ROUTES */}
             <Route path="/courses/:courseSlug"
