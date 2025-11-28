@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Home,
   User,
 } from "lucide-react";
 import { useUser } from "../contexts/UserContext";
@@ -23,32 +24,13 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // custom click actions for scroll-based items
-  const handleScrollNav = (target) => {
-    // if not already on dashboard, navigate first then scroll
-    if (!location.pathname.startsWith("/dashboard")) {
-      navigate("/dashboard");
-      // wait small delay for dashboard load
-      setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent("dashboard-scroll-to", { detail: { target } })
-        );
-      }, 300);
-    } else {
-      // already on dashboard — scroll immediately
-      window.dispatchEvent(
-        new CustomEvent("dashboard-scroll-to", { detail: { target } })
-      );
-    }
-  };
-
   const learningMenu = [
-    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} />, type: "route" },
-    { name: "My Roadmap", path: "/dashboard/roadmap", icon: <Map size={18} />, type: "route" },
-
-    // These two use scroll instead of route:
-    { name: "My Courses", path: "scroll-courses", icon: <BookOpen size={18} />, type: "scroll", target: "courses" },
-    { name: "My Projects", path: "scroll-projects", icon: <FolderKanban size={18} />, type: "scroll", target: "projects" },
+    { name: "Home", path: "/", icon: <Home size={18} /> },
+    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
+    { name: "My Roadmap", path: "/dashboard/roadmap", icon: <Map size={18} /> },
+    // The below two will be handled specially to scroll to sections inside dashboard:
+    { name: "My Courses", path: "/dashboard#courses", icon: <BookOpen size={18} />, anchor: "courses" },
+    { name: "My Projects", path: "/dashboard#projects", icon: <FolderKanban size={18} />, anchor: "projects" },
   ];
 
   const cloudMenu = [
@@ -57,6 +39,26 @@ const Sidebar = () => {
     { name: "Users", path: "/dashboard/users", icon: <Users size={18} /> },
     { name: "Settings", path: "/dashboard/settings", icon: <Settings size={18} /> },
   ];
+
+  const handleNav = (item) => {
+    // if item has an anchor, we try to scroll inside dashboard
+    if (item.anchor) {
+      if (location.pathname.startsWith("/dashboard")) {
+        // dispatch custom event to dashboard to scroll
+        window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
+      } else {
+        // navigate to dashboard first, then scroll after small delay
+        navigate("/dashboard");
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
+        }, 250);
+      }
+      return;
+    }
+
+    // otherwise do regular navigation
+    navigate(item.path);
+  };
 
   return (
     <aside
@@ -82,32 +84,37 @@ const Sidebar = () => {
         {!collapsed && (
           <p className="text-xs px-4 mb-2 text-slate-400 uppercase tracking-wide">Learning</p>
         )}
-
         <nav className="px-2 space-y-1">
-          {learningMenu.map((item) =>
-            item.type === "route" ? (
+          {learningMenu.map((item) => {
+            const isSpecialAnchor = !!item.anchor;
+            if (isSpecialAnchor) {
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => handleNav(item)}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    ${location.pathname === item.path.split("#")[0] && !collapsed ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`}
+                >
+                  {item.icon}
+                  {!collapsed && <span>{item.name}</span>}
+                </button>
+              );
+            }
+
+            return (
               <NavLink
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium transition-colors
-                ${isActive ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
+                  ${isActive ? "bg-slate-700 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
                 }
               >
                 {item.icon}
                 {!collapsed && <span>{item.name}</span>}
               </NavLink>
-            ) : (
-              <button
-                key={item.name}
-                onClick={() => handleScrollNav(item.target)}
-                className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-sm font-medium text-left text-slate-300 hover:bg-slate-800 hover:text-cyan-200 transition"
-              >
-                {item.icon}
-                {!collapsed && <span>{item.name}</span>}
-              </button>
-            )
-          )}
+            );
+          })}
         </nav>
       </div>
 

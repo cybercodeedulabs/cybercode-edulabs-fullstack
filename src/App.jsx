@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
 import AIAssistant from "./components/AIAssistant";
@@ -55,21 +55,24 @@ import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-function App() {
+/**
+ * Small wrapper so we can use location hook inside render
+ */
+function AppWrapper() {
   const [darkMode, setDarkMode] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const location = useLocation();
 
-    useEffect(() => {
-    setTimeout(() => setShowAI(true), 300); // ✅ safe delay avoids memory spike
+  useEffect(() => {
+    setTimeout(() => setShowAI(true), 300); // safe small delay
   }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
+  // Hide the global header only for dashboard routes (to avoid duplicate header)
+  const isDashboardRoute = location.pathname.startsWith("/dashboard");
 
   const HomePage = () => {
     const { user, logout } = useUser();
@@ -150,71 +153,75 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
-        <VoiceWelcome />
-        <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300 flex flex-col">
+      <VoiceWelcome />
 
-        <main className="flex-grow">
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/demo" element={<DemoClass />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/podcast" element={<Podcast />} />
-            <Route path="/podcast/:id" element={<PodcastEpisode />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/student-projects" element={<StudentProjects />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
+      {/* Global header is hidden on dashboard routes to avoid duplication.
+          Footer remains visible on all pages (user requested). */}
+      {!isDashboardRoute && <Header darkMode={darkMode} setDarkMode={setDarkMode} />}
 
-            <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-            <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
-            <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
-            <Route path="/pricing" element={<Pricing />} />
+      <main className="flex-grow">
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/demo" element={<DemoClass />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/podcast" element={<Podcast />} />
+          <Route path="/podcast/:id" element={<PodcastEpisode />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/student-projects" element={<StudentProjects />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
 
-            <Route path="/register" element={<Register />} />
-            <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
-            <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
+          <Route path="/courses/:courseSlug" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+          <Route path="/courses/:courseSlug/lessons/:lessonSlug" element={<ProtectedRoute><LessonDetail /></ProtectedRoute>} />
+          <Route path="/certificate/:courseSlug" element={<ProtectedRoute><CertificatePage /></ProtectedRoute>} />
+          <Route path="/pricing" element={<Pricing />} />
 
-            {/* NESTED DASHBOARD ROUTES using your existing DashboardLayout (components) */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="roadmap" element={<RoadmapPage />} />
-            </Route>
+          <Route path="/register" element={<Register />} />
+          <Route path="/labs" element={<ProtectedRoute><Labs /></ProtectedRoute>} />
+          <Route path="/enroll/:courseSlug" element={<ProtectedRoute><Enroll /></ProtectedRoute>} />
 
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/cloud" element={<CybercodeCloud />} />
-            <Route path="/admin/waitlist" element={<AdminWaitlist />} />
-            <Route path="/legal" element={<LegalIndex />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfUse />} />
-            <Route path="/refund" element={<RefundPolicy />} />
-            <Route path="/cookie" element={<CookiePolicy />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/payment" element={<Payment />} />
+          {/* NESTED DASHBOARD ROUTES */}
+          <Route
+            path="/dashboard/*"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route path="/set-goals" element={<ProtectedRoute><GoalSetupWizard /></ProtectedRoute>} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/cloud" element={<CybercodeCloud />} />
+          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+          <Route path="/legal" element={<LegalIndex />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="/refund" element={<RefundPolicy />} />
+          <Route path="/cookie" element={<CookiePolicy />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/payment" element={<Payment />} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+          <Route path="/set-goals" element={<ProtectedRoute><GoalSetupWizard /></ProtectedRoute>} />
 
-        <CookieBanner />
-        <Footer />
-        {showAI && <AIAssistant />} {/* floating assistant available site-wide */}
-      </div>
-    </Router>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
+      <CookieBanner />
+      <Footer />
+      {showAI && <AIAssistant />} {/* floating assistant available site-wide */}
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <AppWrapper />
+    </Router>
+  );
+}

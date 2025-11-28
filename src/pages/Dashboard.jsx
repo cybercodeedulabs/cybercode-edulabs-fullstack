@@ -237,7 +237,6 @@ export default function Dashboard() {
   const handleMentorAction = (cmd) => {
     if (cmd === "ask_ai") {
       // show floating assistant quickly (it is loaded globally on app)
-      // dispatch a small event for assistant to open (optional)
       const e = new CustomEvent("open-ai-assistant", { detail: { focus: true } });
       window.dispatchEvent(e);
     } else {
@@ -246,11 +245,8 @@ export default function Dashboard() {
     }
   };
 
-  // If you prefer "scroll to section in dashboard" behavior (you chose B),
-  // expose anchors and helper scroll function for sidebar links to use.
-  // We'll provide IDs on the major cards so `#courses` and `#projects` work.
+  // Listen for dashboard-scroll-to events (sidebar triggers)
   useEffect(() => {
-    // optional: listen for external requests to scroll (e.g., sidebar anchors)
     const handler = (e) => {
       const target = e?.detail?.target;
       if (!target) return;
