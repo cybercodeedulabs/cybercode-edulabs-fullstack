@@ -1,24 +1,25 @@
+// src/pages/StudentProjects.jsx
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 export default function StudentProjects() {
-  const { generatedProjects } = useUser();
+  const { generatedProjects = [] } = useUser();
 
   return (
-    <section className="max-w-6xl mx-auto px-6 py-16">
+    <section className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200">
       <h1 className="text-3xl font-bold text-indigo-600 mb-8">
         Student Project Showcase
       </h1>
 
-      {/* AI PROJECTS SECTION */}
+      {/* AI PROJECTS */}
       <h2 className="text-xl font-semibold text-indigo-500 mb-4">
         🔥 AI-Generated Projects (from Dashboard)
       </h2>
 
       {!generatedProjects.length && (
         <p className="text-gray-500 mb-10">
-          No AI-generated projects yet. Create one from your dashboard →
+          No AI-generated projects yet. Create one from your Dashboard →
         </p>
       )}
 
@@ -32,13 +33,16 @@ export default function StudentProjects() {
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
           >
             <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
-            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">{p.description}</p>
 
-            <div className="mt-3 text-xs text-gray-500">
-              {p.tech_stack?.length ? (
-                <div>Tech: {p.tech_stack.join(", ")}</div>
-              ) : null}
-            </div>
+            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+              {p.description}
+            </p>
+
+            {p.techStack?.length ? (
+              <div className="mt-3 text-xs text-gray-500">
+                Tech: {p.techStack.join(", ")}
+              </div>
+            ) : null}
 
             <div className="mt-4">
               <Link

@@ -49,11 +49,12 @@ export default function StudentProjectDetail() {
       </h1>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Created on {new Date(project.createdAt).toLocaleDateString()}
+        Created on{" "}
+        {new Date(project.timestamp || project.createdAt || Date.now()).toLocaleDateString()}
       </p>
 
       {/* Description */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
         <h2 className="text-xl font-semibold mb-3">📘 Description</h2>
         <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
           {project.description}
@@ -61,7 +62,7 @@ export default function StudentProjectDetail() {
       </div>
 
       {/* Tech Stack */}
-      {project.techStack && project.techStack.length > 0 && (
+      {project.techStack?.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">🛠 Tech Stack</h2>
           <ul className="list-disc ml-6 space-y-1 text-gray-700 dark:text-gray-300">
@@ -72,8 +73,8 @@ export default function StudentProjectDetail() {
         </div>
       )}
 
-      {/* Tasks / Steps */}
-      {project.steps && project.steps.length > 0 && (
+      {/* Steps */}
+      {project.steps?.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">📌 Project Steps</h2>
           <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
@@ -88,15 +89,15 @@ export default function StudentProjectDetail() {
       {project.difficulty && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">⚡ Difficulty</h2>
-          <p className="text-gray-700 dark:text-gray-300">{project.difficulty}</p>
+          <p className="text-gray-700 dark:text-gray-300">
+            {project.difficulty}
+          </p>
         </div>
       )}
 
-      {/* Optional Future: Export PDF, Ask AI, etc */}
+      {/* Action Buttons */}
       <div className="flex gap-4 mt-8">
-        <button
-          className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition"
-        >
+        <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
           Export as PDF (Coming Soon)
         </button>
 

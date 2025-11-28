@@ -14,14 +14,11 @@ import GoalReminderBanner from "../components/GoalReminderBanner";
 import GoalSummaryCard from "../components/GoalSummaryCard";
 import GoalRoadmap from "../components/GoalRoadmap";
 
-// lazy chat assistant (floating)
 const AIAssistantLazy = lazy(() => import("../components/AIAssistant"));
 
-/* small helper components are kept inline for clarity (ProgressRibbon, QuickActions, CollapsibleCard, AIMentorPanel)
-   — these are unchanged from the earlier version you've already reviewed and purposely kept compact here to
-   reduce duplication across codebase when copy-pasting into your repo. If you prefer, split them into their own files.
-*/
-
+/* ---------------------------
+   Helper UI components
+----------------------------*/
 function ProgressRibbon({ stats = {} }) {
   const streak = stats.streakDays || 0;
   const weekly = Math.round(stats.weeklyPct || 0);
@@ -32,7 +29,9 @@ function ProgressRibbon({ stats = {} }) {
       <div className="max-w-6xl mx-auto flex items-center gap-4 text-sm">
         <div className="flex items-center gap-3">
           <div className="font-semibold text-indigo-700">🔥 Streak</div>
-          <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900 rounded-full text-indigo-700">{streak} days</div>
+          <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900 rounded-full text-indigo-700">
+            {streak} days
+          </div>
         </div>
 
         <div className="flex-1">
@@ -41,7 +40,10 @@ function ProgressRibbon({ stats = {} }) {
             <span className="text-gray-600 dark:text-gray-300">{weekly}%</span>
           </div>
           <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div style={{ width: `${weekly}%` }} className="h-full bg-indigo-600 transition-all" />
+            <div
+              style={{ width: `${weekly}%` }}
+              className="h-full bg-indigo-600 transition-all"
+            />
           </div>
         </div>
 
@@ -51,7 +53,10 @@ function ProgressRibbon({ stats = {} }) {
             <span className="text-gray-600 dark:text-gray-300">{ready}%</span>
           </div>
           <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div style={{ width: `${ready}%` }} className="h-full bg-emerald-500 transition-all" />
+            <div
+              style={{ width: `${ready}%` }}
+              className="h-full bg-emerald-500 transition-all"
+            />
           </div>
         </div>
       </div>
@@ -59,13 +64,36 @@ function ProgressRibbon({ stats = {} }) {
   );
 }
 
-function QuickActions({ onAction = () => { } }) {
+function QuickActions({ onAction = () => {} }) {
   return (
     <div className="mt-4 flex gap-3 flex-wrap">
-      <button onClick={() => onAction("resume")} className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:opacity-95 transition">▶ Resume Last Lesson</button>
-      <button onClick={() => onAction("practice")} className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition">📝 Start Practice Exam</button>
-      <button onClick={() => onAction("project")} className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition">⚙ Start Project</button>
-      <Link to="/cloud" className="px-4 py-2 rounded-lg bg-emerald-600 text-white shadow-sm hover:opacity-95 transition">☁️ Open Cloud Console</Link>
+      <button
+        onClick={() => onAction("resume")}
+        className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:opacity-95 transition"
+      >
+        ▶ Resume Last Lesson
+      </button>
+
+      <button
+        onClick={() => onAction("practice")}
+        className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition"
+      >
+        📝 Start Practice Exam
+      </button>
+
+      <button
+        onClick={() => onAction("project")}
+        className="px-4 py-2 rounded-lg bg-white border border-indigo-200 dark:bg-gray-800 text-indigo-600 hover:opacity-95 transition"
+      >
+        ⚙ Start Project
+      </button>
+
+      <Link
+        to="/cloud"
+        className="px-4 py-2 rounded-lg bg-emerald-600 text-white shadow-sm hover:opacity-95 transition"
+      >
+        ☁️ Open Cloud Console
+      </Link>
     </div>
   );
 }
@@ -76,16 +104,30 @@ function CollapsibleCard({ title, children, defaultOpen = true, hint }) {
     <div className="bg-white dark:bg-gray-900 rounded-2xl border p-4 shadow">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</div>
-          {hint && <div className="text-xs text-gray-500 dark:text-gray-400">{hint}</div>}
+          <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {title}
+          </div>
+          {hint && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {hint}
+            </div>
+          )}
         </div>
 
-        <button onClick={() => setOpen((s) => !s)} className="px-3 py-1 text-sm rounded border bg-white/0 dark:bg-transparent">
+        <button
+          onClick={() => setOpen((s) => !s)}
+          className="px-3 py-1 text-sm rounded border bg-white/0 dark:bg-transparent"
+        >
           {open ? "Collapse" : "Open"}
         </button>
       </div>
 
-      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }} transition={{ duration: 0.28 }} style={{ overflow: "hidden" }}>
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: open ? 1 : 0, height: open ? "auto" : 0 }}
+        transition={{ duration: 0.28 }}
+        style={{ overflow: "hidden" }}
+      >
         <div className="pt-2">{children}</div>
       </motion.div>
     </div>
@@ -96,7 +138,9 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
   const suggestions = useMemo(() => {
     const s = [];
     if (userGoals?.targetRole) {
-      s.push(`Complete a focused module on ${userGoals.targetRole} fundamentals (2 weeks)`);
+      s.push(
+        `Complete a focused module on ${userGoals.targetRole} fundamentals (2 weeks)`
+      );
     } else {
       s.push("Set your career goal to get a personalized roadmap.");
     }
@@ -110,22 +154,44 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <h4 className="font-semibold text-indigo-600">Cybercode AI Mentor</h4>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">Quick suggestions to move forward—AI-backed.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+            Quick suggestions to move forward—AI-backed.
+          </p>
 
           <ul className="mt-3 space-y-2 text-sm">
             {suggestions.map((t, i) => (
-              <li key={i} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                <div className="flex-1 text-gray-700 dark:text-gray-200">{t}</div>
+              <li
+                key={i}
+                className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded"
+              >
+                <div className="flex-1 text-gray-700 dark:text-gray-200">
+                  {t}
+                </div>
                 <div className="ml-3">
-                  <button onClick={() => onSuggest && onSuggest(t)} className="text-xs px-2 py-1 bg-indigo-600 text-white rounded">Do</button>
+                  <button
+                    onClick={() => onSuggest && onSuggest(t)}
+                    className="text-xs px-2 py-1 bg-indigo-600 text-white rounded"
+                  >
+                    Do
+                  </button>
                 </div>
               </li>
             ))}
           </ul>
 
           <div className="mt-3 flex gap-2">
-            <Link to="/dashboard/roadmap" className="px-3 py-1 text-sm bg-indigo-50 text-indigo-700 rounded">Open Roadmap</Link>
-            <button onClick={() => onSuggest && onSuggest("ask_ai")} className="px-3 py-1 text-sm bg-indigo-600 text-white rounded">Ask Mentor</button>
+            <Link
+              to="/dashboard/roadmap"
+              className="px-3 py-1 text-sm bg-indigo-50 text-indigo-700 rounded"
+            >
+              Open Roadmap
+            </Link>
+            <button
+              onClick={() => onSuggest && onSuggest("ask_ai")}
+              className="px-3 py-1 text-sm bg-indigo-600 text-white rounded"
+            >
+              Ask Mentor
+            </button>
           </div>
         </div>
 
@@ -149,23 +215,33 @@ export default function Dashboard() {
     getTopPersona,
     courseProgress = {},
     enrolledCourses = [],
-    projects = [],
+    generatedProjects = [], // ✅ FIXED
     hasCertificationAccess = false,
     hasServerAccess = false,
     userStats = {},
     userGoals,
   } = useUser();
 
-  const topPersona = typeof getTopPersona === "function" ? getTopPersona() : topPersonaFromScores(personaScores || {});
+  const topPersona =
+    typeof getTopPersona === "function"
+      ? getTopPersona()
+      : topPersonaFromScores(personaScores || {});
   const normalized = normalizePersonaScores(personaScores || {});
-  const humanName = user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
-  const sourceCourseProgress = courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
 
-  const ribbonStats = useMemo(() => ({
-    streakDays: userStats?.streakDays || 3,
-    weeklyPct: userStats?.weeklyPct || 42,
-    readinessPct: userStats?.readinessPct || 68,
-  }), [userStats]);
+  const humanName =
+    user?.name || (user?.email && user.email.split("@")[0]) || "Learner";
+
+  const sourceCourseProgress =
+    courseProgress && Object.keys(courseProgress).length ? courseProgress : {};
+
+  const ribbonStats = useMemo(
+    () => ({
+      streakDays: userStats?.streakDays || 3,
+      weeklyPct: userStats?.weeklyPct || 42,
+      readinessPct: userStats?.readinessPct || 68,
+    }),
+    [userStats]
+  );
 
   const handleQuickAction = (act) => {
     if (act === "resume") {
@@ -200,15 +276,22 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <motion.section className="space-y-6 max-w-7xl mx-auto px-4 md:px-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.section
+      className="space-y-6 max-w-7xl mx-auto px-4 md:px-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       {/* HERO */}
       <div className="rounded-3xl overflow-hidden">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-3xl shadow-lg border border-white/10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl font-extrabold truncate">Welcome back, {humanName}.</h1>
+              <h1 className="text-2xl md:text-3xl font-extrabold truncate">
+                Welcome back, {humanName}.
+              </h1>
               <p className="mt-2 text-indigo-100 max-w-2xl text-sm">
-                Your personalized learning engine is ready. Continue where you left off or ask your AI Career Mentor for a custom plan.
+                Your personalized learning engine is ready. Continue where you
+                left off or ask your AI Career Mentor for a custom plan.
               </p>
 
               <div className="mt-4 md:mt-6">
@@ -221,8 +304,13 @@ export default function Dashboard() {
                 <div className="text-xs text-indigo-100">Current Goal</div>
                 {userGoals ? (
                   <div className="mt-2">
-                    <div className="font-semibold">{userGoals.targetRole || "—"}</div>
-                    <div className="text-xs text-indigo-100">{userGoals.hoursPerWeek} hrs/week • {userGoals.deadlineMonths} months</div>
+                    <div className="font-semibold">
+                      {userGoals.targetRole || "—"}
+                    </div>
+                    <div className="text-xs text-indigo-100">
+                      {userGoals.hoursPerWeek} hrs/week •{" "}
+                      {userGoals.deadlineMonths} months
+                    </div>
                   </div>
                 ) : (
                   <div className="text-xs text-indigo-200">No goal set</div>
@@ -236,41 +324,79 @@ export default function Dashboard() {
       </div>
 
       {/* Goal reminder / summary */}
-      <div>
-        {!userGoals ? <GoalReminderBanner /> : <GoalSummaryCard goals={userGoals} />}
-      </div>
+      <div>{!userGoals ? <GoalReminderBanner /> : <GoalSummaryCard goals={userGoals} />}</div>
 
       {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT */}
         <div className="lg:col-span-2 space-y-6">
           <div id="roadmap">
-            <CollapsibleCard title="Personalized Roadmap" hint="A concise month-by-month plan">
+            <CollapsibleCard
+              title="Personalized Roadmap"
+              hint="A concise month-by-month plan"
+            >
               <div>
-                {userGoals ? <GoalRoadmap goals={userGoals} /> : <GoalReminderBanner compact />}
+                {userGoals ? (
+                  <GoalRoadmap goals={userGoals} />
+                ) : (
+                  <GoalReminderBanner compact />
+                )}
               </div>
               <div className="mt-3 flex justify-end">
-                <Link to="/dashboard/roadmap" className="text-indigo-600 hover:underline text-sm">Open full roadmap →</Link>
+                <Link
+                  to="/dashboard/roadmap"
+                  className="text-indigo-600 hover:underline text-sm"
+                >
+                  Open full roadmap →
+                </Link>
               </div>
             </CollapsibleCard>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* COURSES */}
             <div id="courses">
-              <CollapsibleCard title="📚 My Courses" hint="Progress on your enrolled courses" defaultOpen>
+              <CollapsibleCard
+                title="📚 My Courses"
+                hint="Progress on your enrolled courses"
+                defaultOpen
+              >
                 {enrolledCourses && enrolledCourses.length ? (
                   <ul className="space-y-3">
                     {enrolledCourses.map((slug) => {
                       const lessons = lessonsData[slug] || [];
-                      const prog = sourceCourseProgress[slug] || { completedLessons: [] };
-                      const percent = lessons.length ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100) : 0;
+                      const prog =
+                        sourceCourseProgress[slug] || {
+                          completedLessons: [],
+                        };
+                      const percent = lessons.length
+                        ? Math.round(
+                            ((prog.completedLessons?.length || 0) /
+                              lessons.length) *
+                              100
+                          )
+                        : 0;
+
                       return (
-                        <li key={slug} className="flex items-center justify-between">
-                          <Link to={`/courses/${slug}`} className="text-indigo-600 hover:underline">{slug}</Link>
+                        <li
+                          key={slug}
+                          className="flex items-center justify-between"
+                        >
+                          <Link
+                            to={`/courses/${slug}`}
+                            className="text-indigo-600 hover:underline"
+                          >
+                            {slug}
+                          </Link>
                           <div className="w-40 flex items-center gap-2">
-                            <div className="text-sm text-gray-600">{percent}%</div>
+                            <div className="text-sm text-gray-600">
+                              {percent}%
+                            </div>
                             <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
-                              <div style={{ width: `${percent}%` }} className="h-full bg-indigo-600 transition-all" />
+                              <div
+                                style={{ width: `${percent}%` }}
+                                className="h-full bg-indigo-600 transition-all"
+                              />
                             </div>
                           </div>
                         </li>
@@ -283,6 +409,7 @@ export default function Dashboard() {
               </CollapsibleCard>
             </div>
 
+            {/* PROJECTS */}
             <div id="projects">
               <CollapsibleCard
                 title="📁 My Projects"
@@ -301,7 +428,9 @@ export default function Dashboard() {
                             {proj.title}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {new Date(proj.createdAt).toLocaleDateString()}
+                            {proj.timestamp
+                              ? new Date(proj.timestamp).toLocaleDateString()
+                              : "—"}
                           </div>
                         </div>
 
@@ -321,77 +450,152 @@ export default function Dashboard() {
                 )}
               </CollapsibleCard>
             </div>
-
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT SIDEBAR */}
         <div className="space-y-6">
-          <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Persona */}
+          <motion.div
+            className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-indigo-600">🧠 Learning Persona</h3>
-                <div className="text-sm text-gray-600 mt-1">A snapshot of your learning strengths</div>
+                <h3 className="text-lg font-semibold text-indigo-600">
+                  🧠 Learning Persona
+                </h3>
+                <div className="text-sm text-gray-600 mt-1">
+                  A snapshot of your learning strengths
+                </div>
               </div>
             </div>
 
             <div className="mt-4 space-y-3">
               {!topPersona ? (
-                <p className="text-gray-600">Start exploring courses — your persona will be detected automatically.</p>
+                <p className="text-gray-600">
+                  Start exploring courses — your persona will be detected automatically.
+                </p>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-lg font-semibold text-indigo-700">{PERSONAS_LIST[topPersona.persona] || topPersona.persona}</div>
+                      <div className="text-lg font-semibold text-indigo-700">
+                        {PERSONAS_LIST[topPersona.persona] ||
+                          topPersona.persona}
+                      </div>
                       <div className="text-xs text-gray-500">Top persona</div>
                     </div>
-                    <div className="text-sm text-indigo-700 font-semibold">{(topPersona.score || 0)} pts</div>
+                    <div className="text-sm text-indigo-700 font-semibold">
+                      {(topPersona.score || 0)} pts
+                    </div>
                   </div>
 
                   <div className="mt-3 space-y-2">
                     {Object.entries(normalized).map(([p, pct]) => (
                       <div key={p} className="text-sm">
                         <div className="flex justify-between mb-1 text-xs">
-                          <span className="capitalize">{PERSONAS_LIST[p] || p}</span>
-                          <span className="font-semibold text-indigo-600">{pct}%</span>
+                          <span className="capitalize">
+                            {PERSONAS_LIST[p] || p}
+                          </span>
+                          <span className="font-semibold text-indigo-600">
+                            {pct}%
+                          </span>
                         </div>
                         <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded overflow-hidden">
-                          <div style={{ width: `${pct}%` }} className="h-full bg-indigo-600 transition-all" />
+                          <div
+                            style={{ width: `${pct}%` }}
+                            className="h-full bg-indigo-600 transition-all"
+                          />
                         </div>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-4">
-                    <Link to="/courses" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Explore Recommended Courses →</Link>
+                    <Link
+                      to="/courses"
+                      className="px-3 py-1 bg-indigo-600 text-white rounded text-sm"
+                    >
+                      Explore Recommended Courses →
+                    </Link>
                   </div>
                 </>
               )}
             </div>
           </motion.div>
 
-          <AIMentorPanel userGoals={userGoals} persona={topPersona} onSuggest={handleMentorAction} />
+          <AIMentorPanel
+            userGoals={userGoals}
+            persona={topPersona}
+            onSuggest={handleMentorAction}
+          />
 
+          {/* Access Boxes */}
           <div className="grid grid-cols-1 gap-4">
-            <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <h4 className="font-semibold text-indigo-600">🎓 Certification Access</h4>
+            <motion.div
+              className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h4 className="font-semibold text-indigo-600">
+                🎓 Certification Access
+              </h4>
               <div className="mt-2">
-                {hasCertificationAccess ? <div className="text-green-600">Access granted.</div> : <Link to="/payment?type=certification" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Unlock Certification</Link>}
+                {hasCertificationAccess ? (
+                  <div className="text-green-600">Access granted.</div>
+                ) : (
+                  <Link
+                    to="/payment?type=certification"
+                    className="px-3 py-1 bg-indigo-600 text-white rounded text-sm"
+                  >
+                    Unlock Certification
+                  </Link>
+                )}
               </div>
             </motion.div>
 
-            <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <h4 className="font-semibold text-indigo-600">🖥️ 1-Year Server Access</h4>
+            <motion.div
+              className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h4 className="font-semibold text-indigo-600">
+                🖥️ 1-Year Server Access
+              </h4>
               <div className="mt-2">
-                {hasServerAccess ? <div className="text-green-600">Server Access Active.</div> : <Link to="/payment?type=server" className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Activate Server Access</Link>}
+                {hasServerAccess ? (
+                  <div className="text-green-600">Server Access Active.</div>
+                ) : (
+                  <Link
+                    to="/payment?type=server"
+                    className="px-3 py-1 bg-indigo-600 text-white rounded text-sm"
+                  >
+                    Activate Server Access
+                  </Link>
+                )}
               </div>
             </motion.div>
 
-            <motion.div className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <h4 className="font-semibold text-indigo-600">☁️ Cybercode Cloud Console</h4>
-              <p className="text-sm text-gray-600 mt-1">Launch AI, Cloud, or IoT projects instantly.</p>
+            <motion.div
+              className="bg-white dark:bg-gray-900 border p-4 rounded-2xl shadow"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h4 className="font-semibold text-indigo-600">
+                ☁️ Cybercode Cloud Console
+              </h4>
+              <p className="text-sm text-gray-600 mt-1">
+                Launch AI, Cloud, or IoT projects instantly.
+              </p>
               <div className="mt-3">
-                <Link to="/cloud" className="px-3 py-1 bg-emerald-600 text-white rounded text-sm">Open Cloud Console</Link>
+                <Link
+                  to="/cloud"
+                  className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                >
+                  Open Cloud Console
+                </Link>
               </div>
             </motion.div>
           </div>

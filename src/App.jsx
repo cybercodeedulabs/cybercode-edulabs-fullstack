@@ -233,6 +233,7 @@ function App() {
             <Route path="/podcast/:id" element={<PodcastEpisode />} />
             <Route path="/community" element={<Community />} />
             <Route path="/student-projects" element={<StudentProjects />} />
+            <Route path="/student-projects/:id" element={<StudentProjectDetail />} />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/register" element={<Register />} />
