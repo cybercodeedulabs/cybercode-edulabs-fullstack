@@ -246,6 +246,21 @@ export default function Dashboard() {
     }
   };
 
+  // If you prefer "scroll to section in dashboard" behavior (you chose B),
+  // expose anchors and helper scroll function for sidebar links to use.
+  // We'll provide IDs on the major cards so `#courses` and `#projects` work.
+  useEffect(() => {
+    // optional: listen for external requests to scroll (e.g., sidebar anchors)
+    const handler = (e) => {
+      const target = e?.detail?.target;
+      if (!target) return;
+      const el = document.getElementById(target);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    window.addEventListener("dashboard-scroll-to", handler);
+    return () => window.removeEventListener("dashboard-scroll-to", handler);
+  }, []);
+
   return (
     <motion.section className="space-y-6 max-w-7xl mx-auto px-4 md:px-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* HERO */}
@@ -293,55 +308,61 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT: Roadmap, Courses, Projects */}
         <div className="lg:col-span-2 space-y-6">
-          <CollapsibleCard title="Personalized Roadmap" hint="A concise month-by-month plan">
-            <div>
-              {userGoals ? <GoalRoadmap goals={userGoals} /> : <GoalReminderBanner compact />}
-            </div>
-            <div className="mt-3 flex justify-end">
-              <Link to="/dashboard/roadmap" className="text-indigo-600 hover:underline text-sm">Open full roadmap →</Link>
-            </div>
-          </CollapsibleCard>
+          <div id="roadmap">
+            <CollapsibleCard title="Personalized Roadmap" hint="A concise month-by-month plan">
+              <div>
+                {userGoals ? <GoalRoadmap goals={userGoals} /> : <GoalReminderBanner compact />}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Link to="/dashboard/roadmap" className="text-indigo-600 hover:underline text-sm">Open full roadmap →</Link>
+              </div>
+            </CollapsibleCard>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CollapsibleCard title="📚 My Courses" hint="Progress on your enrolled courses" defaultOpen>
-              {enrolledCourses && enrolledCourses.length ? (
-                <ul className="space-y-3">
-                  {enrolledCourses.map((slug) => {
-                    const lessons = lessonsData[slug] || [];
-                    const prog = sourceCourseProgress[slug] || { completedLessons: [] };
-                    const percent = lessons.length ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100) : 0;
-                    return (
-                      <li key={slug} className="flex items-center justify-between">
-                        <Link to={`/courses/${slug}`} className="text-indigo-600 hover:underline">{slug}</Link>
-                        <div className="w-40 flex items-center gap-2">
-                          <div className="text-sm text-gray-600">{percent}%</div>
-                          <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
-                            <div style={{ width: `${percent}%` }} className="h-full bg-indigo-600 transition-all" />
+            <div id="courses">
+              <CollapsibleCard title="📚 My Courses" hint="Progress on your enrolled courses" defaultOpen>
+                {enrolledCourses && enrolledCourses.length ? (
+                  <ul className="space-y-3">
+                    {enrolledCourses.map((slug) => {
+                      const lessons = lessonsData[slug] || [];
+                      const prog = sourceCourseProgress[slug] || { completedLessons: [] };
+                      const percent = lessons.length ? Math.round(((prog.completedLessons?.length || 0) / lessons.length) * 100) : 0;
+                      return (
+                        <li key={slug} className="flex items-center justify-between">
+                          <Link to={`/courses/${slug}`} className="text-indigo-600 hover:underline">{slug}</Link>
+                          <div className="w-40 flex items-center gap-2">
+                            <div className="text-sm text-gray-600">{percent}%</div>
+                            <div className="w-full h-2 bg-gray-200 rounded overflow-hidden">
+                              <div style={{ width: `${percent}%` }} className="h-full bg-indigo-600 transition-all" />
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="text-gray-600">You haven’t enrolled in any courses yet.</p>
-              )}
-            </CollapsibleCard>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600">You haven’t enrolled in any courses yet.</p>
+                )}
+              </CollapsibleCard>
+            </div>
 
-            <CollapsibleCard title="📁 My Projects" hint="Track your project work" defaultOpen={false}>
-              {projects && projects.length ? (
-                <ul className="space-y-3">
-                  {projects.map((p) => (
-                    <li key={p} className="flex items-center justify-between">
-                      <div>{p}</div>
-                      <Link to={`/projects/${p}`} className="text-indigo-600 hover:underline text-sm">Open →</Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">Your project progress will appear here once you start learning.</p>
-              )}
-            </CollapsibleCard>
+            <div id="projects">
+              <CollapsibleCard title="📁 My Projects" hint="Track your project work" defaultOpen={false}>
+                {projects && projects.length ? (
+                  <ul className="space-y-3">
+                    {projects.map((p) => (
+                      <li key={p} className="flex items-center justify-between">
+                        <div>{p}</div>
+                        <Link to={`/projects/${p}`} className="text-indigo-600 hover:underline text-sm">Open →</Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600">Your project progress will appear here once you start learning.</p>
+                )}
+              </CollapsibleCard>
+            </div>
           </div>
         </div>
 
