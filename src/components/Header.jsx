@@ -4,11 +4,16 @@ import logo from "/images/logo.png";
 import { useState, useEffect } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { useUser } from "../contexts/UserContext";
+import { useTheme } from "../contexts/ThemeContext";
 
-function Header({ darkMode, setDarkMode }) {
+function Header() {
   const [taglineIndex, setTaglineIndex] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // 🌙 Global theme
+  const { darkMode, setDarkMode } = useTheme();
+
   const { user, logout } = useUser();
   const navigate = useNavigate();
 
@@ -18,17 +23,20 @@ function Header({ darkMode, setDarkMode }) {
     "Learn. Build. Deploy. All at Cybercode",
   ];
 
+  // Rotate tagline
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTaglineIndex((prev) => (prev + 1) % taglines.length);
-    }, 4000);
+    const interval = setInterval(
+      () => setTaglineIndex((prev) => (prev + 1) % taglines.length),
+      4000
+    );
     return () => clearInterval(interval);
   }, []);
 
+  // Scroll shadow
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handler = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handler);
+    return () => window.removeEventListener("scroll", handler);
   }, []);
 
   const handleLogout = async () => {
@@ -42,40 +50,38 @@ function Header({ darkMode, setDarkMode }) {
     { name: "Labs", to: "/labs" },
     { name: "Projects", to: "/projects" },
     { name: "Cloud", to: "/cloud", highlight: true },
-    {
-      name: "Demo Class",
-      to: "/demo",
-      demo: true
-    },
+    { name: "Demo Class", to: "/demo", demo: true },
     { name: "Contact", to: "/contact" },
   ];
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 ${
+      className={`sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all ${
         scrolled ? "shadow-lg" : "shadow-md"
       }`}
     >
-      {/* Vision Strip */}
-      <div className="bg-indigo-600 text-white text-xs md:text-sm py-1.5 md:py-2 overflow-hidden">
+      {/* VISION STRIP */}
+      <div className="bg-indigo-600 text-white text-xs md:text-sm py-1.5 overflow-hidden">
         <p className="animate-marquee font-medium tracking-wide">
-          ☁️ Cybercode Cloud — India's Own Developer Cloud Platform • 
-          ⚡ EduLabs — Real-Time IT Courses, Simulators & Hands-On Labs • 
-          🌐 Learn, Build & Deploy on One Unified Ecosystem
+          ☁️ Cybercode Cloud — India's Own Developer Cloud • ⚡ EduLabs —
+          Real-Time IT Courses & Labs • 🌐 Learn, Build & Deploy
         </p>
       </div>
 
-      {/* Main Header */}
-      <div className="px-3 py-2 md:px-6 md:py-3 flex justify-between items-center w-full max-w-[1280px] mx-auto">
+      {/* MAIN HEADER */}
+      <div className="px-3 py-2 md:px-6 md:py-3 flex justify-between items-center max-w-[1280px] mx-auto">
 
-        {/* Brand Logo */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate("/")}>
-          <img src={logo} alt="Cybercode Logo" className="h-9 w-auto md:h-11 transition-all"/>
+        {/* Logo */}
+        <div
+          className="flex items-center space-x-3 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
+          <img src={logo} className="h-9 md:h-11" />
           <div>
-            <div className="text-xl font-extrabold tracking-wide text-gray-900 dark:text-gray-100">
+            <div className="text-xl font-extrabold text-gray-900 dark:text-gray-100">
               Cybercode Suite
             </div>
-            <div className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 transition-opacity duration-500 leading-tight">
+            <div className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400">
               {taglines[taglineIndex]}
             </div>
           </div>
@@ -89,42 +95,40 @@ function Header({ darkMode, setDarkMode }) {
               to={link.to}
               className={`
                 transition-all font-medium
-
                 ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
-
                 ${
                   link.demo
-                    ? "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl flex items-center gap-2 text-sm animate-pulse-slow hover:scale-105 hover:shadow-2xl transition-transform"
+                    ? "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl animate-pulse-slow"
                     : "text-gray-800 dark:text-gray-200 hover:text-indigo-500"
                 }
               `}
             >
               {link.demo ? (
                 <>
-                  🎯 Demo Class
-                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Demo Class
+                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
                     FREE
                   </span>
                 </>
+              ) : link.name === "Cloud" ? (
+                "☁️ Cloud"
               ) : (
-                link.name === "Cloud" ? "☁️ Cloud" : link.name
+                link.name
               )}
             </Link>
           ))}
 
-          {/* Auth Buttons */}
+          {/* Auth */}
           {user ? (
             <div className="flex items-center space-x-3">
               <img
                 src={user.photo}
-                alt={user.name}
-                title={user.name}
-                className="w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer hover:scale-105 transition-transform"
+                className="w-9 h-9 rounded-full cursor-pointer border hover:scale-105"
                 onClick={() => navigate("/dashboard")}
               />
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm"
               >
                 <LogOut size={16} />
                 Logout
@@ -132,15 +136,15 @@ function Header({ darkMode, setDarkMode }) {
             </div>
           ) : (
             <div className="flex items-center space-x-3">
-              <Link to="/register" className="text-gray-700 dark:text-gray-200 hover:underline">
+              <Link to="/register" className="hover:underline text-gray-700 dark:text-gray-200">
                 Register
               </Link>
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition"
+                className="flex items-center gap-2 border px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
               >
-                <img src="/images/google.svg" alt="Google" className="w-4 h-4" />
-                <span>Sign in</span>
+                <img src="/images/google.svg" className="w-4 h-4" />
+                Sign in
               </Link>
             </div>
           )}
@@ -148,82 +152,61 @@ function Header({ darkMode, setDarkMode }) {
           {/* Dark Mode */}
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="ml-2 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+            className="ml-2 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm"
           >
             {darkMode ? "☀️ Light" : "🌙 Dark"}
           </button>
         </nav>
 
-        {/* Mobile Buttons */}
+        {/* MOBILE NAVBAR BUTTONS */}
         <div className="flex items-center space-x-2 md:hidden">
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             {darkMode ? "☀️" : "🌙"}
           </button>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+            className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {/* Mobile Menu */}
+      {/* MOBILE MENU */}
       <div
-        className={`md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md transition-all duration-300 origin-top ${
+        className={`md:hidden bg-white dark:bg-gray-800 border-t shadow-md ${
           menuOpen ? "block" : "hidden"
         }`}
       >
         <nav className="flex flex-col p-4 space-y-4">
           {links.map((link) => (
             <Link
-  key={link.name}
-  to={link.to}
-  onClick={() => {
-    setTimeout(() => setMenuOpen(false), 150);
-  }}
-  className={`
-    text-lg 
-    ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
-    ${
-      link.demo
-        ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full shadow animate-pulse-slow text-center font-semibold"
-        : "text-gray-800 dark:text-gray-200"
-    }
-  `}
->
-  {link.demo ? (
-    <>
-      🎯 Demo Class
-      <span className="ml-2 bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-        FREE
-      </span>
-    </>
-  ) : (
-    link.name
-  )}
-</Link>
-
+              key={link.name}
+              to={link.to}
+              onClick={() => setTimeout(() => setMenuOpen(false), 150)}
+              className={`text-lg ${
+                link.demo
+                  ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full text-center animate-pulse-slow"
+                  : "text-gray-800 dark:text-gray-200"
+              }`}
+            >
+              {link.name}
+            </Link>
           ))}
 
           {user ? (
             <>
               <div className="flex items-center space-x-3 mt-3">
-                <img
-                  src={user.photo}
-                  alt={user.name}
-                  className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">{user.name}</span>
+                <img src={user.photo} className="w-8 h-8 rounded-full border" />
+                <span>{user.name}</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="mt-3 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm transition"
+                className="mt-3 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md"
               >
                 <LogOut size={16} /> Logout
               </button>
@@ -232,15 +215,14 @@ function Header({ darkMode, setDarkMode }) {
             <Link
               to="/register"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 border px-3 py-1.5 rounded-md"
             >
-              <img src="/images/google.svg" alt="Google" className="w-4 h-4" />
-              <span>Sign in</span>
+              <img src="/images/google.svg" className="w-4 h-4" />
+              Sign in
             </Link>
           )}
         </nav>
       </div>
-
     </header>
   );
 }

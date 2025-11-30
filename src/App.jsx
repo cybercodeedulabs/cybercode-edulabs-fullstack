@@ -4,18 +4,18 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Link,
   useLocation,
+  Link,
 } from "react-router-dom";
 import { motion } from "framer-motion";
 
+import { ThemeProvider } from "./contexts/ThemeContext";
+
 import AIAssistant from "./components/AIAssistant";
 import AIProjectGeneratorModal from "./components/AIProjectGeneratorModal";
-
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
 import CookieBanner from "./components/CookieBanner";
-
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CourseCategoryTabs from "./components/CourseCategoryTabs";
@@ -63,12 +63,9 @@ import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-// ----------------------------
-// Hide Global Navbar inside Dashboard
-// ----------------------------
+// HIDE HEADER INSIDE DASHBOARD/CLOUD
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
-
   const hideHeader =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/cloud") ||
@@ -83,64 +80,80 @@ const LayoutWrapper = ({ children }) => {
   );
 };
 
-
-
-// ----------------------------
-// HOMEPAGE COMPONENT
-// ----------------------------
+// HOMEPAGE (unchanged)
 function HomePage() {
   const { user, logout } = useUser();
 
   return (
     <>
+      {/* HERO SECTION */}
       <section className="relative bg-gray-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: "url('/images/hero-banner.png')" }}></div>
+        <div
+          className="absolute inset-0 bg-cover opacity-30"
+          style={{ backgroundImage: "url('/images/hero-banner.png')" }}
+        ></div>
 
-        <div className="relative z-10 px-6 py-32 max-w-7xl mx-auto text-center">
-          <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight"
+        <div className="relative px-6 py-32 text-center max-w-7xl mx-auto">
+          <motion.h1
+            className="text-4xl md:text-6xl font-extrabold mb-6"
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}>
-            Learn. Build. Deploy.<br />
+            transition={{ duration: 0.8 }}
+          >
+            Learn. Build. Deploy.
+            <br />
             <span className="text-indigo-400">All in One Tech Ecosystem.</span>
           </motion.h1>
 
-          <motion.p className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto"
+          <motion.p
+            className="text-lg md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}>
-            Cybercode EduLabs trains India’s next-gen engineers, while Cybercode Cloud delivers
-            India’s first developer-focused cloud platform — built for real innovation.
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            Cybercode EduLabs trains India’s next-gen engineers, while
+            Cybercode Cloud enables real innovation.
           </motion.p>
 
-          <motion.div className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          <motion.div
+            className="flex flex-col sm:flex-row justify-center items-center gap-4"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}>
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
             {user ? (
               <>
-                <Link to="/dashboard"
-                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">
+                <Link
+                  to="/dashboard"
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white text-lg"
+                >
                   👋 Welcome {user.name?.split(" ")[0]} — Dashboard
                 </Link>
-                <button onClick={logout}
-                  className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow-lg text-lg">
+                <button
+                  onClick={logout}
+                  className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white text-lg"
+                >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/courses"
-                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white shadow-lg text-lg">
+                <Link
+                  to="/courses"
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white text-lg"
+                >
                   Explore Courses
                 </Link>
-                <Link to="/demo"
-                  className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg shadow text-lg">
+                <Link
+                  to="/demo"
+                  className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg text-lg"
+                >
                   Free Demo Class
                 </Link>
-                <Link to="/register"
-                  className="px-8 py-3 bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2">
+                <Link
+                  to="/register"
+                  className="px-8 py-3 bg-gray-100 text-gray-900 border hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2"
+                >
                   <img src="/images/google.svg" className="w-5 h-5" />
                   Sign in with Google
                 </Link>
@@ -150,74 +163,93 @@ function HomePage() {
         </div>
       </section>
 
+      {/* CLOUD SECTION */}
       <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">☁️ Introducing Cybercode Cloud</h2>
-            <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed mb-6">
-              India’s first indigenous cloud platform built for developers, startups, and enterprises.
+            <h2 className="text-3xl font-bold dark:text-white">
+              ☁️ Introducing Cybercode Cloud
+            </h2>
+            <p className="text-lg dark:text-gray-300 leading-relaxed mt-4">
+              India’s first indigenous developer-first cloud platform.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/cloud"
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <Link
+                to="/cloud"
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+              >
                 Explore Cloud Platform
               </Link>
-              <Link to="/cloud"
-                className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
-                text-gray-900 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow">
+              <Link
+                to="/cloud"
+                className="px-6 py-3 bg-white dark:bg-gray-800 border dark:border-gray-600 shadow rounded-lg"
+              >
                 Join Waitlist
               </Link>
             </div>
           </div>
 
-          <img src="/images/cloud-illustration.png" alt="Cloud Platform" className="rounded-lg shadow-lg" />
+          <img
+            src="/images/cloud-illustration.png"
+            className="rounded-lg shadow-lg"
+          />
         </div>
       </section>
 
-      <section id="courses" className="py-20 bg-white dark:bg-gray-950">
-        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+      {/* COURSES */}
+      <section className="py-20 bg-white dark:bg-gray-950">
+        <h2 className="text-3xl font-bold text-center dark:text-white mb-12">
           Explore Courses by Category
         </h2>
         <CourseCategoryTabs />
       </section>
 
+      {/* FEATURES */}
       <section className="bg-gray-100 dark:bg-gray-900 py-20 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-14 tracking-tight">
+          <h2 className="text-4xl font-extrabold dark:text-white mb-14">
             The Cybercode Advantage
           </h2>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <FeatureItem icon="ai" title="AI-Powered Smart Learning"
-              description="AI-driven learning support that assists through real scenarios." />
-            <FeatureItem icon="cloud" title="Hands-On Cloud Labs"
-              description="Practice on real cloud infrastructure using Cybercode Cloud." />
-            <FeatureItem icon="projects" title="Real-Time Project Experience"
-              description="Industry-grade workflows matching real DevOps environments." />
-            <FeatureItem icon="training" title="Career-Focused Training Path"
-              description="Courses structured around real job roles and production tasks." />
+            <FeatureItem
+              icon="ai"
+              title="AI-Powered Smart Learning"
+              description="AI-driven assistance for real-world scenarios."
+            />
+            <FeatureItem
+              icon="cloud"
+              title="Hands-On Cloud Labs"
+              description="Practice on real cloud infrastructure."
+            />
+            <FeatureItem
+              icon="projects"
+              title="Real-Time Project Experience"
+              description="Workflows matching production DevOps."
+            />
+            <FeatureItem
+              icon="training"
+              title="Career-Focused Training Path"
+              description="Designed around real job roles."
+            />
           </div>
         </div>
       </section>
 
       <Testimonials />
-      <div id="register"><RegistrationCTA /></div>
+      <div id="register">
+        <RegistrationCTA />
+      </div>
     </>
   );
 }
 
-
-// ----------------------------
 // MAIN APP COMPONENT
-// ----------------------------
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [showProjectGenerator, setShowProjectGenerator] = useState(false);
   const [showAI, setShowAI] = useState(false);
 
-  const [showProjectGenerator, setShowProjectGenerator] = useState(false);
-
-  // GLOBAL EVENT → open generator from anywhere
   useEffect(() => {
     const handler = () => setShowProjectGenerator(true);
     window.addEventListener("open-ai-project-generator", handler);
@@ -226,133 +258,129 @@ function App() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
-  useEffect(() => {
     setTimeout(() => setShowAI(true), 300);
   }, []);
 
   return (
-    <Router>
-      <ScrollToTop />
-      <VoiceWelcome />
+    <ThemeProvider>
+      <Router>
+        <ScrollToTop />
+        <VoiceWelcome />
 
-      <LayoutWrapper>
-        <main className="flex-grow">
-          <Routes>
-            {/* PUBLIC ROUTES */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/demo" element={<DemoClass />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/podcast" element={<Podcast />} />
-            <Route path="/podcast/:id" element={<PodcastEpisode />} />
-            <Route path="/community" element={<Community />} />
+        <LayoutWrapper>
+          <main className="flex-grow">
+            <Routes>
+              {/* PUBLIC ROUTES */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/demo" element={<DemoClass />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/podcast" element={<Podcast />} />
+              <Route path="/podcast/:id" element={<PodcastEpisode />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/student-projects" element={<StudentProjects />} />
+              <Route
+                path="/student-projects/:id"
+                element={<StudentProjectDetail />}
+              />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/cloud" element={<CybercodeCloud />} />
+              <Route path="/admin/waitlist" element={<AdminWaitlist />} />
 
-            <Route path="/student-projects" element={<StudentProjects />} />
-            <Route
-              path="/student-projects/:id"
-              element={<StudentProjectDetail />}
-            />
+              <Route path="/legal" element={<LegalIndex />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/cookie" element={<CookiePolicy />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/payment" element={<Payment />} />
 
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/cloud" element={<CybercodeCloud />} />
-            <Route path="/admin/waitlist" element={<AdminWaitlist />} />
-            <Route path="/legal" element={<LegalIndex />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfUse />} />
-            <Route path="/refund" element={<RefundPolicy />} />
-            <Route path="/cookie" element={<CookiePolicy />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/payment" element={<Payment />} />
+              {/* PROTECTED ROUTES */}
+              <Route
+                path="/courses/:courseSlug"
+                element={
+                  <ProtectedRoute>
+                    <CourseDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseSlug/lessons/:lessonSlug"
+                element={
+                  <ProtectedRoute>
+                    <LessonDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/certificate/:courseSlug"
+                element={
+                  <ProtectedRoute>
+                    <CertificatePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/labs"
+                element={
+                  <ProtectedRoute>
+                    <Labs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/enroll/:courseSlug"
+                element={
+                  <ProtectedRoute>
+                    <Enroll />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* PROTECTED ROUTES */}
-            <Route
-              path="/courses/:courseSlug"
-              element={
-                <ProtectedRoute>
-                  <CourseDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/courses/:courseSlug/lessons/:lessonSlug"
-              element={
-                <ProtectedRoute>
-                  <LessonDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/certificate/:courseSlug"
-              element={
-                <ProtectedRoute>
-                  <CertificatePage />
-                </ProtectedRoute>
-              }
-            />
+              {/* DASHBOARD */}
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="roadmap" element={<RoadmapPage />} />
+              </Route>
 
-            <Route
-              path="/labs"
-              element={
-                <ProtectedRoute>
-                  <Labs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/enroll/:courseSlug"
-              element={
-                <ProtectedRoute>
-                  <Enroll />
-                </ProtectedRoute>
-              }
-            />
+              {/* GOALS */}
+              <Route
+                path="/set-goals"
+                element={
+                  <ProtectedRoute>
+                    <GoalSetupWizard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* DASHBOARD */}
-            <Route
-              path="/dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="roadmap" element={<RoadmapPage />} />
-            </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
 
-            {/* GOAL SETUP */}
-            <Route
-              path="/set-goals"
-              element={
-                <ProtectedRoute>
-                  <GoalSetupWizard />
-                </ProtectedRoute>
-              }
-            />
+          <CookieBanner />
+        </LayoutWrapper>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
+        {/* GLOBAL MODALS */}
+        <AIProjectGeneratorModal
+          isOpen={showProjectGenerator}
+          onClose={() => setShowProjectGenerator(false)}
+        />
 
-        <CookieBanner />
-      </LayoutWrapper>
-
-      {/* GLOBAL MODAL */}
-      <AIProjectGeneratorModal
-        isOpen={showProjectGenerator}
-        onClose={() => setShowProjectGenerator(false)}
-      />
-
-      {showAI && <AIAssistant />}
-    </Router>
+        {showAI && <AIAssistant />}
+      </Router>
+    </ThemeProvider>
   );
 }
 

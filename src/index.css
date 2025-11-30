@@ -397,3 +397,7 @@ button:focus-visible {
   .ai-assistant-root { width: calc(100vw - 20px); height: 70vh; }
   .fixed.bottom-24.right-6 { right: 12px !important; bottom: 80px !important; }
 }
+
+.theme-transition {
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
