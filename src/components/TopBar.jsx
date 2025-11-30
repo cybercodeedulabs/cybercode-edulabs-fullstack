@@ -8,16 +8,16 @@ const TopBar = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="relative flex items-center justify-between px-6 py-3 
-      border-b border-slate-700 bg-slate-900 shadow-md">
+    <header className="relative flex items-center justify-between px-6 py-3
+      bg-[#0f172a] border-b border-slate-700 shadow-md">
 
-      {/* Left */}
+      {/* Left: Title */}
       <div>
         <h1 className="text-lg font-semibold text-cyan-400">C3 Cloud Console</h1>
-        <span className="text-xs text-slate-400">powered by Cybercode EduLabs</span>
+        <p className="text-xs text-slate-400">powered by Cybercode EduLabs</p>
       </div>
 
-      {/* Right */}
+      {/* Right: Profile */}
       <div className="flex items-center gap-4 relative">
         <button
           onClick={() => setOpen(!open)}
@@ -30,12 +30,9 @@ const TopBar = () => {
           <ChevronDown size={18} />
         </button>
 
-        {/* Dropdown */}
         {open && (
-          <div
-            className="absolute right-0 top-14 w-52 bg-slate-800 border border-slate-700 
-            rounded-xl shadow-xl p-2 animate-fadeIn z-50"
-          >
+          <div className="absolute right-0 top-14 w-52 bg-slate-800 border border-slate-700 
+            rounded-xl shadow-xl p-2 animate-fadeIn z-50">
             <div className="p-3">
               <p className="font-semibold text-slate-200">{user?.name}</p>
               <p className="text-xs text-slate-400">{user?.email}</p>
