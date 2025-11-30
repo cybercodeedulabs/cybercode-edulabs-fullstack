@@ -10,19 +10,10 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 
-/**
- * useUserData
- * Firestore syncing + premium + analytics + goals
- *
- * IMPORTANT:
- * - This file NEVER imports useUser() to avoid circular dependency.
- * - All setters come from UserContext.
- */
 export default function useUserData(
   user,
   { setEnrolledCourses, setCourseProgress, setUser, setUserGoals }
 ) {
-  // If no user, return empty stubs
   if (!user) {
     return {
       enrollInCourse: async () => {},
@@ -39,10 +30,10 @@ export default function useUserData(
   const ref = doc(db, "users", user.uid);
   const goalsRef = doc(db, "users", user.uid, "goals", "main");
 
-  // ---------------------------------------------------------------------
-  // USER ROOT SNAPSHOT
-  // ---------------------------------------------------------------------
-  onSnapshot(ref, async (snap) => {
+  // ---------------------------------------------------------
+  // SNAPSHOT LISTENERS (SAFE - WITH CLEANUP)
+  // ---------------------------------------------------------
+  const unsubUser = onSnapshot(ref, async (snap) => {
     if (!snap.exists()) {
       await setDoc(
         ref,
@@ -67,27 +58,20 @@ export default function useUserData(
 
     const data = snap.data();
 
-    // Sync courses
     if (setEnrolledCourses)
       setEnrolledCourses(data.enrolledCourses || []);
 
-    // Sync progress
     if (setCourseProgress)
       setCourseProgress(data.courseProgress || {});
 
-    // Sync premium
     if (data.isPremium && setUser)
       setUser((u) => (u ? { ...u, isPremium: true } : u));
 
-    // Optional fallback if goals are stored at root
     if (data.goals && setUserGoals)
       setUserGoals(data.goals);
   });
 
-  // ---------------------------------------------------------------------
-  // GOALS SNAPSHOT (MAIN SOURCE OF TRUTH)
-  // ---------------------------------------------------------------------
-  onSnapshot(goalsRef, (snap) => {
+  const unsubGoals = onSnapshot(goalsRef, (snap) => {
     if (snap.exists()) {
       if (setUserGoals) setUserGoals(snap.data());
     } else {
@@ -95,18 +79,21 @@ export default function useUserData(
     }
   });
 
-  // =====================================================================
-  // 1. ENROLL IN COURSE
-  // =====================================================================
-  const enrollInCourse = async (courseSlug) => {
-    await updateDoc(ref, {
-      enrolledCourses: arrayUnion(courseSlug),
+  // Cleanup function (prevents memory leak)
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", () => {
+      unsubUser();
+      unsubGoals();
     });
+  }
+
+  // ---------------------------------------------------------
+  // ACTIONS
+  // ---------------------------------------------------------
+  const enrollInCourse = async (courseSlug) => {
+    await updateDoc(ref, { enrolledCourses: arrayUnion(courseSlug) });
   };
 
-  // =====================================================================
-  // 2. COMPLETE LESSON (TRANSACTION)
-  // =====================================================================
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
@@ -124,9 +111,6 @@ export default function useUserData(
     });
   };
 
-  // =====================================================================
-  // 3. RECORD STUDY SESSION
-  // =====================================================================
   const recordStudySession = async (courseSlug, lessonSlug, minutes) => {
     const today = new Date().toISOString().split("T")[0];
 
@@ -143,9 +127,6 @@ export default function useUserData(
     });
   };
 
-  // =====================================================================
-  // 4. RESET ALL PROGRESS
-  // =====================================================================
   const resetMyProgress = async () => {
     await updateDoc(ref, {
       courseProgress: {},
@@ -160,9 +141,6 @@ export default function useUserData(
     if (setCourseProgress) setCourseProgress({});
   };
 
-  // =====================================================================
-  // 5. PREMIUM ACCESS
-  // =====================================================================
   const grantCertificationAccess = async () => {
     await updateDoc(ref, {
       hasCertificationAccess: true,
@@ -185,9 +163,6 @@ export default function useUserData(
     });
   };
 
-  // =====================================================================
-  // 6. SAVE USER GOALS (MAIN LOGIC)
-  // =====================================================================
   const saveUserGoals = async (goals) => {
     await setDoc(
       goalsRef,
@@ -202,9 +177,6 @@ export default function useUserData(
     if (setUserGoals) setUserGoals(goals);
   };
 
-  // =====================================================================
-  // RETURN EVERYTHING
-  // =====================================================================
   return {
     enrollInCourse,
     completeLessonFS,
