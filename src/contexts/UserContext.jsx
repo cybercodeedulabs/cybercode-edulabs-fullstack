@@ -1,8 +1,7 @@
 // src/contexts/UserContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
@@ -29,7 +28,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // -----------------------------------------------------
-  // AI-GENERATED PROJECTS
+  // AI-GENERATED PROJECTS (local cache)
   // -----------------------------------------------------
   const [generatedProjects, setGeneratedProjects] = useState(() => {
     try {
@@ -39,73 +38,32 @@ export const UserProvider = ({ children }) => {
     }
   });
 
-  /** Load projects from Firestore + merge local */
-  const loadGeneratedProjects = async (uid) => {
+  const loadGeneratedProjectsLocal = async (uid) => {
     try {
-      const ref = doc(db, "users", uid);
-      const snap = await getDoc(ref);
-
-      const cloudProjects =
-        snap.exists() && snap.data().generatedProjects
-          ? snap.data().generatedProjects
-          : [];
-
-      const localProjects =
-        JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
-
-      // merge unique
-      const merged = [
-        ...localProjects,
-        ...cloudProjects.filter(
-          (cp) => !localProjects.some((lp) => lp.id === cp.id)
-        ),
-      ];
-
-      setGeneratedProjects(merged);
-      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(merged));
-
-      // sync back to Firestore if mismatched
-      if (merged.length !== cloudProjects.length) {
-        await updateDoc(ref, { generatedProjects: merged });
-      }
-    } catch (err) {
-      console.error("Failed loading generated projects:", err);
+      // use hook's load if available (it is)
+      // but keep fallback to localStorage key
+      const lp = JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      setGeneratedProjects(lp);
+    } catch {
+      // ignore
     }
   };
 
-  /** Save new project (local + Firestore) */
-  const saveGeneratedProject = async (project) => {
+  const saveGeneratedProjectLocal = async (project) => {
     try {
       const withId = {
         ...project,
-        id: project.id || crypto.randomUUID(),
+        id: project.id || `${Date.now()}-${Math.random()}`,
         timestamp: Date.now(),
       };
-
-      // save locally
       setGeneratedProjects((prev) => {
         const next = [...prev, withId];
         localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
         return next;
       });
-
-      // save in Firestore
-      if (user?.uid) {
-        const ref = doc(db, "users", user.uid);
-
-        await setDoc(
-          ref,
-          {
-            generatedProjects: [...generatedProjects, withId],
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
-
       return withId;
     } catch (err) {
-      console.error("Saving generated project failed:", err);
+      console.error("Saving generated project failed (local):", err);
     }
   };
 
@@ -131,8 +89,8 @@ export const UserProvider = ({ children }) => {
         setUser(merged);
         localStorage.setItem("cybercodeUser", JSON.stringify(merged));
 
-        // Load AI-generated projects
-        await loadGeneratedProjects(firebaseUser.uid);
+        // Load AI-generated projects (local cache)
+        await loadGeneratedProjectsLocal(firebaseUser.uid);
       } else {
         setUser(null);
         localStorage.removeItem("cybercodeUser");
@@ -187,15 +145,14 @@ export const UserProvider = ({ children }) => {
   };
 
   // -----------------------------------------------------
-  // FIRESTORE HOOK
+  // FIRESTORE HOOK -> replaced by local useUserData implementation
   // -----------------------------------------------------
   const firestore = useUserData(user, {
     setEnrolledCourses,
     setCourseProgress,
     setUser: (updater) => {
       setUser((prev) => {
-        const next =
-          typeof updater === "function" ? updater(prev) : updater;
+        const next = typeof updater === "function" ? updater(prev) : updater;
         const merged = { ...prev, ...next };
         localStorage.setItem("cybercodeUser", JSON.stringify(merged));
         return merged;
@@ -204,10 +161,11 @@ export const UserProvider = ({ children }) => {
     setUserGoals,
   });
 
+  // expose saveUserGoals (from local hook)
   const saveUserGoals = firestore.saveUserGoals;
 
   // -----------------------------------------------------
-  // COURSE ENROLL WRAPPER (FIXED)
+  // COURSE ENROLL WRAPPER (LOCAL)
   // -----------------------------------------------------
   const enrollInCourse = async (courseSlug) => {
     if (!user?.uid) return;
@@ -217,9 +175,12 @@ export const UserProvider = ({ children }) => {
     );
 
     try {
-      await firestore.enrollInCourse(courseSlug);
+      if (firestore && typeof firestore.enrollInCourse === "function") {
+        await firestore.enrollInCourse(courseSlug);
+      }
     } catch (err) {
-      console.error("Enroll failed:", err);
+      // local-only mode shouldn't throw, but handle safely
+      console.error("Enroll failed (local mode):", err);
     }
   };
 
@@ -227,12 +188,17 @@ export const UserProvider = ({ children }) => {
   // LOGOUT
   // -----------------------------------------------------
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.warn("Sign out error:", err);
+    }
 
     setUser(null);
     setEnrolledCourses([]);
     setCourseProgress({});
     setGeneratedProjects([]);
+    setUserGoals(null);
 
     localStorage.removeItem("cybercodeUser");
     localStorage.removeItem(GENERATED_PROJECTS_KEY);
@@ -245,17 +211,13 @@ export const UserProvider = ({ children }) => {
 
     window.location.href = "/";
   };
-  // -----------------------------------------------------
-  // LESSON PROGRESS MANAGEMENT (RESTORED & COMPATIBLE)
-  // -----------------------------------------------------
 
-  /**
-   * Mark a lesson as complete.
-   * Saves locally + Firestore.
-   * (Name preserved for backward compatibility in CourseDetail & LessonDetail)
-   */
+  // -----------------------------------------------------
+  // LESSON PROGRESS MANAGEMENT (LOCAL COMPAT)
+  // -----------------------------------------------------
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     try {
+      // update local state immediately
       setCourseProgress((prev) => {
         const existing = prev[courseSlug] || {
           completedLessons: [],
@@ -266,45 +228,30 @@ export const UserProvider = ({ children }) => {
           new Set([...existing.completedLessons, lessonSlug])
         );
 
-        return {
+        const next = {
           ...prev,
           [courseSlug]: {
             completedLessons: updatedLessons,
-            currentLessonIndex: updatedLessons.length, // ✅ REQUIRED
+            currentLessonIndex: updatedLessons.length,
             updatedAt: new Date().toISOString(),
           },
         };
-      });
 
-      if (user?.uid) {
-        const ref = doc(db, "users", user.uid);
-        await setDoc(
-          ref,
-          {
-            courseProgress: {
-              ...(courseProgress || {}),
-              [courseSlug]: {
-                completedLessons: [
-                  ...new Set([
-                    ...(courseProgress?.[courseSlug]?.completedLessons || []),
-                    lessonSlug,
-                  ]),
-                ],
-                currentLessonIndex:
-                  (courseProgress?.[courseSlug]?.completedLessons?.length || 0) +
-                  1, // ✅ REQUIRED
-                updatedAt: new Date().toISOString(),
-              },
-            },
-          },
-          { merge: true }
-        );
-      }
+        // Also call local hook to persist in localStorage via its own logic
+        try {
+          if (firestore && typeof firestore.completeLessonFS === "function") {
+            firestore.completeLessonFS(courseSlug, lessonSlug);
+          }
+        } catch (e) {
+          console.warn("Local persist of completeLessonFS failed", e);
+        }
+
+        return next;
+      });
     } catch (err) {
       console.error("completeLessonFS failed:", err);
     }
   };
-
 
   /** Check if a lesson is completed */
   const isLessonCompleted = (courseSlug, lessonSlug) => {
@@ -349,12 +296,11 @@ export const UserProvider = ({ children }) => {
         saveUserGoals,
 
         generatedProjects,
-        saveGeneratedProject,
-        loadGeneratedProjects,
+        saveGeneratedProject: saveGeneratedProjectLocal,
+        loadGeneratedProjects: loadGeneratedProjectsLocal,
         completeLessonFS,
         isLessonCompleted,
         getCourseCompletion,
-
       }}
     >
       {children}
