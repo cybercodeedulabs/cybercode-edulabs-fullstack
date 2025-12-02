@@ -5,33 +5,60 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 
+const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+
 export default function GoogleLoginButton() {
   const { setUser } = useUser();
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const u = result.user;
+      // -------------------------------------------------------
+      // FIREBASE MODE
+      // -------------------------------------------------------
+      if (USE_FIREBASE) {
+        const result = await signInWithPopup(auth, provider);
+        const u = result.user;
 
-      const userData = {
-        name: u.displayName,
-        email: u.email,
-        photo: u.photoURL,
-        uid: u.uid,
+        const userData = {
+          name: u.displayName,
+          email: u.email,
+          photo: u.photoURL,
+          uid: u.uid,
+        };
+
+        localStorage.setItem("cybercodeUser", JSON.stringify(userData));
+        setUser(userData);
+
+        const redirectPath =
+          sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+        sessionStorage.removeItem("redirectAfterLogin");
+
+        return navigate(redirectPath);
+      }
+
+      // -------------------------------------------------------
+      // LOCAL MODE (FIREBASE OFF)
+      // Create local “fake Google user”
+      // -------------------------------------------------------
+      const dummyUser = {
+        name: "Google User",
+        email: "google-user@example.com",
+        photo: "/images/google.svg", // keep your image
+        uid: `local-google-${Date.now()}`,
       };
 
-      localStorage.setItem("cybercodeUser", JSON.stringify(userData));
-      setUser(userData);
+      localStorage.setItem("cybercodeUser", JSON.stringify(dummyUser));
+      setUser(dummyUser);
 
       const redirectPath =
         sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
       sessionStorage.removeItem("redirectAfterLogin");
 
-      navigate(redirectPath);
+      return navigate(redirectPath);
     } catch (error) {
       console.error("Google Login Failed:", error);
-      alert("Google Sign-In failed. Please try again.");
+      alert("Google Sign-In is temporarily unavailable.");
     }
   };
 
@@ -48,7 +75,9 @@ export default function GoogleLoginButton() {
                  transition-all duration-200"
     >
       <img src="/images/google.svg" alt="Google" className="w-5 h-5" />
-      <span className="text-sm md:text-base font-medium">Sign in with Google</span>
+      <span className="text-sm md:text-base font-medium">
+        Sign in with Google
+      </span>
     </motion.button>
   );
 }

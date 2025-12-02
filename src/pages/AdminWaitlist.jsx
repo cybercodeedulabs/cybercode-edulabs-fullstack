@@ -6,6 +6,10 @@ import { db, provider } from "../firebase";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 
+const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+const LOCAL_WAITLIST_KEY = "cloud_waitlist_local_v1";
+const LOCAL_ADMIN_KEY = "local_admin_user_v1";
+
 function formatDate(ts) {
   try {
     if (!ts) return "";
@@ -18,7 +22,9 @@ function formatDate(ts) {
 
 export default function AdminWaitlist() {
   const auth = getAuth();
-  const [user, setUser] = useState(auth.currentUser);
+  const [user, setUser] = useState(
+    USE_FIREBASE ? auth.currentUser : JSON.parse(localStorage.getItem(LOCAL_ADMIN_KEY))
+  );
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,14 +36,47 @@ export default function AdminWaitlist() {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
+  // -------------------------------------------------------
+  // FIREBASE AUTH LISTENER (disabled in local mode)
+  // -------------------------------------------------------
   useEffect(() => {
+    if (!USE_FIREBASE) return;
+
     const unsub = auth.onAuthStateChanged((u) => setUser(u));
     return () => unsub();
   }, [auth]);
 
+  // -------------------------------------------------------
+  // LOCAL MODE: SIGN IN (dummy admin login)
+  // -------------------------------------------------------
+  const localSignIn = () => {
+    const adminUser = {
+      email: ALLOWED_ADMINS[0] || "admin@local",
+      name: "Local Admin",
+      uid: "local-admin",
+    };
+
+    localStorage.setItem(LOCAL_ADMIN_KEY, JSON.stringify(adminUser));
+    setUser(adminUser);
+  };
+
+  const localSignOut = () => {
+    localStorage.removeItem(LOCAL_ADMIN_KEY);
+    setUser(null);
+    setRows([]);
+    setAuthorized(false);
+  };
+
+  // -------------------------------------------------------
+  // FIREBASE SIGN-IN / SIGN-OUT
+  // -------------------------------------------------------
   async function handleSignIn() {
     try {
-      await signInWithPopup(auth, provider);
+      if (USE_FIREBASE) {
+        await signInWithPopup(auth, provider);
+      } else {
+        localSignIn();
+      }
     } catch (err) {
       console.error("Sign-in error:", err);
       setError("Sign-in failed. Please try again.");
@@ -46,24 +85,54 @@ export default function AdminWaitlist() {
 
   async function handleSignOut() {
     try {
-      await signOut(auth);
-      setRows([]);
-      setAuthorized(false);
+      if (USE_FIREBASE) {
+        await signOut(auth);
+      } else {
+        localSignOut();
+      }
     } catch (err) {
       console.error("Sign-out error:", err);
     }
   }
 
+  // -------------------------------------------------------
+  // LOAD WAITLIST
+  // -------------------------------------------------------
   async function loadRows() {
     setLoading(true);
     setError(null);
     setDiagnostic(null);
 
     try {
-      const q = query(collection(db, "cloud_waitlist"), orderBy("timestamp", "desc"));
-      const snap = await getDocs(q);
+      if (USE_FIREBASE) {
+        // FIREBASE MODE
+        const q = query(collection(db, "cloud_waitlist"), orderBy("timestamp", "desc"));
+        const snap = await getDocs(q);
 
-      if (snap.empty) {
+        if (snap.empty) {
+          setRows([]);
+          setDiagnostic({
+            type: "info",
+            title: "No Data",
+            message:
+              "No waitlist entries found yet. Once users submit the form, data will appear here.",
+          });
+          setLoading(false);
+          return;
+        }
+
+        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setRows(data);
+        setLoading(false);
+        return;
+      }
+
+      // ---------------------------------------------------
+      // LOCAL MODE
+      // ---------------------------------------------------
+      const local = JSON.parse(localStorage.getItem(LOCAL_WAITLIST_KEY)) || [];
+
+      if (!local.length) {
         setRows([]);
         setDiagnostic({
           type: "info",
@@ -71,55 +140,47 @@ export default function AdminWaitlist() {
           message:
             "No waitlist entries found yet. Once users submit the form, data will appear here.",
         });
+        setLoading(false);
         return;
       }
 
-      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setRows(data);
+      setRows(local);
     } catch (err) {
-      console.error("Firestore read error:", err);
+      console.error("Read error:", err);
 
-      let diag = {
+      setDiagnostic({
         type: "error",
         title: "Unknown Error",
         message: "Something went wrong while loading data.",
-      };
+      });
 
-      if (err.code === "permission-denied") {
-        diag = {
-          type: "warning",
-          title: "Access Denied",
-          message:
-            "Your Firestore rules are blocking read access.\n\n➡ Fix: In Firestore → Rules, ensure your admin email is listed in the `allow read:` block for `cloud_waitlist`.",
-        };
-      } else if (err.message?.includes("Failed to fetch")) {
-        diag = {
-          type: "warning",
-          title: "Network Error",
-          message:
-            "Unable to connect to Firestore.\n\n➡ Check your internet connection or Firebase project configuration.",
-        };
-      }
-
-      setDiagnostic(diag);
-      setError(diag.title);
+      setError("Unknown Error");
     } finally {
       setLoading(false);
     }
   }
 
+  // -------------------------------------------------------
+  // CHECK AUTHORIZED ADMIN
+  // -------------------------------------------------------
   useEffect(() => {
     if (!user) return;
+
     const email = user.email?.toLowerCase() || "";
+
     if (ALLOWED_ADMINS.length && !ALLOWED_ADMINS.includes(email)) {
       setAuthorized(false);
       setError("Access denied — this account is not authorized.");
       return;
     }
+
     setAuthorized(true);
     loadRows();
   }, [user]);
 
+  // -------------------------------------------------------
+  // CSV EXPORT (no change)
+  // -------------------------------------------------------
   function exportCSV() {
     if (!rows.length) return;
     const headers = ["id", "name", "email", "organization", "interest", "timestamp"];
@@ -153,6 +214,7 @@ export default function AdminWaitlist() {
           <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
             Admin — Cloud Waitlist
           </h1>
+
           <div className="flex items-center gap-2">
             {user ? (
               <>
@@ -174,8 +236,7 @@ export default function AdminWaitlist() {
           <Card className="p-6">
             <CardContent>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Please sign in with your project’s Google account to access
-                waitlist data.
+                Please sign in with your project’s Google account to access waitlist data.
               </p>
             </CardContent>
           </Card>

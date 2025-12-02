@@ -12,7 +12,6 @@ import { motion } from "framer-motion";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 import AIAssistant from "./components/AIAssistant";
-import AIProjectGeneratorModal from "./components/AIProjectGeneratorModal";
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
 import CookieBanner from "./components/CookieBanner";
@@ -63,12 +62,14 @@ import PodcastEpisode from "./pages/PodcastEpisode";
 import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-// HIDE HEADER INSIDE DASHBOARD/CLOUD
+/**
+ * LayoutWrapper
+ * Hides header for dashboard/experiment only (cloud keeps header now).
+ */
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
   const hideHeader =
     location.pathname.startsWith("/dashboard") ||
-    location.pathname.startsWith("/cloud") ||
     location.pathname.startsWith("/experiment");
 
   return (
@@ -80,7 +81,7 @@ const LayoutWrapper = ({ children }) => {
   );
 };
 
-// HOMEPAGE (unchanged)
+/* HOMEPAGE (unchanged) */
 function HomePage() {
   const { user, logout } = useUser();
 
@@ -245,140 +246,147 @@ function HomePage() {
   );
 }
 
-// MAIN APP COMPONENT
-function App() {
-  const [showProjectGenerator, setShowProjectGenerator] = useState(false);
+/* MAIN APP COMPONENT */
+function AppInner() {
+  // we keep showAI state but mount assistant only on learning/dashboard areas
   const [showAI, setShowAI] = useState(false);
+  const location = useLocation();
+
+  // define where AI assistant is useful — only mount on these sections
+  const aiAllowed = [
+    "/dashboard",
+    "/courses",
+    "/courses/",
+    "/projects",
+    "/student-projects",
+    "/labs",
+  ];
 
   useEffect(() => {
-    const handler = () => setShowProjectGenerator(true);
-    window.addEventListener("open-ai-project-generator", handler);
-    return () =>
-      window.removeEventListener("open-ai-project-generator", handler);
-  }, []);
+    // decide whether to mount AI based on current path
+    const path = location.pathname || "/";
+    const allowed = aiAllowed.some((p) => path.startsWith(p));
+    if (allowed) {
+      // small delay to avoid heavy blocking at initial navigation
+      const t = setTimeout(() => setShowAI(true), 300);
+      return () => clearTimeout(t);
+    } else {
+      setShowAI(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
-  useEffect(() => {
-    setTimeout(() => setShowAI(true), 300);
-  }, []);
+  return (
+    <>
+      <LayoutWrapper>
+        <main className="flex-grow">
+          <Routes>
+            {/* PUBLIC ROUTES */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/demo" element={<DemoClass />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/podcast" element={<Podcast />} />
+            <Route path="/podcast/:id" element={<PodcastEpisode />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/student-projects" element={<StudentProjects />} />
+            <Route
+              path="/student-projects/:id"
+              element={<StudentProjectDetail />}
+            />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/cloud" element={<CybercodeCloud />} />
+            <Route path="/admin/waitlist" element={<AdminWaitlist />} />
 
+            <Route path="/legal" element={<LegalIndex />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfUse />} />
+            <Route path="/refund" element={<RefundPolicy />} />
+            <Route path="/cookie" element={<CookiePolicy />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/payment" element={<Payment />} />
+
+            {/* NOTE: Course page is PUBLIC so visitors can view course details before login */}
+            <Route path="/courses/:courseSlug" element={<CourseDetail />} />
+
+            {/* PROTECTED ROUTES */}
+            <Route
+              path="/courses/:courseSlug/lessons/:lessonSlug"
+              element={
+                <ProtectedRoute>
+                  <LessonDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/certificate/:courseSlug"
+              element={
+                <ProtectedRoute>
+                  <CertificatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/labs"
+              element={
+                <ProtectedRoute>
+                  <Labs />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ENROLL is public — allows friendly redirect-to-login flow inside page */}
+            <Route path="/enroll/:courseSlug" element={<Enroll />} />
+
+            {/* DASHBOARD (protected layout + nested routes) */}
+            <Route
+              path="/dashboard/*"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="roadmap" element={<RoadmapPage />} />
+            </Route>
+
+            {/* GOALS */}
+            <Route
+              path="/set-goals"
+              element={
+                <ProtectedRoute>
+                  <GoalSetupWizard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+
+        <CookieBanner />
+      </LayoutWrapper>
+
+      {/* Conditionally mount AI assistant to reduce load on non-learning pages */}
+      {showAI && <AIAssistant />}
+    </>
+  );
+}
+
+function App() {
   return (
     <ThemeProvider>
       <Router>
         <ScrollToTop />
         <VoiceWelcome />
 
-        <LayoutWrapper>
-          <main className="flex-grow">
-            <Routes>
-              {/* PUBLIC ROUTES */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/demo" element={<DemoClass />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/podcast" element={<Podcast />} />
-              <Route path="/podcast/:id" element={<PodcastEpisode />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/student-projects" element={<StudentProjects />} />
-              <Route
-                path="/student-projects/:id"
-                element={<StudentProjectDetail />}
-              />
-              <Route path="/edit-profile" element={<EditProfile />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/cloud" element={<CybercodeCloud />} />
-              <Route path="/admin/waitlist" element={<AdminWaitlist />} />
-
-              <Route path="/legal" element={<LegalIndex />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfUse />} />
-              <Route path="/refund" element={<RefundPolicy />} />
-              <Route path="/cookie" element={<CookiePolicy />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/payment" element={<Payment />} />
-
-              {/* PROTECTED ROUTES */}
-              <Route
-                path="/courses/:courseSlug"
-                element={
-                  <ProtectedRoute>
-                    <CourseDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/courses/:courseSlug/lessons/:lessonSlug"
-                element={
-                  <ProtectedRoute>
-                    <LessonDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/certificate/:courseSlug"
-                element={
-                  <ProtectedRoute>
-                    <CertificatePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/labs"
-                element={
-                  <ProtectedRoute>
-                    <Labs />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/enroll/:courseSlug"
-                element={
-                  <ProtectedRoute>
-                    <Enroll />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* DASHBOARD */}
-              <Route
-                path="/dashboard/*"
-                element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="roadmap" element={<RoadmapPage />} />
-              </Route>
-
-              {/* GOALS */}
-              <Route
-                path="/set-goals"
-                element={
-                  <ProtectedRoute>
-                    <GoalSetupWizard />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-
-          <CookieBanner />
-        </LayoutWrapper>
-
-        {/* GLOBAL MODALS */}
-        <AIProjectGeneratorModal
-          isOpen={showProjectGenerator}
-          onClose={() => setShowProjectGenerator(false)}
-        />
-
-        {showAI && <AIAssistant />}
+        <AppInner />
       </Router>
     </ThemeProvider>
   );

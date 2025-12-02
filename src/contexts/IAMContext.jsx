@@ -12,8 +12,9 @@ import {
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
-// Create context
 const IAMContext = createContext();
+
+const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
 
 export const IAMProvider = ({ children }) => {
   const [iamUser, setIamUser] = useState(null);
@@ -28,56 +29,129 @@ export const IAMProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // ✅ Register new IAM user
+  // -------------------------------------------------------
+  // LOCAL FALLBACK STORAGE KEY
+  // -------------------------------------------------------
+  const LOCAL_IAM_KEY = "iam_users_local_v1";
+
+  const loadLocalUsers = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LOCAL_IAM_KEY)) || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalUsers = (users) => {
+    localStorage.setItem(LOCAL_IAM_KEY, JSON.stringify(users));
+  };
+
+  // -------------------------------------------------------
+  // REGISTER IAM USER
+  // -------------------------------------------------------
   const registerIAMUser = async ({ email, password, role }) => {
     try {
-      // Check if user already exists
-      const q = query(collection(db, "iam_users"), where("email", "==", email));
-      const snapshot = await getDocs(q);
+      if (USE_FIREBASE) {
+        // FIREBASE MODE (original logic)
+        const q = query(collection(db, "iam_users"), where("email", "==", email));
+        const snapshot = await getDocs(q);
 
-      if (!snapshot.empty) {
+        if (!snapshot.empty) {
+          throw new Error("User already exists with this email.");
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const userRef = await addDoc(collection(db, "iam_users"), {
+          email,
+          password: hashedPassword,
+          role: role || "developer",
+          createdAt: new Date(),
+        });
+
+        return { id: userRef.id, email, role };
+      }
+
+      // ---------------------------------------------------
+      // LOCAL MODE (Firestore disabled)
+      // ---------------------------------------------------
+      const users = loadLocalUsers();
+      const exists = users.find((u) => u.email === email);
+      if (exists) {
         throw new Error("User already exists with this email.");
       }
 
-      // Hash password before storing
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Store in Firestore
-      const userRef = await addDoc(collection(db, "iam_users"), {
+      const newUser = {
+        id: `${Date.now()}-${Math.random()}`,
         email,
         password: hashedPassword,
-        role: role || "developer", // default role
-        createdAt: new Date(),
-      });
+        role: role || "developer",
+        createdAt: new Date().toISOString(),
+      };
 
-      return { id: userRef.id, email, role };
+      users.push(newUser);
+      saveLocalUsers(users);
+
+      return { id: newUser.id, email, role: newUser.role };
     } catch (error) {
       console.error("IAM registration error:", error);
       throw error;
     }
   };
 
-  // ✅ Login IAM user
+  // -------------------------------------------------------
+  // LOGIN IAM USER
+  // -------------------------------------------------------
   const loginIAMUser = async ({ email, password }) => {
     try {
-      const q = query(collection(db, "iam_users"), where("email", "==", email));
-      const snapshot = await getDocs(q);
+      if (USE_FIREBASE) {
+        // FIREBASE MODE (original logic)
+        const q = query(collection(db, "iam_users"), where("email", "==", email));
+        const snapshot = await getDocs(q);
 
-      if (snapshot.empty) {
+        if (snapshot.empty) {
+          throw new Error("Invalid email or password.");
+        }
+
+        const userData = snapshot.docs[0].data();
+        const passwordMatch = await bcrypt.compare(password, userData.password);
+
+        if (!passwordMatch) {
+          throw new Error("Invalid email or password.");
+        }
+
+        const user = {
+          id: snapshot.docs[0].id,
+          email: userData.email,
+          role: userData.role,
+        };
+
+        setIamUser(user);
+        localStorage.setItem("iamUser", JSON.stringify(user));
+        return user;
+      }
+
+      // ---------------------------------------------------
+      // LOCAL MODE (Firestore disabled)
+      // ---------------------------------------------------
+      const users = loadLocalUsers();
+      const found = users.find((u) => u.email === email);
+
+      if (!found) {
         throw new Error("Invalid email or password.");
       }
 
-      const userData = snapshot.docs[0].data();
-      const passwordMatch = await bcrypt.compare(password, userData.password);
-
+      const passwordMatch = await bcrypt.compare(password, found.password);
       if (!passwordMatch) {
         throw new Error("Invalid email or password.");
       }
 
       const user = {
-        id: snapshot.docs[0].id,
-        email: userData.email,
-        role: userData.role,
+        id: found.id,
+        email: found.email,
+        role: found.role,
       };
 
       setIamUser(user);
@@ -90,22 +164,33 @@ export const IAMProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout IAM user
+  // -------------------------------------------------------
+  // LOGOUT
+  // -------------------------------------------------------
   const logoutIAM = () => {
     setIamUser(null);
     localStorage.removeItem("iamUser");
   };
 
-  // ✅ Get user role info (useful for protected routes)
+  // -------------------------------------------------------
+  // GET USER ROLE BY ID
+  // -------------------------------------------------------
   const getUserRole = async (userId) => {
     try {
-      const docRef = doc(db, "iam_users", userId);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        return snapshot.data().role;
-      } else {
+      if (USE_FIREBASE) {
+        // FIREBASE MODE
+        const docRef = doc(db, "iam_users", userId);
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+          return snapshot.data().role;
+        }
         return null;
       }
+
+      // LOCAL MODE
+      const users = loadLocalUsers();
+      const found = users.find((u) => u.id === userId);
+      return found?.role || null;
     } catch (error) {
       console.error("Error fetching role:", error);
       return null;
@@ -128,5 +213,4 @@ export const IAMProvider = ({ children }) => {
   );
 };
 
-// ✅ Custom hook for easier access
 export const useIAM = () => useContext(IAMContext);

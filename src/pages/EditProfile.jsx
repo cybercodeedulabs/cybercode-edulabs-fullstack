@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 import { PERSONAS_LIST } from "../utils/personaEngine";
 import { Camera } from "lucide-react";
 
+const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+
 export default function EditProfile() {
   const { user, setUser, getTopPersona } = useUser();
   const navigate = useNavigate();
@@ -54,17 +56,38 @@ export default function EditProfile() {
     setUploading(true);
 
     try {
-      const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      // -------------------------------------------------------
+      // FIREBASE MODE
+      // -------------------------------------------------------
+      if (USE_FIREBASE) {
+        const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
 
-      setForm((prev) => ({ ...prev, photo: url }));
+        setForm((prev) => ({ ...prev, photo: url }));
 
-      await setDoc(
-        doc(db, "users", user.uid),
-        { photo: url, updatedAt: new Date().toISOString() },
-        { merge: true }
-      );
+        await setDoc(
+          doc(db, "users", user.uid),
+          { photo: url, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+
+        setUploading(false);
+        return;
+      }
+
+      // -------------------------------------------------------
+      // LOCAL MODE (Firebase disabled)
+      // Use browser temporary image URL
+      // -------------------------------------------------------
+      const localUrl = URL.createObjectURL(file);
+
+      setForm((prev) => ({ ...prev, photo: localUrl }));
+
+      // Update local user object (no Firestore)
+      const updated = { ...user, photo: localUrl };
+      setUser(updated);
+      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
     } catch (err) {
       console.error("Photo upload failed:", err);
     }
@@ -80,27 +103,51 @@ export default function EditProfile() {
 
     setSaving(true);
 
-    const refUser = doc(db, "users", user.uid);
-
     try {
-      await setDoc(
-        refUser,
-        {
-          name: form.name,
-          phone: form.phone,
-          role: form.role,
-          about: form.about,
-          photo: form.photo,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
+      // -------------------------------------------------------
+      // FIREBASE MODE
+      // -------------------------------------------------------
+      if (USE_FIREBASE) {
+        const refUser = doc(db, "users", user.uid);
 
-      setUser({ ...user, ...form });
+        await setDoc(
+          refUser,
+          {
+            name: form.name,
+            phone: form.phone,
+            role: form.role,
+            about: form.about,
+            photo: form.photo,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+        setUser({ ...user, ...form });
+
+        setTimeout(() => navigate("/dashboard"), 500);
+        setSaving(false);
+        return;
+      }
+
+      // -------------------------------------------------------
+      // LOCAL MODE (NO FIREBASE)
+      // Save everything to localStorage
+      // -------------------------------------------------------
+      const updated = {
+        ...user,
+        name: form.name,
+        phone: form.phone,
+        role: form.role,
+        about: form.about,
+        photo: form.photo,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setUser(updated);
+      localStorage.setItem("cybercodeUser", JSON.stringify(updated));
+
+      setTimeout(() => navigate("/dashboard"), 500);
     } catch (err) {
       console.error("Profile update failed:", err);
     }
