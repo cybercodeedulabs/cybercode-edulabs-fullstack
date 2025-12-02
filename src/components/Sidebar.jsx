@@ -1,21 +1,8 @@
 // src/components/Sidebar.jsx
 import React, { useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Map,
-  BookOpen,
-  Server,
-  FolderKanban,
-  Cloud,
-  Users,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Home,
-} from "lucide-react";
 import { useUser } from "../contexts/UserContext";
+import { Icon } from "@iconify/react";
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -24,28 +11,46 @@ const Sidebar = () => {
   const location = useLocation();
 
   const learningMenu = [
-    { name: "Home", path: "/", icon: <Home size={18} /> },
-    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
-    { name: "My Roadmap", path: "/dashboard/roadmap", icon: <Map size={18} /> },
-    { name: "My Courses", path: "/dashboard#courses", icon: <BookOpen size={18} />, anchor: "courses" },
-    { name: "My Projects", path: "/dashboard#projects", icon: <FolderKanban size={18} />, anchor: "projects" },
+    { name: "Home", path: "/", icon: "mdi:home-outline" },
+    { name: "Dashboard", path: "/dashboard", icon: "mdi:view-dashboard-outline" },
+    { name: "My Roadmap", path: "/dashboard/roadmap", icon: "mdi:map-outline" },
+    {
+      name: "My Courses",
+      path: "/dashboard#courses",
+      icon: "mdi:book-open-variant-outline",
+      anchor: "courses",
+    },
+    {
+      name: "My Projects",
+      path: "/dashboard#projects",
+      icon: "mdi:folder-outline",
+      anchor: "projects",
+    },
   ];
 
   const cloudMenu = [
-    { name: "Cloud Console", path: "/cloud", icon: <Cloud size={18} /> },
-    { name: "Instances", path: "/dashboard/instances", icon: <Server size={18} /> },
-    { name: "Users", path: "/dashboard/users", icon: <Users size={18} /> },
-    { name: "Settings", path: "/dashboard/settings", icon: <Settings size={18} /> },
+    { name: "Cloud Console", path: "/cloud", icon: "mdi:cloud-outline" },
+    { name: "Instances", path: "/dashboard/instances", icon: "mdi:server-outline" },
+    { name: "Users", path: "/dashboard/users", icon: "mdi:account-multiple-outline" },
+    { name: "Settings", path: "/dashboard/settings", icon: "mdi:cog-outline" },
   ];
 
   const handleNav = (item) => {
     if (item.anchor) {
       if (location.pathname.startsWith("/dashboard")) {
-        window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
+        window.dispatchEvent(
+          new CustomEvent("dashboard-scroll-to", {
+            detail: { target: item.anchor },
+          })
+        );
       } else {
         navigate("/dashboard");
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("dashboard-scroll-to", { detail: { target: item.anchor } }));
+          window.dispatchEvent(
+            new CustomEvent("dashboard-scroll-to", {
+              detail: { target: item.anchor },
+            })
+          );
         }, 300);
       }
       return;
@@ -60,10 +65,10 @@ const Sidebar = () => {
       transition-all duration-300 flex flex-col shadow-xl
       ${collapsed ? "w-20" : "w-64"}`}
     >
-      {/* Logo + Collapse */}
+      {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-slate-700">
         <div className="flex items-center gap-2 text-cyan-400 font-semibold text-lg">
-          <Cloud size={22} />
+          <Icon icon="mdi:cloud-outline" width={22} />
           {!collapsed && <span>Cybercode</span>}
         </div>
 
@@ -71,7 +76,10 @@ const Sidebar = () => {
           onClick={() => setCollapsed(!collapsed)}
           className="text-slate-400 hover:text-cyan-400 transition"
         >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          <Icon
+            icon={collapsed ? "mdi:chevron-right" : "mdi:chevron-left"}
+            width={20}
+          />
         </button>
       </div>
 
@@ -104,7 +112,7 @@ const Sidebar = () => {
 
         <nav className="px-2 space-y-1">
           {learningMenu.map((item) => {
-            if (item.anchor) {
+            if (item.anchor)
               return (
                 <button
                   key={item.name}
@@ -112,11 +120,10 @@ const Sidebar = () => {
                   className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm 
                   text-slate-300 hover:bg-slate-800 hover:text-cyan-200 transition"
                 >
-                  {item.icon}
+                  <Icon icon={item.icon} width={18} />
                   {!collapsed && <span>{item.name}</span>}
                 </button>
               );
-            }
 
             return (
               <NavLink
@@ -124,10 +131,13 @@ const Sidebar = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition
-                  ${isActive ? "bg-slate-800 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
+                  ${isActive
+                    ? "bg-slate-800 text-cyan-300"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"
+                  }`
                 }
               >
-                {item.icon}
+                <Icon icon={item.icon} width={18} />
                 {!collapsed && <span>{item.name}</span>}
               </NavLink>
             );
@@ -150,10 +160,13 @@ const Sidebar = () => {
               to={item.path}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-2 rounded-lg text-sm transition
-                ${isActive ? "bg-slate-800 text-cyan-300" : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"}`
+                ${isActive
+                  ? "bg-slate-800 text-cyan-300"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-cyan-200"
+                }`
               }
             >
-              {item.icon}
+              <Icon icon={item.icon} width={18} />
               {!collapsed && <span>{item.name}</span>}
             </NavLink>
           ))}
@@ -167,7 +180,7 @@ const Sidebar = () => {
           className="flex items-center gap-2 text-sm w-full px-4 py-2 rounded-lg 
           bg-slate-800 hover:bg-red-700 text-red-300 border border-slate-600 transition"
         >
-          <LogOut size={16} />
+          <Icon icon="mdi:logout" width={16} />
           {!collapsed && <span>Logout</span>}
         </button>
       </div>

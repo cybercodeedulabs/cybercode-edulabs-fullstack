@@ -1,7 +1,7 @@
 // src/components/TopBar.jsx
 import React, { useState } from "react";
 import { useUser } from "../contexts/UserContext";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 const TopBar = () => {
   const { user, logout } = useUser();
@@ -11,13 +11,13 @@ const TopBar = () => {
     <header className="relative flex items-center justify-between px-6 py-3
       bg-[#0f172a] border-b border-slate-700 shadow-md">
 
-      {/* Left: Title */}
+      {/* Title */}
       <div>
         <h1 className="text-lg font-semibold text-cyan-400">C3 Cloud Console</h1>
         <p className="text-xs text-slate-400">powered by Cybercode EduLabs</p>
       </div>
 
-      {/* Right: Profile */}
+      {/* Profile */}
       <div className="flex items-center gap-4 relative">
         <button
           onClick={() => setOpen(!open)}
@@ -27,7 +27,7 @@ const TopBar = () => {
             src={user?.photo || "/images/default-avatar.png"}
             className="w-9 h-9 rounded-full border border-cyan-400 object-cover"
           />
-          <ChevronDown size={18} />
+          <Icon icon="mdi:chevron-down" width={18} />
         </button>
 
         {open && (
@@ -43,7 +43,7 @@ const TopBar = () => {
               className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md 
               hover:bg-slate-700 text-slate-300"
             >
-              <User size={16} /> Edit Profile
+              <Icon icon="mdi:account-outline" width={16} /> Edit Profile
             </button>
 
             <button
@@ -51,7 +51,7 @@ const TopBar = () => {
               className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md 
               hover:bg-red-700 text-red-300"
             >
-              <LogOut size={16} /> Sign Out
+              <Icon icon="mdi:logout" width={16} /> Sign Out
             </button>
           </div>
         )}

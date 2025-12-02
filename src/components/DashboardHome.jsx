@@ -1,7 +1,7 @@
 // src/components/DashboardHome.jsx
 import React, { useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { Server, Cloud, Layers, Shield } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 const DashboardHome = () => {
   const { user } = useContext(UserContext);
@@ -14,14 +14,15 @@ const DashboardHome = () => {
           Welcome back, {user?.iamUsername || user?.name || "Cloud User"} 👋
         </h2>
         <p className="text-slate-400">
-          Manage your Cybercode Cloud resources and explore real-time learning environments.
+          Manage your Cybercode Cloud resources and explore real-time learning
+          environments.
         </p>
       </div>
 
-      {/* Grid of Services */}
+      {/* Services Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="panel p-6 hover:scale-[1.02] transition">
-          <Cloud className="w-8 h-8 text-cyan-400 mb-3" />
+          <Icon icon="mdi:cloud-outline" width={36} className="text-cyan-400 mb-3" />
           <h3 className="text-lg font-semibold text-white mb-2">Compute</h3>
           <p className="text-sm text-slate-400">
             Launch and manage your virtual cloud instances.
@@ -29,7 +30,7 @@ const DashboardHome = () => {
         </div>
 
         <div className="panel p-6 hover:scale-[1.02] transition">
-          <Layers className="w-8 h-8 text-cyan-400 mb-3" />
+          <Icon icon="mdi:layers-outline" width={36} className="text-cyan-400 mb-3" />
           <h3 className="text-lg font-semibold text-white mb-2">Storage</h3>
           <p className="text-sm text-slate-400">
             Manage object storage and persistent volumes.
@@ -37,7 +38,7 @@ const DashboardHome = () => {
         </div>
 
         <div className="panel p-6 hover:scale-[1.02] transition">
-          <Server className="w-8 h-8 text-cyan-400 mb-3" />
+          <Icon icon="mdi:server-outline" width={36} className="text-cyan-400 mb-3" />
           <h3 className="text-lg font-semibold text-white mb-2">Database</h3>
           <p className="text-sm text-slate-400">
             Explore scalable database services with monitoring tools.
@@ -45,7 +46,7 @@ const DashboardHome = () => {
         </div>
 
         <div className="panel p-6 hover:scale-[1.02] transition">
-          <Shield className="w-8 h-8 text-cyan-400 mb-3" />
+          <Icon icon="mdi:shield-check-outline" width={36} className="text-cyan-400 mb-3" />
           <h3 className="text-lg font-semibold text-white mb-2">Security</h3>
           <p className="text-sm text-slate-400">
             Configure IAM roles, policies, and secure environments.
@@ -53,11 +54,12 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Quick Stats (placeholder for later analytics) */}
+      {/* Stats */}
       <div className="panel p-6">
         <h3 className="text-lg font-semibold text-cyan-400 mb-4">
           Cloud Resource Summary
         </h3>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p className="text-3xl font-bold text-white">03</p>
@@ -72,7 +74,7 @@ const DashboardHome = () => {
             <p className="text-sm text-slate-400">Databases</p>
           </div>
           <div>
-            <p className="text-3xl font-bold text-white">98 %</p>
+            <p className="text-3xl font-bold text-white">98%</p>
             <p className="text-sm text-slate-400">Uptime</p>
           </div>
         </div>
