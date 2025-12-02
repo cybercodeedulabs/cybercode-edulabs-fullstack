@@ -1,23 +1,30 @@
-// src/contexts/UserContext.jsx
-import React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 // import { auth } from "../firebase";
 // import { onAuthStateChanged, signOut } from "firebase/auth";
 import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
 
-// ----------------------------
-// CONSTANTS
-// ----------------------------
+/* ------------------------------------
+   CONSTANTS
+-------------------------------------*/
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
-const USE_FIREBASE = false;
+const USE_FIREBASE = false;   // local mode only
 
-
-
+/* ------------------------------------
+   PROVIDER
+-------------------------------------*/
 export const UserProvider = ({ children }) => {
-  // AUTH USER (local cache load)
+
+  /* -------------------------
+     AUTH USER (LOCAL CACHE)
+  --------------------------*/
   const [user, setUser] = useState(() => {
     try {
       const raw = localStorage.getItem("cybercodeUser");
@@ -29,7 +36,9 @@ export const UserProvider = ({ children }) => {
 
   const [loading, setLoading] = useState(true);
 
-  // AI-GENERATED PROJECTS (LOCAL CACHE)
+  /* --------------------------------------
+     GENERATED PROJECTS (LOCAL STORAGE)
+  ---------------------------------------*/
   const [generatedProjects, setGeneratedProjects] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
@@ -38,10 +47,10 @@ export const UserProvider = ({ children }) => {
     }
   });
 
-  // load/save helpers for generated projects (local)
   const loadGeneratedProjectsLocal = async () => {
     try {
-      const lp = JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      const lp =
+        JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
       setGeneratedProjects(lp);
       return lp;
     } catch {
@@ -53,86 +62,57 @@ export const UserProvider = ({ children }) => {
     try {
       const withId = {
         ...project,
-        id: project.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        id:
+          project.id ||
+          `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         timestamp: project.timestamp || Date.now(),
       };
+
       setGeneratedProjects((prev) => {
         const next = [...(prev || []), withId];
-        try {
-          localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-        } catch (e) {
-          console.warn("Could not persist generated projects to localStorage", e);
-        }
+        localStorage.setItem(
+          GENERATED_PROJECTS_KEY,
+          JSON.stringify(next)
+        );
         return next;
       });
+
       return withId;
     } catch (err) {
-      console.error("Saving generated project failed (local):", err);
+      console.warn("Failed to save project locally:", err);
       return project;
     }
   };
 
-  // -------------------------
-  // AUTH LISTENER
-  // -------------------------
+  /* -------------------------
+     AUTH LISTENER
+  --------------------------*/
   useEffect(() => {
     if (!USE_FIREBASE) {
-      // LOCAL MODE: load local data and skip firebase listener
       loadGeneratedProjectsLocal();
       setLoading(false);
       return;
     }
 
-    // FIREBASE MODE
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const stored = JSON.parse(localStorage.getItem("cybercodeUser")) || {};
-
-        const merged = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: stored.name || firebaseUser.displayName || "",
-          photo: stored.photo || firebaseUser.photoURL || "",
-          phone: stored.phone || "",
-          role: stored.role || "",
-          about: stored.about || "",
-          isPremium: stored.isPremium || false,
-        };
-
-        setUser(merged);
-        try {
-          localStorage.setItem("cybercodeUser", JSON.stringify(merged));
-        } catch { }
-        await loadGeneratedProjectsLocal();
-      } else {
-        // signed out
-        setUser(null);
-        try {
-          localStorage.removeItem("cybercodeUser");
-          localStorage.removeItem(GENERATED_PROJECTS_KEY);
-        } catch { }
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Firebase disabled → no listener runs.
   }, []);
 
-  // -------------------------
-  // USER GOALS / COURSE PROGRESS / PERSONA
-  // -------------------------
+  /* --------------------------------------
+     USER GOALS + COURSE PROGRESS
+  ---------------------------------------*/
   const [userGoals, setUserGoals] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
   const [userStats, setUserStats] = useState({});
 
-  // PERSONA SCORES
+  /* --------------------------------------
+     PERSONA SCORES
+  ---------------------------------------*/
   const [personaScores, setPersonaScores] = useState(() => {
     try {
-      const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
+      return (
+        JSON.parse(localStorage.getItem(PERSONA_STORAGE_KEY)) || {}
+      );
     } catch {
       return {};
     }
@@ -150,34 +130,37 @@ export const UserProvider = ({ children }) => {
         }
       }
 
-      try {
-        localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
-      } catch { }
+      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
   const getTopPersona = () => {
-    const list = Object.entries(personaScores || {});
-    if (!list.length) return null;
-    list.sort((a, b) => b[1] - a[1]);
-    return { persona: list[0][0], score: list[0][1], all: list };
+    const entries = Object.entries(personaScores || {});
+    if (!entries.length) return null;
+    entries.sort((a, b) => b[1] - a[1]);
+    return {
+      persona: entries[0][0],
+      score: entries[0][1],
+      all: entries,
+    };
   };
 
-  // -------------------------
-  // FIRESTORE / LOCAL HOOK
-  // -------------------------
-  // useUserData returns the same-fn names used by the app. In local mode it persists to localStorage.
+  /* --------------------------------------
+     FIRESTORE / LOCAL HOOK (LOCAL MODE)
+  ---------------------------------------*/
   const firestore = useUserData(user, {
     setEnrolledCourses,
     setCourseProgress,
     setUser: (updater) => {
       setUser((prev) => {
-        const next = typeof updater === "function" ? updater(prev) : updater;
+        const next =
+          typeof updater === "function" ? updater(prev) : updater;
         const merged = { ...prev, ...next };
-        try {
-          localStorage.setItem("cybercodeUser", JSON.stringify(merged));
-        } catch { }
+        localStorage.setItem(
+          "cybercodeUser",
+          JSON.stringify(merged)
+        );
         return merged;
       });
     },
@@ -185,47 +168,48 @@ export const UserProvider = ({ children }) => {
     setUserStats,
   });
 
-  // safe fallback for saveUserGoals
+  /* --------------------------------------
+     SAVE USER GOALS (LOCAL FALLBACK)
+  ---------------------------------------*/
   const saveUserGoals =
     firestore?.saveUserGoals ||
     (async (goals) => {
-      try {
-        const now = Date.now();
-        const payload = { ...goals, updatedAt: now, createdAt: goals?.createdAt || now };
-        setUserGoals(payload);
-        try {
-          localStorage.setItem("cybercode_user_goals", JSON.stringify(payload));
-        } catch { }
-        return payload;
-      } catch (e) {
-        console.warn("saveUserGoals fallback failed", e);
-        return null;
-      }
+      const now = Date.now();
+      const payload = {
+        ...goals,
+        updatedAt: now,
+        createdAt: goals?.createdAt || now,
+      };
+
+      setUserGoals(payload);
+      localStorage.setItem(
+        "cybercode_user_goals",
+        JSON.stringify(payload)
+      );
+
+      return payload;
     });
 
-  // -------------------------
-  // COURSE ENROLL (wrapper)
-  // -------------------------
+  /* --------------------------------------
+     COURSE ENROLL
+  ---------------------------------------*/
   const enrollInCourse = async (courseSlug) => {
-    // NOTE: we intentionally require a logged-in user for persistent enrollments.
-    // If you want optimistic anonymous enroll (temp), we can add that later.
-    if (!user?.uid) return;
+    if (!user?.uid) return; // user must be logged in
 
     setEnrolledCourses((prev) =>
-      prev && Array.isArray(prev) && prev.includes(courseSlug) ? prev : [...(prev || []), courseSlug]
+      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
     );
 
     try {
       await firestore?.enrollInCourse?.(courseSlug);
     } catch (err) {
-      console.warn("enrollInCourse (firestore) failed:", err);
+      console.warn("enrollInCourse fallback:", err);
     }
   };
 
-  // -------------------------
-  // GENERATED PROJECTS (local + firestore)
-  // -------------------------
-  // If firestore offers load/save, prefer it; otherwise use local helpers above.
+  /* --------------------------------------
+     GENERATED PROJECTS (LOCAL + OPTIONAL REMOTE)
+  ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     if (firestore?.loadGeneratedProjects) {
       try {
@@ -234,8 +218,8 @@ export const UserProvider = ({ children }) => {
           setGeneratedProjects(list);
           return list;
         }
-      } catch (e) {
-        console.warn("firestore.loadGeneratedProjects failed", e);
+      } catch (err) {
+        console.warn("loadGeneratedProjects (firestore) failed");
       }
     }
     return loadGeneratedProjectsLocal();
@@ -245,65 +229,63 @@ export const UserProvider = ({ children }) => {
     if (firestore?.saveGeneratedProject) {
       try {
         const saved = await firestore.saveGeneratedProject(project);
-        // persist to local view as well
+
         setGeneratedProjects((prev) => {
-          const next = [...(prev || []), saved];
-          try {
-            localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-          } catch { }
+          const next = [...prev, saved];
+          localStorage.setItem(
+            GENERATED_PROJECTS_KEY,
+            JSON.stringify(next)
+          );
           return next;
         });
+
         return saved;
-      } catch (e) {
-        console.warn("firestore.saveGeneratedProject failed, falling back to local", e);
+      } catch (err) {
+        console.warn("saveGeneratedProject (fallback)", err);
       }
     }
+
     return saveGeneratedProjectLocal(project);
   };
 
-  // -------------------------
-  // LOGOUT
-  // -------------------------
+  /* --------------------------------------
+     LOGOUT
+  ---------------------------------------*/
   const logout = async () => {
-    if (USE_FIREBASE) {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        console.warn("Sign out error:", err);
-      }
-    }
-
     setUser(null);
     setEnrolledCourses([]);
     setCourseProgress({});
     setGeneratedProjects([]);
     setUserGoals(null);
 
-    try {
-      localStorage.removeItem("cybercodeUser");
-      localStorage.removeItem(GENERATED_PROJECTS_KEY);
-      localStorage.removeItem(PERSONA_STORAGE_KEY);
-      localStorage.removeItem("cybercode_user_goals");
-    } catch { }
+    localStorage.removeItem("cybercodeUser");
+    localStorage.removeItem(GENERATED_PROJECTS_KEY);
+    localStorage.removeItem(PERSONA_STORAGE_KEY);
+    localStorage.removeItem("cybercode_user_goals");
 
-    // cleanup any cached roadmaps
-    try {
-      Object.keys(localStorage)
-        .filter((k) => k.startsWith("cybercode_ai_roadmap_v"))
-        .forEach((k) => localStorage.removeItem(k));
-    } catch { }
+    // remove cached AI roadmaps
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("cybercode_ai_roadmap_v"))
+      .forEach((k) => localStorage.removeItem(k));
 
-    // gentle redirect to home
     window.location.href = "/";
   };
 
-  // -------------------------
-  // LESSON PROGRESS (local UI update + persist)
-  // -------------------------
+  /* --------------------------------------
+     LESSON PROGRESS
+  ---------------------------------------*/
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     setCourseProgress((prev) => {
-      const existing = prev?.[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-      const updatedLessons = Array.from(new Set([...(existing.completedLessons || []), lessonSlug]));
+      const existing =
+        prev?.[courseSlug] || {
+          completedLessons: [],
+          currentLessonIndex: 0,
+        };
+
+      const updatedLessons = Array.from(
+        new Set([...(existing.completedLessons || []), lessonSlug])
+      );
+
       const next = {
         ...prev,
         [courseSlug]: {
@@ -313,29 +295,31 @@ export const UserProvider = ({ children }) => {
         },
       };
 
-      // try to persist via firestore/local hook
       try {
         firestore?.completeLessonFS?.(courseSlug, lessonSlug);
-      } catch (e) {
-        // ignore
-      }
+      } catch {}
 
       return next;
     });
   };
 
   const isLessonCompleted = (courseSlug, lessonSlug) =>
-    Boolean(courseProgress?.[courseSlug]?.completedLessons?.includes(lessonSlug));
+    Boolean(
+      courseProgress?.[courseSlug]?.completedLessons?.includes(
+        lessonSlug
+      )
+    );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed = courseProgress?.[courseSlug]?.completedLessons || [];
+    const completed =
+      courseProgress?.[courseSlug]?.completedLessons || [];
     if (!totalLessons) return 0;
     return Math.round((completed.length / totalLessons) * 100);
   };
 
-  // -------------------------
-  // PROVIDER
-  // -------------------------
+  /* --------------------------------------
+     PROVIDER EXPORT
+  ---------------------------------------*/
   return (
     <UserContext.Provider
       value={{
@@ -365,6 +349,7 @@ export const UserProvider = ({ children }) => {
         completeLessonFS,
         isLessonCompleted,
         getCourseCompletion,
+
         userStats,
         setUserStats,
       }}
@@ -374,4 +359,7 @@ export const UserProvider = ({ children }) => {
   );
 };
 
+/* --------------------------------------
+   HOOK EXPORT
+---------------------------------------*/
 export const useUser = () => useContext(UserContext);

@@ -3,9 +3,10 @@
 // Stores a simple "user document" in localStorage under key `cc_userdoc_<uid>`
 // and goals under `cc_goals_<uid>`.
 // Exposes the same functions used by the app.
-import React from "react";
+import React, { useEffect } from "react";
 
-const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+
+const USE_FIREBASE = false;
 
 /**
  * Small guard for localStorage (prevents crashes during SSR / build)
@@ -25,14 +26,14 @@ export default function useUserData(
   // If Firebase mode -> return safe no-op object (Firestore will handle in real mode)
   if (USE_FIREBASE) {
     return {
-      enrollInCourse: async () => {},
-      completeLessonFS: async () => {},
-      recordStudySession: async () => {},
-      resetMyProgress: async () => {},
-      grantCertificationAccess: async () => {},
-      grantServerAccess: async () => {},
-      grantFullPremium: async () => {},
-      saveUserGoals: async () => {},
+      enrollInCourse: async () => { },
+      completeLessonFS: async () => { },
+      recordStudySession: async () => { },
+      resetMyProgress: async () => { },
+      grantCertificationAccess: async () => { },
+      grantServerAccess: async () => { },
+      grantFullPremium: async () => { },
+      saveUserGoals: async () => { },
       loadGeneratedProjects: async () => [],
       saveGeneratedProject: async (p) => p,
     };
@@ -90,14 +91,14 @@ export default function useUserData(
   // If no user -> return no-op functions (do NOT attempt localStorage I/O)
   if (!user || !user.uid) {
     return {
-      enrollInCourse: async () => {},
-      completeLessonFS: async () => {},
-      recordStudySession: async () => {},
-      resetMyProgress: async () => {},
-      grantCertificationAccess: async () => {},
-      grantServerAccess: async () => {},
-      grantFullPremium: async () => {},
-      saveUserGoals: async () => {},
+      enrollInCourse: async () => { },
+      completeLessonFS: async () => { },
+      recordStudySession: async () => { },
+      resetMyProgress: async () => { },
+      grantCertificationAccess: async () => { },
+      grantServerAccess: async () => { },
+      grantFullPremium: async () => { },
+      saveUserGoals: async () => { },
       loadGeneratedProjects: async () => [],
       saveGeneratedProject: async (p) => p,
     };
@@ -134,19 +135,26 @@ export default function useUserData(
   };
 
   // Hydrate UI (guarded: only run when localStorage available)
-  try {
-    if (canUseLocalStorage()) {
+  // HYDRATE ONLY AFTER MOUNT
+  useEffect(() => {
+    try {
+      if (!canUseLocalStorage()) return;
+
       const doc = ensureInitialLocalDoc();
       setEnrolledCourses?.(doc.enrolledCourses || []);
       setCourseProgress?.(doc.courseProgress || {});
+
       const g = readGoalsDoc(uid);
       if (g && setUserGoals) setUserGoals(g);
+
       if (doc.isPremium && setUser)
         setUser((u) => (u ? { ...u, isPremium: true } : u));
+
+    } catch (e) {
+      console.warn("hydrateOnce failed", e);
     }
-  } catch (e) {
-    console.warn("hydrateOnce failed", e);
-  }
+  }, [uid]);
+
 
   // Write helper that persists doc and updates React state
   const persistAndNotify = (nextDoc) => {
