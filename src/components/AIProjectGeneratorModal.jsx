@@ -1,6 +1,7 @@
+// src/components/AIProjectGeneratorModal.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Lightbulb, Loader2 } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { useUser } from "../contexts/UserContext";
 
 export default function AIProjectGeneratorModal({ isOpen, onClose }) {
@@ -43,7 +44,6 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
         raw["quick_steps"] ||
         [],
 
-      // timestamp normalization
       timestamp: Date.now(),
     };
   };
@@ -79,7 +79,6 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
         console.error("JSON parse failed, raw text:", text);
       }
 
-      // ⭐ FIX: Normalize shape for UI
       const finalProject = normalizeProject(parsed);
 
       const saved = await saveGeneratedProject({
@@ -107,11 +106,11 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
           className="absolute right-3 top-3 text-gray-400 hover:text-white"
           onClick={onClose}
         >
-          <X size={20} />
+          <Icon icon="mdi:close" width={20} />
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <Lightbulb size={22} className="text-indigo-500" />
+          <Icon icon="mdi:lightbulb-on-outline" width={22} className="text-indigo-500" />
           <h2 className="text-xl font-bold text-indigo-600">
             AI Project Generator
           </h2>
@@ -134,7 +133,9 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
           disabled={loading}
           className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow text-sm font-semibold flex items-center justify-center gap-2"
         >
-          {loading && <Loader2 size={18} className="animate-spin" />}
+          {loading && (
+            <Icon icon="mdi:loading" width={18} className="animate-spin" />
+          )}
           {loading ? "Generating..." : "Generate Project"}
         </button>
 
@@ -146,6 +147,7 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
             <p className="text-sm mt-1 text-gray-700 dark:text-gray-300">
               {generated.description}
             </p>
+
             <button
               className="mt-3 px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg"
               onClick={onClose}

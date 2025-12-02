@@ -1,10 +1,11 @@
 // src/components/simulations/full-stack/ClientServerFlow.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Laptop, Server, Database, ArrowRight, ArrowLeft } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function ClientServerFlow() {
   const [stage, setStage] = useState(0);
+
   const steps = [
     {
       title: "Step 1: User Action (Frontend)",
@@ -56,13 +57,13 @@ export default function ClientServerFlow() {
           }`}
           animate={{ scale: stage === 0 ? 1.1 : 1 }}
         >
-          <Laptop size={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
+          <Icon icon="mdi:laptop" width={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
           <p className="text-center font-semibold text-indigo-700 dark:text-indigo-300">
             Frontend (React)
           </p>
         </motion.div>
 
-        <ArrowRight className="hidden sm:block text-indigo-500 dark:text-indigo-400" size={36} />
+        <Icon icon="mdi:arrow-right" width={36} className="hidden sm:block text-indigo-500 dark:text-indigo-400" />
 
         {/* Backend */}
         <motion.div
@@ -71,13 +72,13 @@ export default function ClientServerFlow() {
           }`}
           animate={{ scale: stage === 2 ? 1.1 : 1 }}
         >
-          <Server size={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
+          <Icon icon="mdi:server" width={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
           <p className="text-center font-semibold text-indigo-700 dark:text-indigo-300">
             Backend (Express)
           </p>
         </motion.div>
 
-        <ArrowRight className="hidden sm:block text-indigo-500 dark:text-indigo-400" size={36} />
+        <Icon icon="mdi:arrow-right" width={36} className="hidden sm:block text-indigo-500 dark:text-indigo-400" />
 
         {/* Database */}
         <motion.div
@@ -86,19 +87,18 @@ export default function ClientServerFlow() {
           }`}
           animate={{ scale: stage === 3 ? 1.1 : 1 }}
         >
-          <Database size={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
+          <Icon icon="mdi:database" width={48} className="text-indigo-600 dark:text-indigo-400 mx-auto mb-2" />
           <p className="text-center font-semibold text-indigo-700 dark:text-indigo-300">
             Database (MongoDB)
           </p>
         </motion.div>
       </div>
 
-      {/* Stage Details */}
+      {/* Step Details */}
       <motion.div
         key={stage}
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
         transition={{ duration: 0.4 }}
         className="text-center"
       >
@@ -116,13 +116,12 @@ export default function ClientServerFlow() {
           onClick={handlePrev}
           disabled={stage === 0}
           className={`px-5 py-2 rounded-lg text-white font-medium transition ${
-            stage === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
+            stage === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
           }`}
         >
           ← Previous
         </button>
+
         <button
           onClick={handleNext}
           disabled={stage === steps.length - 1}
@@ -136,7 +135,7 @@ export default function ClientServerFlow() {
         </button>
       </div>
 
-      {/* Connection Arrows (animated for request/response) */}
+      {/* Request / Response Animation */}
       {stage >= 1 && stage <= 4 && (
         <motion.div
           className="mt-10 text-center text-indigo-600 dark:text-indigo-300 font-mono text-sm"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Play, RotateCcw } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function ReactComponentSimulator({ defaultCode = "" }) {
   const [Babel, setBabel] = useState(null);
@@ -22,7 +22,7 @@ export default function ReactComponentSimulator({ defaultCode = "" }) {
   const [error, setError] = useState("");
   const iframeRef = useRef();
 
-  // ✅ Load Babel dynamically
+  // Load Babel dynamically
   useEffect(() => {
     const loadBabel = async () => {
       if (window.Babel) {
@@ -37,7 +37,6 @@ export default function ReactComponentSimulator({ defaultCode = "" }) {
     loadBabel();
   }, []);
 
-  // ✅ Function to safely run JSX code
   const runCode = () => {
     if (!Babel) {
       setError("⏳ Loading Babel runtime... please wait a second.");
@@ -51,13 +50,11 @@ export default function ReactComponentSimulator({ defaultCode = "" }) {
     try {
       setError("");
 
-      // 🧹 1️⃣ Clean imports/exports
       let cleanedCode = code
         .replace(/import\s+.*?from\s+['"].*?['"];?/g, "")
         .replace(/export\s+default\s+/g, "")
         .replace(/export\s+\{.*?\};?/g, "");
 
-      // 🪄 2️⃣ Auto-render if no ReactDOM.render present
       if (!/ReactDOM\.render/.test(cleanedCode) && /function\s+[A-Z]/.test(cleanedCode)) {
         const componentName = cleanedCode.match(/function\s+([A-Z]\w*)/)?.[1];
         if (componentName) {
@@ -72,22 +69,19 @@ if (ReactDOM.createRoot) {
         }
       }
 
-      // 🧩 3️⃣ Auto-fix common React hooks (useState → React.useState)
-cleanedCode = cleanedCode
-  .replace(/\buseState\b/g, "React.useState")
-  .replace(/\buseEffect\b/g, "React.useEffect")
-  .replace(/\buseRef\b/g, "React.useRef")
-  .replace(/\buseContext\b/g, "React.useContext")
-  .replace(/\buseReducer\b/g, "React.useReducer")
-  .replace(/\buseMemo\b/g, "React.useMemo")
-  .replace(/\buseCallback\b/g, "React.useCallback");
+      cleanedCode = cleanedCode
+        .replace(/\buseState\b/g, "React.useState")
+        .replace(/\buseEffect\b/g, "React.useEffect")
+        .replace(/\buseRef\b/g, "React.useRef")
+        .replace(/\buseContext\b/g, "React.useContext")
+        .replace(/\buseReducer\b/g, "React.useReducer")
+        .replace(/\buseMemo\b/g, "React.useMemo")
+        .replace(/\buseCallback\b/g, "React.useCallback");
 
-      // ⚡ 3️⃣ Transform JSX → plain JS
       const transformed = Babel.transform(cleanedCode, {
         presets: ["react", "env"],
       }).code;
 
-      // 🧱 4️⃣ Build proper HTML (with DOCTYPE)
       const html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -124,7 +118,6 @@ cleanedCode = cleanedCode
         </html>
       `;
 
-      // 🚀 5️⃣ Inject and execute
       doc.open();
       doc.write(html);
       doc.close();
@@ -138,7 +131,6 @@ cleanedCode = cleanedCode
     setError("");
   };
 
-  // Auto-run when Babel first loads
   useEffect(() => {
     if (Babel) runCode();
   }, [Babel]);
@@ -161,13 +153,14 @@ cleanedCode = cleanedCode
           onClick={runCode}
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium"
         >
-          <Play size={16} /> Run
+          <Icon icon="mdi:play" width={16} /> Run
         </button>
+
         <button
           onClick={resetCode}
           className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 px-4 py-2 rounded-lg font-medium"
         >
-          <RotateCcw size={16} /> Reset
+          <Icon icon="mdi:restart" width={16} /> Reset
         </button>
       </div>
 
@@ -175,11 +168,13 @@ cleanedCode = cleanedCode
         <h4 className="text-sm font-semibold text-indigo-600 dark:text-indigo-300 mb-2">
           🧩 Output Preview
         </h4>
+
         <iframe
           ref={iframeRef}
           title="JSX Output"
           className="w-full h-56 border rounded-lg bg-white dark:bg-gray-900"
         />
+
         {error && (
           <div className="mt-3 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/30 p-2 rounded">
             ⚠️ Error: {error}

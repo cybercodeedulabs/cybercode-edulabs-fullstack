@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home } from "lucide-react";
+
+// Replaced lucide-react with Iconify
+import { Icon } from "@iconify/react";
 
 export default function NotFound() {
   return (
@@ -56,7 +58,7 @@ export default function NotFound() {
             to="/"
             className="inline-flex items-center gap-2 px-6 py-3 text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl text-lg font-semibold shadow-lg transition-all"
           >
-            <Home className="w-5 h-5" />
+            <Icon icon="mdi:home-outline" width={20} height={20} />
             Back to Home
           </Link>
         </motion.div>

@@ -4,7 +4,7 @@ import { useUser } from "../contexts/UserContext";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Calendar, Star, ListChecks } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v4_safe_";
 
@@ -16,8 +16,7 @@ export default function AIJobRoadmap({ goals }) {
   const [error, setError] = useState(null);
 
   const cacheKey = user ? `${LOCAL_KEY_PREFIX}${user.uid}` : LOCAL_KEY_PREFIX + "anon";
-
-  const loadedOnce = useRef(false); // ✅ Prevent duplicate triggers
+  const loadedOnce = useRef(false);
 
   const cleanMarkdown = (text) => {
     try {
@@ -29,7 +28,7 @@ export default function AIJobRoadmap({ goals }) {
 
   useEffect(() => {
     if (!goals || loadedOnce.current) return;
-    loadedOnce.current = true; // 🛑 prevents multiple executions
+    loadedOnce.current = true;
 
     try {
       const raw = localStorage.getItem(cacheKey);
@@ -104,8 +103,8 @@ Do NOT wrap inside code blocks.
       }
 
       const text = data?.choices?.[0]?.message?.content || data?.error || "";
-
       setAiText(text);
+
       try {
         localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), text }));
       } catch {}
@@ -184,7 +183,7 @@ Do NOT wrap inside code blocks.
       {parsed.summary && (
         <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow border border-indigo-200/30 dark:border-indigo-700/30">
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-            <Star /> Outcome Summary
+            <Icon icon="mdi:star-outline" width={22} /> Outcome Summary
           </h2>
           <div
             className="mt-2 text-gray-700 dark:text-gray-300 leading-relaxed"
@@ -197,7 +196,7 @@ Do NOT wrap inside code blocks.
       {Array.isArray(parsed.months) && parsed.months.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-            <Calendar /> Month-by-Month Roadmap
+            <Icon icon="mdi:calendar-month" width={22} /> Month-by-Month Roadmap
           </h2>
 
           <div className="relative">
@@ -213,12 +212,17 @@ Do NOT wrap inside code blocks.
       {Array.isArray(parsed.projects) && parsed.projects.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-            <ListChecks /> Recommended Projects
+            <Icon icon="mdi:check-decagram-outline" width={22} /> Recommended Projects
           </h2>
 
           <div className="grid gap-4 mt-3">
             {parsed.projects.map((p, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border shadow">
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border shadow"
+              >
                 {p}
               </motion.div>
             ))}
@@ -230,12 +234,15 @@ Do NOT wrap inside code blocks.
       {Array.isArray(parsed.actions) && parsed.actions.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-            🚀 Next 5 Action Items
+            <Icon icon="mdi:rocket-launch-outline" width={22} /> Next 5 Action Items
           </h2>
 
           <div className="flex flex-wrap gap-2 mt-3">
             {parsed.actions.map((a, i) => (
-              <span key={i} className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 rounded-full border border-indigo-300/40 dark:border-indigo-600/40">
+              <span
+                key={i}
+                className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 rounded-full border border-indigo-300/40 dark:border-indigo-600/40"
+              >
                 {a}
               </span>
             ))}
@@ -251,7 +258,7 @@ Do NOT wrap inside code blocks.
         <button
           onClick={() => {
             localStorage.removeItem(cacheKey);
-            loadedOnce.current = false; // allow regeneration again
+            loadedOnce.current = false;
             fetchRoadmap();
           }}
           className="px-4 py-2 bg-white dark:bg-gray-900 border rounded-lg shadow"
@@ -272,12 +279,21 @@ function MonthCard({ month }) {
       <div className="bg-white dark:bg-gray-900 rounded-xl border shadow p-4">
         <button onClick={() => setOpen(!open)} className="w-full flex justify-between items-center text-left">
           <span className="font-semibold text-indigo-700 dark:text-indigo-300 text-lg">{month.title}</span>
-          {open ? <ChevronDown /> : <ChevronRight />}
+          {open ? (
+            <Icon icon="mdi:chevron-down" width={20} />
+          ) : (
+            <Icon icon="mdi:chevron-right" width={20} />
+          )}
         </button>
 
         <AnimatePresence>
           {open && (
-            <motion.ul initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="mt-3 space-y-2 text-gray-700 dark:text-gray-300">
+            <motion.ul
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mt-3 space-y-2 text-gray-700 dark:text-gray-300"
+            >
               {(month.bullets || []).map((b, i) => (
                 <li key={i} className="bg-gray-50 dark:bg-gray-800 p-2 rounded-md border text-sm">
                   {b}

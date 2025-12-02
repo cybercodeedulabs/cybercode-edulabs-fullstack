@@ -6,7 +6,7 @@ import {
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useState, useEffect, useRef, Suspense } from "react";
-import { Copy } from "lucide-react";
+import { Icon } from "@iconify/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -548,7 +548,7 @@ export default function LessonDetail() {
                     className="absolute top-3 right-3 text-gray-600 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400"
                     onClick={() => handleCopy(block.value, idx)}
                   >
-                    <Copy size={18} />
+                    <Icon icon="mdi:content-copy" className="w-5 h-5" />
                   </button>
 
                   {copiedIdx === idx && (

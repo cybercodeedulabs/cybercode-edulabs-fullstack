@@ -1,6 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Mail } from "lucide-react";
+
+// 🔄 Replaced lucide-react with Iconify
+import { Icon } from "@iconify/react";
 
 export default function FAQ() {
   const faqs = [
@@ -39,6 +41,7 @@ export default function FAQ() {
   return (
     <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-20 px-6">
       <div className="max-w-5xl mx-auto">
+
         {/* Header */}
         <motion.h1
           className="text-4xl md:text-5xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4"
@@ -67,7 +70,15 @@ export default function FAQ() {
               whileHover={{ scale: 1.02 }}
             >
               <div className="flex items-start gap-3">
-                <ChevronDown className="text-indigo-500 mt-1 shrink-0" />
+
+                {/* Updated Icon */}
+                <Icon
+                  icon="mdi:chevron-down"
+                  className="text-indigo-500 mt-1 shrink-0"
+                  width="22"
+                  height="22"
+                />
+
                 <div>
                   <h2 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
                     {faq.question}
@@ -94,10 +105,12 @@ export default function FAQ() {
               href="mailto:support@cybercodeedulabs.com"
               className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1"
             >
-              <Mail className="w-4 h-4" /> support@cybercodeedulabs.com
+              <Icon icon="mdi:email-outline" width="16" height="16" />
+              support@cybercodeedulabs.com
             </a>
           </p>
         </motion.div>
+
       </div>
     </section>
   );

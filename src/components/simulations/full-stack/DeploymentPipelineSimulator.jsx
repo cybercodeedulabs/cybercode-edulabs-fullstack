@@ -1,15 +1,16 @@
 // src/components/simulations/full-stack/DeploymentPipelineSimulator.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { GitBranch, CloudUpload, Globe, Server } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function DeploymentPipelineSimulator() {
   const [step, setStep] = useState(0);
+
   const steps = [
-    { icon: <GitBranch />, label: "Code Pushed to GitHub" },
-    { icon: <CloudUpload />, label: "CI/CD Builds on Netlify + Render" },
-    { icon: <Server />, label: "Backend Deployed (Render)" },
-    { icon: <Globe />, label: "Frontend Live on Netlify 🌐" },
+    { icon: "mdi:source-branch", label: "Code Pushed to GitHub" },
+    { icon: "mdi:cloud-upload-outline", label: "CI/CD Builds on Netlify + Render" },
+    { icon: "mdi:server", label: "Backend Deployed (Render)" },
+    { icon: "mdi:web", label: "Frontend Live on Netlify 🌐" },
   ];
 
   const next = () => setStep((s) => (s < steps.length - 1 ? s + 1 : s));
@@ -20,10 +21,13 @@ export default function DeploymentPipelineSimulator() {
       <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-300 mb-4">
         🚀 Deployment Pipeline Visualizer
       </h2>
+
       <p className="text-gray-700 dark:text-gray-300 text-sm mb-6">
-        Watch how your full-stack project moves from code commit to live deployment using Netlify (frontend) and Render (backend).
+        Watch how your full-stack project moves from code commit to live deployment using
+        Netlify (frontend) and Render (backend).
       </p>
 
+      {/* Step Icons */}
       <div className="flex justify-center items-center gap-6 mb-8 flex-wrap">
         {steps.map((s, i) => (
           <motion.div
@@ -36,12 +40,19 @@ export default function DeploymentPipelineSimulator() {
             transition={{ duration: 0.4 }}
             className="bg-white dark:bg-gray-900 border border-purple-300 dark:border-purple-700 rounded-xl p-4 w-52 text-center shadow-md"
           >
-            <div className="text-purple-600 dark:text-purple-400 text-3xl mb-2">{s.icon}</div>
-            <p className="font-semibold text-purple-700 dark:text-purple-300 text-sm">{s.label}</p>
+            <Icon
+              icon={s.icon}
+              width={40}
+              className="text-purple-600 dark:text-purple-400 mb-2"
+            />
+            <p className="font-semibold text-purple-700 dark:text-purple-300 text-sm">
+              {s.label}
+            </p>
           </motion.div>
         ))}
       </div>
 
+      {/* Controls */}
       <div className="flex justify-center gap-4">
         <button
           onClick={next}
@@ -54,6 +65,7 @@ export default function DeploymentPipelineSimulator() {
         >
           {step === steps.length - 1 ? "Complete ✅" : "Next →"}
         </button>
+
         <button
           onClick={reset}
           className="px-5 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -62,6 +74,7 @@ export default function DeploymentPipelineSimulator() {
         </button>
       </div>
 
+      {/* Final Message */}
       {step === steps.length - 1 && (
         <motion.div
           className="mt-6 text-center text-purple-700 dark:text-purple-300 font-semibold"

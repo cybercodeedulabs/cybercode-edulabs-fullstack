@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import logo from "/images/logo.png";
 import { useState, useEffect } from "react";
-import { Menu, X, LogOut } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { useUser } from "../contexts/UserContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -54,6 +54,29 @@ function Header() {
     { name: "Contact", to: "/contact" },
   ];
 
+  // helper to compute nav class without complex template literals inside JSX
+  const navClassFor = (link) => {
+    const parts = ["transition-all", "font-medium"];
+    if (link.highlight) {
+      parts.push("text-indigo-600", "dark:text-indigo-400", "font-semibold");
+    }
+    if (link.demo) {
+      parts.push(
+        "px-4",
+        "py-1.5",
+        "bg-green-600",
+        "hover:bg-green-700",
+        "text-white",
+        "rounded-full",
+        "shadow-xl",
+        "animate-pulse-slow"
+      );
+    } else {
+      parts.push("text-gray-800", "dark:text-gray-200", "hover:text-indigo-500");
+    }
+    return parts.join(" ");
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-all ${
@@ -70,7 +93,6 @@ function Header() {
 
       {/* MAIN HEADER */}
       <div className="px-3 py-2 md:px-6 md:py-3 flex justify-between items-center max-w-[1280px] mx-auto">
-
         {/* Logo */}
         <div
           className="flex items-center space-x-3 cursor-pointer"
@@ -89,34 +111,27 @@ function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              to={link.to}
-              className={`
-                transition-all font-medium
-                ${link.highlight ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}
-                ${
-                  link.demo
-                    ? "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl animate-pulse-slow"
-                    : "text-gray-800 dark:text-gray-200 hover:text-indigo-500"
-                }
-              `}
-            >
-              {link.demo ? (
-                <>
-                  Demo Class
-                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                    FREE
+          {links.map((link) => {
+            // Do not return fragments inside JSX attribute — handle Demo label rendering here
+            if (link.demo) {
+              return (
+                <Link key={link.name} to={link.to} className={navClassFor(link)}>
+                  <span className="flex items-center gap-2">
+                    <span>Demo Class</span>
+                    <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
+                      FREE
+                    </span>
                   </span>
-                </>
-              ) : link.name === "Cloud" ? (
-                "☁️ Cloud"
-              ) : (
-                link.name
-              )}
-            </Link>
-          ))}
+                </Link>
+              );
+            }
+
+            return (
+              <Link key={link.name} to={link.to} className={navClassFor(link)}>
+                {link.name === "Cloud" ? "☁️ Cloud" : link.name}
+              </Link>
+            );
+          })}
 
           {/* Auth */}
           {user ? (
@@ -130,8 +145,8 @@ function Header() {
                 onClick={handleLogout}
                 className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm"
               >
-                <LogOut size={16} />
-                Logout
+                <Icon icon="mdi:logout" width={16} height={16} />
+                <span>Logout</span>
               </button>
             </div>
           ) : (
@@ -171,7 +186,11 @@ function Header() {
             onClick={() => setMenuOpen(!menuOpen)}
             className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? (
+              <Icon icon="mdi:close" width={20} height={20} />
+            ) : (
+              <Icon icon="mdi:menu" width={20} height={20} />
+            )}
           </button>
         </div>
       </div>
@@ -188,11 +207,11 @@ function Header() {
               key={link.name}
               to={link.to}
               onClick={() => setTimeout(() => setMenuOpen(false), 150)}
-              className={`text-lg ${
+              className={
                 link.demo
-                  ? "px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full text-center animate-pulse-slow"
-                  : "text-gray-800 dark:text-gray-200"
-              }`}
+                  ? "text-lg px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-full text-center animate-pulse-slow"
+                  : "text-lg text-gray-800 dark:text-gray-200"
+              }
             >
               {link.name}
             </Link>
@@ -208,7 +227,8 @@ function Header() {
                 onClick={handleLogout}
                 className="mt-3 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md"
               >
-                <LogOut size={16} /> Logout
+                <Icon icon="mdi:logout" width={16} height={16} />
+                <span>Logout</span>
               </button>
             </>
           ) : (

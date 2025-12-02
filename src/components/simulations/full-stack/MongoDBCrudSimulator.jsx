@@ -1,7 +1,7 @@
 // src/components/simulations/full-stack/MongoDBCrudSimulator.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Database, PlusCircle, Eye, Edit, Trash } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function MongoDBCrudSimulator() {
   const [records, setRecords] = useState([
@@ -11,13 +11,22 @@ export default function MongoDBCrudSimulator() {
   const [counter, setCounter] = useState(3);
 
   const addRecord = () => {
-    const newRec = { id: counter, name: `User${counter}`, email: `user${counter}@mail.com`, age: 20 + counter };
+    const newRec = {
+      id: counter,
+      name: `User${counter}`,
+      email: `user${counter}@mail.com`,
+      age: 20 + counter,
+    };
     setRecords([...records, newRec]);
     setCounter(counter + 1);
   };
 
   const updateRecord = (id) => {
-    setRecords(records.map((r) => (r.id === id ? { ...r, name: r.name + " ✅" } : r)));
+    setRecords(
+      records.map((r) =>
+        r.id === id ? { ...r, name: r.name + " ✅" } : r
+      )
+    );
   };
 
   const deleteRecord = (id) => {
@@ -29,26 +38,30 @@ export default function MongoDBCrudSimulator() {
       <h2 className="text-2xl font-bold text-green-700 dark:text-green-300 mb-4">
         🗄️ MongoDB CRUD Operations Visualizer
       </h2>
+
       <p className="text-gray-700 dark:text-gray-300 text-sm mb-6">
-        This simulator demonstrates how **Create, Read, Update, and Delete** operations modify data in a MongoDB collection.
+        This simulator demonstrates how <b>Create, Read, Update, and Delete</b> operations modify
+        data in a MongoDB collection.
       </p>
 
+      {/* Controls */}
       <div className="flex flex-wrap justify-center gap-4 mb-6">
         <button
           onClick={addRecord}
           className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
         >
-          <PlusCircle size={18} /> Create
+          <Icon icon="mdi:plus-circle" width={18} /> Create
         </button>
+
         <button
           onClick={() => alert("Read operation simply fetches data below 👇")}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
         >
-          <Eye size={18} /> Read
+          <Icon icon="mdi:eye-outline" width={18} /> Read
         </button>
       </div>
 
-      {/* Record Display */}
+      {/* Records Table */}
       <div className="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
         <table className="min-w-full text-sm text-gray-800 dark:text-gray-200">
           <thead className="bg-green-100 dark:bg-gray-800">
@@ -60,6 +73,7 @@ export default function MongoDBCrudSimulator() {
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {records.map((rec) => (
               <motion.tr
@@ -73,18 +87,22 @@ export default function MongoDBCrudSimulator() {
                 <td className="p-3">{rec.name}</td>
                 <td className="p-3">{rec.email}</td>
                 <td className="p-3">{rec.age}</td>
+
                 <td className="p-3 text-center flex justify-center gap-2">
+                  {/* UPDATE BUTTON */}
                   <button
                     onClick={() => updateRecord(rec.id)}
                     className="p-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
                   >
-                    <Edit size={14} />
+                    <Icon icon="mdi:pencil-outline" width={14} />
                   </button>
+
+                  {/* DELETE BUTTON */}
                   <button
                     onClick={() => deleteRecord(rec.id)}
                     className="p-2 bg-red-600 hover:bg-red-700 text-white rounded"
                   >
-                    <Trash size={14} />
+                    <Icon icon="mdi:trash-can-outline" width={14} />
                   </button>
                 </td>
               </motion.tr>
@@ -93,6 +111,7 @@ export default function MongoDBCrudSimulator() {
         </table>
       </div>
 
+      {/* Animated footer */}
       <motion.div
         className="mt-6 text-center text-green-700 dark:text-green-300 font-mono text-sm"
         animate={{ opacity: [0.4, 1, 0.4] }}

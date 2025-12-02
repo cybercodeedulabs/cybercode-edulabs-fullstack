@@ -1,6 +1,6 @@
 // src/components/Footer.jsx
 import { Link } from "react-router-dom";
-import { Linkedin, Youtube, Cloud } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 function Footer() {
   return (
@@ -25,7 +25,7 @@ function Footer() {
               rel="noopener noreferrer"
               className="hover:text-indigo-500 transition-all transform hover:scale-110"
             >
-              <Linkedin size={18} />
+              <Icon icon="mdi:linkedin" width={18} height={18} />
             </a>
             <a
               href="https://youtube.com/@cybercodeedulabs"
@@ -33,7 +33,7 @@ function Footer() {
               rel="noopener noreferrer"
               className="hover:text-indigo-500 transition-all transform hover:scale-110"
             >
-              <Youtube size={18} />
+              <Icon icon="mdi:youtube" width={18} height={18} />
             </a>
           </div>
         </div>
@@ -52,7 +52,7 @@ function Footer() {
           </ul>
         </div>
 
-        {/* NEW — C. Community (Added without disturbing any existing alignment) */}
+        {/* C. Community */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
             Community
@@ -72,7 +72,7 @@ function Footer() {
           </h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <Cloud size={16} className="text-indigo-500" />
+              <Icon icon="mdi:cloud-outline" width={16} height={16} className="text-indigo-500" />
               <Link to="/cloud" className="hover:text-indigo-500">Overview</Link>
             </li>
             <li><Link to="/admin/waitlist" className="hover:text-indigo-500">Admin Panel</Link></li>

@@ -1,16 +1,19 @@
 // src/components/ui/FeatureItem.jsx
-import { Briefcase, BookOpen, Award, Users, Cpu, CloudLightning, Sparkles } from "lucide-react";
+import { Icon } from "@iconify/react";
+
+const iconClass =
+  "w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]";
 
 const icons = {
-  projects: <Briefcase className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
-  exposure: <Users className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
-  training: <BookOpen className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
-  certificate: <Award className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  projects: <Icon icon="mdi:briefcase" className={iconClass} />,
+  exposure: <Icon icon="mdi:account-group" className={iconClass} />,
+  training: <Icon icon="mdi:book-open-page-variant" className={iconClass} />,
+  certificate: <Icon icon="mdi:award" className={iconClass} />,
 
-  // New icons (optional for future use)
-  ai: <Cpu className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
-  cloud: <CloudLightning className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
-  spark: <Sparkles className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_8px_rgba(99,102,241,0.6)]" />,
+  // New icons (optional future use)
+  ai: <Icon icon="mdi:cpu-64-bit" className={iconClass} />,
+  cloud: <Icon icon="mdi:cloud-alert" className={iconClass} />,
+  spark: <Icon icon="mdi:sparkles" className={iconClass} />,
 };
 
 function FeatureItem({ icon, title, description }) {
@@ -56,11 +59,13 @@ function FeatureItem({ icon, title, description }) {
       </p>
 
       {/* Glow ring on hover */}
-      <div className="
+      <div
+        className="
         absolute inset-0 rounded-2xl 
         group-hover:ring-2 ring-indigo-400/40 
         transition-all duration-500 pointer-events-none
-      "></div>
+      "
+      ></div>
     </div>
   );
 }

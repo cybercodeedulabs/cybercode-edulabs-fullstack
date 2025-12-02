@@ -1,10 +1,11 @@
 // src/components/simulations/full-stack/ExpressServerSimulator.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Laptop, Server, FileCode, CheckCircle } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function ExpressServerSimulator() {
   const [stage, setStage] = useState(0);
+
   const steps = [
     { title: "Client Sends Request", text: "The browser (frontend) sends a GET or POST request to the server." },
     { title: "Express Route Matches", text: "Express checks if a route matches the request path, like app.get('/')." },
@@ -20,36 +21,42 @@ export default function ExpressServerSimulator() {
       <h2 className="text-2xl font-bold text-yellow-700 dark:text-yellow-300 mb-4">
         ⚙️ Express Server Request Flow
       </h2>
+
       <p className="text-gray-700 dark:text-gray-300 text-sm mb-6">
-        This simulator demonstrates how **Express.js** handles an incoming HTTP request from the client and sends a response back.
+        This simulator demonstrates how <strong>Express.js</strong> handles an incoming HTTP request from the client and sends a response back.
       </p>
 
+      {/* Visual Steps */}
       <div className="flex items-center justify-center gap-6 mb-8">
+        {/* Client */}
         <motion.div
           animate={{ scale: stage === 0 ? 1.1 : 1 }}
           className="bg-white dark:bg-gray-900 border border-yellow-300 dark:border-yellow-700 rounded-xl p-4 text-center shadow-md"
         >
-          <Laptop size={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+          <Icon icon="mdi:laptop" width={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
           <p className="font-semibold text-yellow-700 dark:text-yellow-300 text-sm">Client (Browser)</p>
         </motion.div>
 
+        {/* Server */}
         <motion.div
           animate={{ scale: stage === 1 || stage === 2 ? 1.1 : 1 }}
           className="bg-white dark:bg-gray-900 border border-yellow-300 dark:border-yellow-700 rounded-xl p-4 text-center shadow-md"
         >
-          <Server size={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+          <Icon icon="mdi:server" width={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
           <p className="font-semibold text-yellow-700 dark:text-yellow-300 text-sm">Server (Express)</p>
         </motion.div>
 
+        {/* Response */}
         <motion.div
           animate={{ scale: stage === 3 ? 1.1 : 1 }}
           className="bg-white dark:bg-gray-900 border border-yellow-300 dark:border-yellow-700 rounded-xl p-4 text-center shadow-md"
         >
-          <FileCode size={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+          <Icon icon="mdi:file-code-outline" width={40} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
           <p className="font-semibold text-yellow-700 dark:text-yellow-300 text-sm">Response Sent</p>
         </motion.div>
       </div>
 
+      {/* Step Detail */}
       <motion.div
         key={stage}
         initial={{ opacity: 0, y: 15 }}
@@ -63,27 +70,34 @@ export default function ExpressServerSimulator() {
         <p className="text-sm text-gray-700 dark:text-gray-300">{steps[stage].text}</p>
       </motion.div>
 
+      {/* Controls */}
       <div className="flex justify-center gap-4">
         <button
           onClick={prev}
           disabled={stage === 0}
           className={`px-5 py-2 rounded-lg font-medium ${
-            stage === 0 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-yellow-600 hover:bg-yellow-700 text-white"
+            stage === 0
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-yellow-600 hover:bg-yellow-700 text-white"
           }`}
         >
           ← Previous
         </button>
+
         <button
           onClick={next}
           disabled={stage === steps.length - 1}
           className={`px-5 py-2 rounded-lg font-medium ${
-            stage === steps.length - 1 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-yellow-600 hover:bg-yellow-700 text-white"
+            stage === steps.length - 1
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-yellow-600 hover:bg-yellow-700 text-white"
           }`}
         >
           Next →
         </button>
       </div>
 
+      {/* Final Animation */}
       {stage === 3 && (
         <motion.div
           className="mt-6 text-center text-green-700 dark:text-green-300 font-semibold"

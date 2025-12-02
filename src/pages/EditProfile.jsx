@@ -7,7 +7,9 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PERSONAS_LIST } from "../utils/personaEngine";
-import { Camera } from "lucide-react";
+
+// 🔄 REPLACED lucide-react with Iconify
+import { Icon } from "@iconify/react";
 
 const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
 
@@ -78,13 +80,11 @@ export default function EditProfile() {
 
       // -------------------------------------------------------
       // LOCAL MODE (Firebase disabled)
-      // Use browser temporary image URL
       // -------------------------------------------------------
       const localUrl = URL.createObjectURL(file);
 
       setForm((prev) => ({ ...prev, photo: localUrl }));
 
-      // Update local user object (no Firestore)
       const updated = { ...user, photo: localUrl };
       setUser(updated);
       localStorage.setItem("cybercodeUser", JSON.stringify(updated));
@@ -104,9 +104,6 @@ export default function EditProfile() {
     setSaving(true);
 
     try {
-      // -------------------------------------------------------
-      // FIREBASE MODE
-      // -------------------------------------------------------
       if (USE_FIREBASE) {
         const refUser = doc(db, "users", user.uid);
 
@@ -130,10 +127,7 @@ export default function EditProfile() {
         return;
       }
 
-      // -------------------------------------------------------
-      // LOCAL MODE (NO FIREBASE)
-      // Save everything to localStorage
-      // -------------------------------------------------------
+      // LOCAL MODE
       const updated = {
         ...user,
         name: form.name,
@@ -181,11 +175,12 @@ export default function EditProfile() {
               className="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 dark:border-indigo-400 shadow-lg"
             />
 
+            {/* UPDATED ICON HERE */}
             <label
               className="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition"
               title="Upload new photo"
             >
-              <Camera size={18} />
+              <Icon icon="mdi:camera" width="18" height="18" />
               <input type="file" hidden onChange={handlePhotoUpload} />
             </label>
           </div>

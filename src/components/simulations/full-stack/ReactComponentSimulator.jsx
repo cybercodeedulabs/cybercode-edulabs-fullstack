@@ -1,7 +1,7 @@
 // src/components/simulations/full-stack/ReactComponentSimulator.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Square, Repeat, ArrowRight } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function ReactComponentSimulator() {
   const [name, setName] = useState("Student");
@@ -17,8 +17,9 @@ export default function ReactComponentSimulator() {
       <h2 className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">
         ⚛️ React Component Re-render Visualizer
       </h2>
+
       <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm">
-        This simulator shows how React updates components when <strong>state</strong> changes.  
+        This simulator shows how React updates components when <strong>state</strong> changes.
         Each time you type in the input, the component re-renders and updates the UI instantly.
       </p>
 
@@ -36,7 +37,11 @@ export default function ReactComponentSimulator() {
           </span>
         </div>
 
-        <ArrowRight className="hidden sm:block text-indigo-600 dark:text-indigo-400" size={40} />
+        <Icon
+          icon="mdi:arrow-right"
+          width={40}
+          className="hidden sm:block text-indigo-600 dark:text-indigo-400"
+        />
 
         {/* Render Box */}
         <motion.div
@@ -46,10 +51,16 @@ export default function ReactComponentSimulator() {
           transition={{ duration: 0.3 }}
           className="p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-indigo-300 dark:border-indigo-700 text-center"
         >
-          <Square size={40} className="mx-auto text-indigo-600 dark:text-indigo-400 mb-2" />
+          <Icon
+            icon="mdi:square-outline"
+            width={40}
+            className="mx-auto text-indigo-600 dark:text-indigo-400 mb-2"
+          />
+
           <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300">
             Hello, {name}! 👋
           </h3>
+
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             Render Count: <strong>{renderCount}</strong>
           </p>

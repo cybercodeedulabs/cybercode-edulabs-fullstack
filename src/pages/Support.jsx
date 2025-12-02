@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Mail, Clock, HelpCircle, Send } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 export default function Support() {
   return (
@@ -34,21 +34,36 @@ export default function Support() {
         >
           {[
             {
-              icon: <Mail className="text-indigo-500 w-10 h-10 mb-4" />,
+              icon: (
+                <Icon
+                  icon="mdi:email-outline"
+                  className="text-indigo-500 w-10 h-10 mb-4"
+                />
+              ),
               title: "Email Support",
               desc: "Get in touch for queries, issues, or platform guidance.",
               linkText: "support@cybercodeedulabs.com",
               link: "mailto:support@cybercodeedulabs.com",
             },
             {
-              icon: <HelpCircle className="text-indigo-500 w-10 h-10 mb-4" />,
+              icon: (
+                <Icon
+                  icon="mdi:help-circle-outline"
+                  className="text-indigo-500 w-10 h-10 mb-4"
+                />
+              ),
               title: "Visit FAQ",
               desc: "Find quick answers to common technical and learning questions.",
               linkText: "Go to FAQ",
               link: "/faq",
             },
             {
-              icon: <Clock className="text-indigo-500 w-10 h-10 mb-4" />,
+              icon: (
+                <Icon
+                  icon="mdi:clock-outline"
+                  className="text-indigo-500 w-10 h-10 mb-4"
+                />
+              ),
               title: "Working Hours",
               desc: "Monday – Friday, 10:00 AM – 6:00 PM (IST). Weekend queries will be answered the next business day.",
             },
@@ -129,7 +144,8 @@ export default function Support() {
               type="submit"
               className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 dark:hover:bg-indigo-500 transition-all shadow-md hover:shadow-lg"
             >
-              <Send className="w-4 h-4" /> Submit Request
+              <Icon icon="mdi:send-outline" width={18} height={18} />
+              Submit Request
             </button>
           </form>
         </motion.div>

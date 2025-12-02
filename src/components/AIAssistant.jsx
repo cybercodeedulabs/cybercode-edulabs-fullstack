@@ -1,7 +1,7 @@
 // src/components/AIAssistant.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, X, MessageSquare } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import courseData from "../data/courseData";
@@ -25,7 +25,7 @@ const AIAssistant = ({ embedMode = "floating" }) => {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [systemNotice, setSystemNotice] = useState(null); // show rate-limit / fallback messages
+  const [systemNotice, setSystemNotice] = useState(null);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -97,7 +97,6 @@ const AIAssistant = ({ embedMode = "floating" }) => {
       const data = await res.json();
 
       if (res.status === 429 || data?.error?.toLowerCase?.().includes("rate")) {
-        // rate limited — show message; if raw cached present, will be provided as 'raw.cached'
         setSystemNotice("Server is busy or rate-limited. Please try in a moment.");
         setMessages((prev) => [
           ...prev,
@@ -131,7 +130,6 @@ const AIAssistant = ({ embedMode = "floating" }) => {
     } finally {
       setIsTyping(false);
       setIsSending(false);
-      // small debounce to prevent resend
       setTimeout(() => {}, 300);
     }
   };
@@ -172,7 +170,7 @@ const AIAssistant = ({ embedMode = "floating" }) => {
     <div className={`ai-assistant-root`} style={{ width: embedMode === "embedded" ? "100%" : undefined }}>
       <div className="ai-header flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <MessageSquare />
+          <Icon icon="mdi:message-text-outline" width={22} />
           <div>
             <div className="text-lg font-semibold">Cybercode AI Advisor</div>
             <div className="text-xs text-slate-400">Ask about courses, career roadmaps, and projects</div>
@@ -189,7 +187,7 @@ const AIAssistant = ({ embedMode = "floating" }) => {
           )}
           {embedMode === "floating" ? (
             <button onClick={() => setIsOpen(false)} className="icon-btn" aria-label="Close chat">
-              <X />
+              <Icon icon="mdi:close" width={20} />
             </button>
           ) : null}
         </div>
@@ -241,7 +239,7 @@ const AIAssistant = ({ embedMode = "floating" }) => {
             disabled={isSending}
             title="Send"
           >
-            <Send />
+            <Icon icon="mdi:send" width={20} />
           </button>
         </div>
       </div>
@@ -262,7 +260,11 @@ const AIAssistant = ({ embedMode = "floating" }) => {
           whileTap={{ scale: 0.95 }}
           aria-label="Open Cybercode AI Advisor"
         >
-          {isOpen ? <X /> : <MessageSquare />}
+          {isOpen ? (
+            <Icon icon="mdi:close" width={22} />
+          ) : (
+            <Icon icon="mdi:message-text-outline" width={22} />
+          )}
         </motion.button>
 
         <AnimatePresence>

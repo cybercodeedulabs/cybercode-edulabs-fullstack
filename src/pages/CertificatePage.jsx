@@ -4,7 +4,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 import courseData from "../data/courseData";
 import lessonsData from "../data/lessonsData";
-import { ArrowLeft } from "lucide-react";
+
+// 🔄 Replaced lucide-react
+import { Icon } from "@iconify/react";
 
 export default function CertificatePage() {
   const { courseSlug } = useParams();
@@ -52,8 +54,7 @@ export default function CertificatePage() {
   };
 
   const isCompleted =
-    progress.completedLessons.length === lessons.length &&
-    lessons.length > 0;
+    progress.completedLessons.length === lessons.length && lessons.length > 0;
 
   // ------------------------------
   // Strict Premium Requirement
@@ -76,8 +77,7 @@ export default function CertificatePage() {
     `CERT-${courseSlug.toUpperCase()}-${user.uid.slice(-6)}`;
 
   const completionDate =
-    progress.completionDate ||
-    new Date().toISOString().split("T")[0];
+    progress.completionDate || new Date().toISOString().split("T")[0];
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
@@ -86,7 +86,7 @@ export default function CertificatePage() {
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 mb-6"
       >
-        <ArrowLeft size={20} />
+        <Icon icon="mdi:arrow-left" className="w-5 h-5" />
         Back
       </button>
 

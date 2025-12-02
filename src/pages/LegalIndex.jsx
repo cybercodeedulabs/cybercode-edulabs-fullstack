@@ -1,24 +1,47 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FileText, ShieldCheck, RotateCcw } from "lucide-react";
+
+// Replaced lucide-react with Iconify
+import { Icon } from "@iconify/react";
 
 export default function LegalIndex() {
   const policies = [
     {
       title: "Privacy Policy",
-      icon: <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
+      icon: (
+        <Icon
+          icon="mdi:shield-check-outline"
+          className="text-indigo-600 dark:text-indigo-400"
+          width={22}
+          height={22}
+        />
+      ),
       path: "/privacy",
       desc: "Learn how we collect, use, and protect your personal information.",
     },
     {
       title: "Terms of Use",
-      icon: <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
+      icon: (
+        <Icon
+          icon="mdi:file-document-outline"
+          className="text-indigo-600 dark:text-indigo-400"
+          width={22}
+          height={22}
+        />
+      ),
       path: "/terms",
       desc: "Understand your rights and obligations while using our platform.",
     },
     {
       title: "Refund Policy",
-      icon: <RotateCcw className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />,
+      icon: (
+        <Icon
+          icon="mdi:restore"
+          className="text-indigo-600 dark:text-indigo-400"
+          width={22}
+          height={22}
+        />
+      ),
       path: "/refund",
       desc: "Read our policy regarding payments, cancellations, and refunds.",
     },

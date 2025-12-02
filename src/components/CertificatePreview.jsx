@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, Award, CheckCircle, Linkedin, Sparkles } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +21,7 @@ export default function CertificatePreview({
   const locked =
     !isEnrolled ||
     !isCompleted ||
-    !user?.isPremium || // strict premium requirement (OPTION B)
+    !user?.isPremium ||
     !certificate?.studentName ||
     !certificate?.courseName ||
     !certificate?.completionDate ||
@@ -107,7 +107,7 @@ export default function CertificatePreview({
             <>
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 to-purple-600/10 blur-md" />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <Lock className="text-white w-10 h-10 drop-shadow-lg mb-1" />
+                <Icon icon="mdi:lock" className="text-white w-10 h-10 drop-shadow-lg mb-1" />
                 <p className="text-white text-sm font-medium drop-shadow">
                   Certificate Locked
                 </p>
@@ -124,7 +124,7 @@ export default function CertificatePreview({
                 exit={{ opacity: 0 }}
                 className="absolute -top-6 -right-6"
               >
-                <Award className="w-16 h-16 text-yellow-400 drop-shadow-2xl" />
+                <Icon icon="mdi:award" className="w-16 h-16 text-yellow-400 drop-shadow-2xl" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -143,14 +143,14 @@ export default function CertificatePreview({
                 onClick={handlePremiumClick}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition"
               >
-                <Lock size={18} />
+                <Icon icon="mdi:lock" width={18} />
                 Become Premium to Unlock
               </button>
             </>
           ) : (
             <>
               <div className="flex items-center gap-2 mb-4 text-green-600 dark:text-green-400">
-                <CheckCircle className="w-6 h-6" />
+                <Icon icon="mdi:check-circle" className="w-6 h-6" />
                 <span className="text-lg font-semibold">
                   Certificate Unlocked!
                 </span>
@@ -160,7 +160,7 @@ export default function CertificatePreview({
                 onClick={handleViewCertificate}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition mb-3"
               >
-                <Sparkles size={18} />
+                <Icon icon="mdi:sparkles" width={18} />
                 View Certificate
               </button>
 
@@ -169,7 +169,7 @@ export default function CertificatePreview({
                 target="_blank"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition"
               >
-                <Linkedin size={18} />
+                <Icon icon="mdi:linkedin" width={18} />
                 Add to LinkedIn
               </a>
             </>
