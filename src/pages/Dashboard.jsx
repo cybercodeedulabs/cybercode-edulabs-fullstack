@@ -1,11 +1,13 @@
 // src/pages/Dashboard.jsx
-import React, {
+import {
   Suspense,
   lazy,
   useMemo,
   useState,
   useEffect,
 } from "react";
+import React from "react";
+
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -244,16 +246,20 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
       MAIN DASHBOARD PAGE
 -------------------------------*/
 export default function Dashboard() {
-  const {
-    user,
-    personaScores,
-    getTopPersona,
-    courseProgress = {},
-    enrolledCourses = [],
-    generatedProjects = [],
-    userGoals,
-    userStats = {},
-  } = useUser();
+const ctx = useUser();
+if (!ctx) return null;    // ← prevents React 301 crash
+
+const {
+  user,
+  personaScores = {},
+  getTopPersona,
+  courseProgress = {},
+  enrolledCourses = [],
+  generatedProjects = [],
+  userGoals,
+  userStats = {},
+} = ctx;
+
 
   // ⭐ NEW — Local modal state
   const [showProjectGenerator, setShowProjectGenerator] =
