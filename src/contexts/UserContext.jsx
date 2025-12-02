@@ -13,6 +13,8 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
 const USE_FIREBASE = false;
+const [userStats, setUserStats] = useState({});
+
 
 export const UserProvider = ({ children }) => {
   // AUTH USER (local cache load)
@@ -100,7 +102,7 @@ export const UserProvider = ({ children }) => {
         setUser(merged);
         try {
           localStorage.setItem("cybercodeUser", JSON.stringify(merged));
-        } catch {}
+        } catch { }
         await loadGeneratedProjectsLocal();
       } else {
         // signed out
@@ -108,7 +110,7 @@ export const UserProvider = ({ children }) => {
         try {
           localStorage.removeItem("cybercodeUser");
           localStorage.removeItem(GENERATED_PROJECTS_KEY);
-        } catch {}
+        } catch { }
       }
 
       setLoading(false);
@@ -149,7 +151,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };
@@ -174,7 +176,7 @@ export const UserProvider = ({ children }) => {
         const merged = { ...prev, ...next };
         try {
           localStorage.setItem("cybercodeUser", JSON.stringify(merged));
-        } catch {}
+        } catch { }
         return merged;
       });
     },
@@ -191,7 +193,7 @@ export const UserProvider = ({ children }) => {
         setUserGoals(payload);
         try {
           localStorage.setItem("cybercode_user_goals", JSON.stringify(payload));
-        } catch {}
+        } catch { }
         return payload;
       } catch (e) {
         console.warn("saveUserGoals fallback failed", e);
@@ -246,7 +248,7 @@ export const UserProvider = ({ children }) => {
           const next = [...(prev || []), saved];
           try {
             localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-          } catch {}
+          } catch { }
           return next;
         });
         return saved;
@@ -280,14 +282,14 @@ export const UserProvider = ({ children }) => {
       localStorage.removeItem(GENERATED_PROJECTS_KEY);
       localStorage.removeItem(PERSONA_STORAGE_KEY);
       localStorage.removeItem("cybercode_user_goals");
-    } catch {}
+    } catch { }
 
     // cleanup any cached roadmaps
     try {
       Object.keys(localStorage)
         .filter((k) => k.startsWith("cybercode_ai_roadmap_v"))
         .forEach((k) => localStorage.removeItem(k));
-    } catch {}
+    } catch { }
 
     // gentle redirect to home
     window.location.href = "/";
@@ -361,6 +363,8 @@ export const UserProvider = ({ children }) => {
         completeLessonFS,
         isLessonCompleted,
         getCourseCompletion,
+        userStats,
+        setUserStats,
       }}
     >
       {children}
