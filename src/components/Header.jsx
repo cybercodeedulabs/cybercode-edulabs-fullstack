@@ -1,8 +1,7 @@
 // src/components/Header.jsx
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "/images/logo.png";
-import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { useUser } from "../contexts/UserContext";
 import { useTheme } from "../contexts/ThemeContext";
@@ -18,20 +17,23 @@ function Header() {
   const { user, logout } = useUser();
   const navigate = useNavigate();
 
-  const taglines = [
-    "India’s First Cloud & EdTech Hybrid",
-    "Empowering Skills and Cloud Innovation",
-    "Learn. Build. Deploy. All at Cybercode",
-  ];
+  // Rotating taglines
+  const taglines = useMemo(
+    () => [
+      "India’s First Cloud & EdTech Hybrid",
+      "Empowering Skills and Cloud Innovation",
+      "Learn. Build. Deploy. All at Cybercode",
+    ],
+    []
+  );
 
-  // Rotate tagline
   useEffect(() => {
     const interval = setInterval(
       () => setTaglineIndex((prev) => (prev + 1) % taglines.length),
       4000
     );
     return () => clearInterval(interval);
-  }, []);
+  }, [taglines.length]);
 
   // Scroll shadow
   useEffect(() => {
@@ -45,24 +47,34 @@ function Header() {
     navigate("/");
   };
 
-  const links = [
-    { name: "Home", to: "/" },
-    { name: "Courses", to: "/courses" },
-    { name: "Labs", to: "/labs" },
-    { name: "Projects", to: "/projects" },
-    { name: "Cloud", to: "/cloud", highlight: true },
-    { name: "Demo Class", to: "/demo", demo: true },
-    { name: "Contact", to: "/contact" },
-  ];
+  // 🧠 Memoize links to avoid infinite renders
+  const links = useMemo(
+    () => [
+      { name: "Home", to: "/" },
+      { name: "Courses", to: "/courses" },
+      { name: "Labs", to: "/labs" },
+      { name: "Projects", to: "/projects" },
+      { name: "Cloud", to: "/cloud", highlight: true },
+      { name: "Demo Class", to: "/demo", demo: true },
+      { name: "Contact", to: "/contact" },
+    ],
+    []
+  );
 
-  // helper to compute nav class without complex template literals inside JSX
   const navClassFor = (link) => {
-    const parts = ["transition-all", "font-medium"];
-    if (link.highlight) {
-      parts.push("text-indigo-600", "dark:text-indigo-400", "font-semibold");
-    }
-    if (link.demo) {
-      parts.push(
+    const base = ["transition-all", "font-medium"];
+
+    if (link.highlight)
+      return [
+        ...base,
+        "text-indigo-600",
+        "dark:text-indigo-400",
+        "font-semibold",
+      ].join(" ");
+
+    if (link.demo)
+      return [
+        ...base,
         "px-4",
         "py-1.5",
         "bg-green-600",
@@ -70,12 +82,15 @@ function Header() {
         "text-white",
         "rounded-full",
         "shadow-xl",
-        "animate-pulse-slow"
-      );
-    } else {
-      parts.push("text-gray-800", "dark:text-gray-200", "hover:text-indigo-500");
-    }
-    return parts.join(" ");
+        "animate-pulse-slow",
+      ].join(" ");
+
+    return [
+      ...base,
+      "text-gray-800",
+      "dark:text-gray-200",
+      "hover:text-indigo-500",
+    ].join(" ");
   };
 
   return (
@@ -112,27 +127,22 @@ function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {links.map((link) => {
-            // Do not return fragments inside JSX attribute — handle Demo label rendering here
-            if (link.demo) {
-              return (
-                <Link key={link.name} to={link.to} className={navClassFor(link)}>
-                  <span className="flex items-center gap-2">
-                    <span>Demo Class</span>
-                    <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                      FREE
-                    </span>
+          {links.map((link) =>
+            link.demo ? (
+              <Link key={link.name} to={link.to} className={navClassFor(link)}>
+                <span className="flex items-center gap-2">
+                  <span>Demo Class</span>
+                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
+                    FREE
                   </span>
-                </Link>
-              );
-            }
-
-            return (
+                </span>
+              </Link>
+            ) : (
               <Link key={link.name} to={link.to} className={navClassFor(link)}>
                 {link.name === "Cloud" ? "☁️ Cloud" : link.name}
               </Link>
-            );
-          })}
+            )
+          )}
 
           {/* Auth */}
           {user ? (
@@ -152,7 +162,10 @@ function Header() {
             </div>
           ) : (
             <div className="flex items-center space-x-3">
-              <Link to="/register" className="hover:underline text-gray-700 dark:text-gray-200">
+              <Link
+                to="/register"
+                className="hover:underline text-gray-700 dark:text-gray-200"
+              >
                 Register
               </Link>
               <Link
@@ -174,7 +187,7 @@ function Header() {
           </button>
         </nav>
 
-        {/* MOBILE NAVBAR BUTTONS */}
+        {/* MOBILE NAV BUTTONS */}
         <div className="flex items-center space-x-2 md:hidden">
           <button
             onClick={() => setDarkMode(!darkMode)}

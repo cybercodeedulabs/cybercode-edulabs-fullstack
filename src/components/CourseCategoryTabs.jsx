@@ -1,15 +1,10 @@
 // src/components/ui/CourseCategoryTabs.jsx
-import React from "react";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "../contexts/UserContext"; // <-- use your existing user context
+import { useUser } from "../contexts/UserContext";
 import lessonsData from "../data/lessonsData";
 
-/**
- * Default category → course mapping (kept for UI consistency).
- * If you later want fully dynamic source, we can populate from courseData.
- */
 const defaultCourseCategories = {
   "Programming & Development": [
     { title: "Golang", slug: "golang", description: "Master modern backend development using Go programming." },
@@ -47,7 +42,7 @@ const defaultCourseCategories = {
 };
 
 
-/* ---------------------- COURSE CARD ---------------------- */
+// COURSE CARD
 function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
   return (
     <motion.div
@@ -96,10 +91,11 @@ function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
 }
 
 
-/* ---------------------- MAIN COMPONENT ---------------------- */
-export default function CourseCategoryTabs({ courses }) {
-  const courseCategories = defaultCourseCategories; // keep same categories as before
-  const categories = Object.keys(courseCategories);
+// MAIN COMPONENT
+export default function CourseCategoryTabs() {
+  const courseCategories = useMemo(() => defaultCourseCategories, []);
+  const categories = useMemo(() => Object.keys(courseCategories), [courseCategories]);
+
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [underlineStyle, setUnderlineStyle] = useState({ width: 0, left: 0 });
 
@@ -109,38 +105,32 @@ export default function CourseCategoryTabs({ courses }) {
   const { user, enrolledCourses = [], enrollInCourse } = useUser();
   const navigate = useNavigate();
 
+  // FIXED EFFECT
   useEffect(() => {
-    const activeTab = tabRefs.current[categories.indexOf(activeCategory)];
+    const idx = categories.indexOf(activeCategory);
+    const activeTab = tabRefs.current[idx];
+
     if (activeTab && tabsContainerRef.current) {
       const containerRect = tabsContainerRef.current.getBoundingClientRect();
       const tabRect = activeTab.getBoundingClientRect();
+
       setUnderlineStyle({
         width: tabRect.width,
         left: tabRect.left - containerRect.left,
       });
     }
-  }, [activeCategory, categories]);
+  }, [activeCategory, categories.length]); // <— SAFE DEPENDENCIES
 
-  // Enroll handler: if not logged in -> go to register; otherwise enroll and redirect to first lesson if exists
   const handleEnroll = (slug) => {
-    if (!user) {
-      navigate("/register");
-      return;
-    }
+    if (!user) return navigate("/register");
 
-    // call context enroll function (should persist in user state)
     enrollInCourse(slug);
 
-    // find first lesson for the course (if lessonsData present)
-    const courseLessons = (lessonsData && lessonsData[slug]) || [];
-    const firstLessonSlug = courseLessons.length > 0 ? courseLessons[0].slug : null;
+    const courseLessons = lessonsData?.[slug] || [];
+    const firstLessonSlug = courseLessons[0]?.slug;
 
-    if (firstLessonSlug) {
-      navigate(`/courses/${slug}/lessons/${firstLessonSlug}`);
-    } else {
-      // fallback to course page
-      navigate(`/courses/${slug}`);
-    }
+    if (firstLessonSlug) navigate(`/courses/${slug}/lessons/${firstLessonSlug}`);
+    else navigate(`/courses/${slug}`);
   };
 
   return (
@@ -165,7 +155,6 @@ export default function CourseCategoryTabs({ courses }) {
           </button>
         ))}
 
-        {/* UNDERLINE */}
         <span
           className="absolute bottom-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full transition-all duration-300 ease-in-out"
           style={{
@@ -175,7 +164,6 @@ export default function CourseCategoryTabs({ courses }) {
         />
       </div>
 
-      {/* COURSE CARDS */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeCategory}

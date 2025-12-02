@@ -1,8 +1,8 @@
 // src/contexts/UserContext.jsx
 import React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "../firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+// import { auth } from "../firebase";
+// import { onAuthStateChanged, signOut } from "firebase/auth";
 import useUserData from "../hooks/useUserData";
 
 const UserContext = createContext();
@@ -12,7 +12,7 @@ const UserContext = createContext();
 // ----------------------------
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
-const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+const USE_FIREBASE = false;
 
 export const UserProvider = ({ children }) => {
   // AUTH USER (local cache load)

@@ -1,4 +1,10 @@
-import React from "react";
+// src/pages/LessonDetail.jsx
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  Suspense
+} from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -6,7 +12,6 @@ import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useState, useEffect, useRef, Suspense } from "react";
 import { Icon } from "@iconify/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -604,7 +609,25 @@ export default function LessonDetail() {
             {block.type === "component" && (
               <div className="my-10">
                 <Suspense fallback={<div>Loading Component...</div>}>
-                  <block.value />
+                  {(() => {
+                    // Safe dynamic component rendering: ensure hook order stability.
+                    const Candidate = block.value;
+                    if (!Candidate) return null;
+
+                    // If value is a function/component, render as component.
+                    if (typeof Candidate === "function") {
+                      const Component = Candidate;
+                      return <Component />;
+                    }
+
+                    // If value is already a React element, render it directly.
+                    if (React.isValidElement(Candidate)) {
+                      return Candidate;
+                    }
+
+                    // If it's something else (string / object), show a warning or nothing.
+                    return null;
+                  })()}
                 </Suspense>
               </div>
             )}
