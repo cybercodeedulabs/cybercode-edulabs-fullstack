@@ -13,7 +13,7 @@ const UserContext = createContext();
 const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
 const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
 const USE_FIREBASE = false;
-const [userStats, setUserStats] = useState({});
+
 
 
 export const UserProvider = ({ children }) => {
@@ -126,6 +126,7 @@ export const UserProvider = ({ children }) => {
   const [userGoals, setUserGoals] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
+  const [userStats, setUserStats] = useState({});
 
   // PERSONA SCORES
   const [personaScores, setPersonaScores] = useState(() => {
@@ -181,6 +182,7 @@ export const UserProvider = ({ children }) => {
       });
     },
     setUserGoals,
+    setUserStats,
   });
 
   // safe fallback for saveUserGoals
