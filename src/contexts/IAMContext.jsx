@@ -1,4 +1,5 @@
 // src/contexts/IAMContext.jsx
+import React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { db } from "../firebase";
 import {

@@ -1,4 +1,5 @@
 // src/components/ui/FeatureItem.jsx
+import React from "react";              // ✅ REQUIRED in Classic JSX runtime
 import { Icon } from "@iconify/react";
 
 const iconClass =
@@ -10,7 +11,6 @@ const icons = {
   training: <Icon icon="mdi:book-open-page-variant" className={iconClass} />,
   certificate: <Icon icon="mdi:award" className={iconClass} />,
 
-  // New icons (optional future use)
   ai: <Icon icon="mdi:cpu-64-bit" className={iconClass} />,
   cloud: <Icon icon="mdi:cloud-alert" className={iconClass} />,
   spark: <Icon icon="mdi:sparkles" className={iconClass} />,
@@ -31,16 +31,12 @@ function FeatureItem({ icon, title, description }) {
         hover:-translate-y-2 hover:shadow-xl
       "
     >
-
-      {/* Animated gradient border */}
       <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-br from-indigo-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-      {/* Icon */}
       <div className="flex justify-center mb-4 transform transition-transform duration-500 group-hover:scale-110">
         {icons[icon]}
       </div>
 
-      {/* Title */}
       <h4
         className="
           text-xl font-semibold 
@@ -53,12 +49,10 @@ function FeatureItem({ icon, title, description }) {
         {title}
       </h4>
 
-      {/* Description */}
       <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
         {description}
       </p>
 
-      {/* Glow ring on hover */}
       <div
         className="
         absolute inset-0 rounded-2xl 

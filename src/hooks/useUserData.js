@@ -3,6 +3,7 @@
 // Stores a simple "user document" in localStorage under key `cc_userdoc_<uid>`
 // and goals under `cc_goals_<uid>`.
 // Exposes the same functions used by the app.
+import React from "react";
 
 const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
 

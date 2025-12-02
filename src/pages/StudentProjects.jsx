@@ -1,4 +1,5 @@
 // src/pages/StudentProjects.jsx
+import React from "react";
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";

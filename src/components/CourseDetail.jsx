@@ -1,4 +1,5 @@
 // src/components/CourseDetail.jsx
+import React from "react";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import courseData from "../data/courseData";

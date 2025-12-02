@@ -1,4 +1,5 @@
 // src/data/courses/golangLessons.js
+import React from "react";
 
 const golangLessons = [
 {

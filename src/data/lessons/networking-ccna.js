@@ -1,5 +1,6 @@
 // src/data/lessons/networking-ccna.js
 // Lesson 1 — Networking Basics (expanded, tutorial style)
+import React from "react";
 import BasicLanSimulator from "../../components/simulations/ccna/BasicLanSimulator";
 import NetworkDeviceQuiz from "../../components/simulations/ccna/NetworkDeviceQuiz";
 import OSIFlowSimulation from "../../components/simulations/ccna/OSIFlowSimulation";

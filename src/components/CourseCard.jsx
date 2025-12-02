@@ -1,4 +1,5 @@
 // src/components/ui/CourseCard.jsx
+import React from "react";
 import { Link } from "react-router-dom";
 
 function CourseCard({ title, slug, description }) {

@@ -1,4 +1,5 @@
 // src/data/courses/cybersecurityEssentials.js
+import React from "react";
 import DecisionTreeSimulator from "../../components/simulations/DecisionTreeSimulator";
 import ThreatMapSimulator from "../../components/simulations/ThreatMapSimulator";
 import PacketFlowSimulator from "../../components/simulations/PacketFlowSimulator";

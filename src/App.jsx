@@ -1,4 +1,5 @@
 // src/App.jsx
+import React from "react";
 import { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,

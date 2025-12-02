@@ -1,4 +1,5 @@
 // src/pages/Register.jsx
+import React from "react";
 import { motion } from "framer-motion";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import { useUser } from "../contexts/UserContext";
