@@ -8,7 +8,15 @@ export default function StudentProjectDetail() {
   const { id } = useParams();
   const { generatedProjects = [] } = useUser();
 
-  if (!Array.isArray(generatedProjects)) return null;
+  if (!Array.isArray(generatedProjects)) {
+  // Wait for generatedProjects to be hydrated
+  return (
+    <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+      <p className="text-gray-500">Loading project…</p>
+    </div>
+  );
+}
+
 
   const project = generatedProjects.find((p) => String(p.id) === String(id));
 

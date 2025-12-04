@@ -23,14 +23,14 @@ export default function useUserData(
   // If we ever re-enable Firebase, this branch will be swapped out.
   if (USE_FIREBASE) {
     return {
-      enrollInCourse: async () => {},
-      completeLessonFS: async () => {},
-      recordStudySession: async () => {},
-      resetMyProgress: async () => {},
-      grantCertificationAccess: async () => {},
-      grantServerAccess: async () => {},
-      grantFullPremium: async () => {},
-      saveUserGoals: async () => {},
+      enrollInCourse: async () => { },
+      completeLessonFS: async () => { },
+      recordStudySession: async () => { },
+      resetMyProgress: async () => { },
+      grantCertificationAccess: async () => { },
+      grantServerAccess: async () => { },
+      grantFullPremium: async () => { },
+      saveUserGoals: async () => { },
       loadGeneratedProjects: async () => [],
       saveGeneratedProject: async (p) => p,
     };
@@ -81,14 +81,14 @@ export default function useUserData(
   /** Not logged in → return no-op implementations */
   if (!user || !user.uid) {
     return {
-      enrollInCourse: async () => {},
-      completeLessonFS: async () => {},
-      recordStudySession: async () => {},
-      resetMyProgress: async () => {},
-      grantCertificationAccess: async () => {},
-      grantServerAccess: async () => {},
-      grantFullPremium: async () => {},
-      saveUserGoals: async () => {},
+      enrollInCourse: async () => { },
+      completeLessonFS: async () => { },
+      recordStudySession: async () => { },
+      resetMyProgress: async () => { },
+      grantCertificationAccess: async () => { },
+      grantServerAccess: async () => { },
+      grantFullPremium: async () => { },
+      saveUserGoals: async () => { },
       loadGeneratedProjects: async () => [],
       saveGeneratedProject: async (p) => p,
     };
@@ -151,14 +151,42 @@ export default function useUserData(
   }, [uid]);
 
   /** Persist UI + localStorage together */
+  /** Persist UI + localStorage together */
   const persistAndNotify = (nextDoc) => {
-    writeUserDoc(uid, nextDoc);
+    // write per-user doc
+    try {
+      writeUserDoc(uid, nextDoc);
+    } catch (e) {
+      console.warn("persistAndNotify writeUserDoc failed", e);
+    }
 
-    setEnrolledCourses?.(nextDoc.enrolledCourses || []);
-    setCourseProgress?.(nextDoc.courseProgress || {});
-    setUserStats?.(nextDoc.userStats || {});
-    setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
+    // mirror generatedProjects to global key so other parts of app (UserContext) can read it
+    try {
+      if (Array.isArray(nextDoc.generatedProjects)) {
+        try {
+          localStorage.setItem(
+            "cybercode_generated_projects_v1",
+            JSON.stringify(nextDoc.generatedProjects)
+          );
+        } catch (err) {
+          // non-fatal
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // update react state via callbacks
+    try {
+      setEnrolledCourses?.(nextDoc.enrolledCourses || []);
+      setCourseProgress?.(nextDoc.courseProgress || {});
+      setUserStats?.(nextDoc.userStats || {});
+      setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
+    } catch (e) {
+      console.warn("persistAndNotify state update failed", e);
+    }
   };
+
 
   /* ============================
         LOCAL MODE FUNCTIONS
@@ -342,29 +370,65 @@ export default function useUserData(
   };
 
   const loadGeneratedProjects = async () => {
-    const doc = ensureInitialLocalDoc();
-    return doc.generatedProjects || [];
+    try {
+      const doc = ensureInitialLocalDoc();
+      const list = Array.isArray(doc.generatedProjects) ? doc.generatedProjects : [];
+      // mirror to global key too
+      try {
+        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(list));
+      } catch {}
+      return list;
+    } catch (e) {
+      console.error("loadGeneratedProjects failed", e);
+      // fallback: try global key
+      try {
+        const raw = localStorage.getItem("cybercode_generated_projects_v1");
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
   };
+
 
   const saveGeneratedProject = async (project) => {
-    const doc = ensureInitialLocalDoc();
+    try {
+      const doc = readUserDoc(uid) || ensureInitialLocalDoc();
+      const gp = Array.isArray(doc.generatedProjects) ? [...doc.generatedProjects] : [];
+      const withId = {
+        ...project,
+        id: project.id || `${nowTs()}-${Math.random()}`,
+        timestamp: nowTs(),
+      };
+      gp.push(withId);
 
-    const withId = {
-      ...project,
-      id: project.id || `${nowTs()}-${Math.random()}`,
-      timestamp: nowTs(),
-    };
+      // Persist to per-user doc + mirror global key via persistAndNotify
+      persistAndNotify({
+        ...doc,
+        generatedProjects: gp,
+        updatedAt: nowTs(),
+      });
 
-    const gp = [...(doc.generatedProjects || []), withId];
+      // Return the saved project for caller
+      return withId;
+    } catch (e) {
+      console.error("saveGeneratedProject failed", e);
 
-    persistAndNotify({
-      ...doc,
-      generatedProjects: gp,
-      updatedAt: nowTs(),
-    });
-
-    return withId;
+      // As last-resort fallback, add to the global key directly
+      try {
+        const raw = localStorage.getItem("cybercode_generated_projects_v1");
+        const arr = raw ? (Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []) : [];
+        const withId = { ...project, id: project.id || `${nowTs()}-${Math.random()}`, timestamp: nowTs() };
+        arr.push(withId);
+        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(arr));
+        return withId;
+      } catch {
+        return project;
+      }
+    }
   };
+
 
   /** Public API */
   return {

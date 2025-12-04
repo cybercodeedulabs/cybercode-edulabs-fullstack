@@ -91,6 +91,57 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+ * Sync generatedProjects across per-user storage (via useUserData) and global key.
+ * This runs on mount and whenever the user object changes so that:
+ *  - Projects created in dashboard (per-user) appear in global key used by UserContext
+ *  - Any pre-existing global list is adopted if per-user doc is empty
+ */
+  useEffect(() => {
+    let mounted = true;
+
+    const syncProjects = async () => {
+      try {
+        // 1) Try to read remote/per-user copy (via hook)
+        const remote = await firestore?.loadGeneratedProjects?.();
+        if (Array.isArray(remote) && remote.length > 0) {
+          // remote has priority -> set and mirror to global key
+          if (!mounted) return;
+          setGeneratedProjects(remote);
+          try {
+            localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
+          } catch { }
+          return;
+        }
+
+        // 2) Fallback to global key if remote empty
+        try {
+          const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(parsed)) {
+            if (!mounted) return;
+            setGeneratedProjects(parsed);
+            return;
+          }
+        } catch { }
+
+        // 3) Final fallback: ensure empty array
+        if (!mounted) return;
+        setGeneratedProjects([]);
+      } catch (e) {
+        // safe fallback
+        if (!mounted) return;
+        setGeneratedProjects([]);
+      }
+    };
+
+    syncProjects();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, firestore]);
+
   /* --------------------------------------
         USER GOALS + PROGRESS
   ---------------------------------------*/
@@ -221,39 +272,47 @@ export const UserProvider = ({ children }) => {
   const loadGeneratedProjects = async () => {
     try {
       const remote = await firestore?.loadGeneratedProjects?.();
-
       if (Array.isArray(remote)) {
         setGeneratedProjects(remote);
+        // mirror to global key for other tabs/components
+        try {
+          localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
+        } catch { }
         return remote;
       }
+    } catch {
+      // continue to fallback
+    }
 
-      setGeneratedProjects([]);
-      return [];
+    try {
+      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const arr = Array.isArray(parsed) ? parsed : [];
+      setGeneratedProjects(arr);
+      return arr;
     } catch {
       setGeneratedProjects([]);
       return [];
     }
   };
 
+
   const saveGeneratedProject = async (project) => {
     try {
-      const saved =
-        await firestore?.saveGeneratedProject?.(project);
-
+      const saved = await firestore?.saveGeneratedProject?.(project);
       if (saved) {
         const next = [...(generatedProjects || []), saved];
         setGeneratedProjects(next);
-        localStorage.setItem(
-          GENERATED_PROJECTS_KEY,
-          JSON.stringify(next)
-        );
+        try {
+          localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+        } catch { }
         return saved;
       }
-    } catch {
-      console.warn("saveGeneratedProject failed in UserContext");
+    } catch (e) {
+      console.warn("saveGeneratedProject failed in UserContext", e);
     }
 
-    // fallback
+    // fallback to local-only implementation
     return saveGeneratedProjectLocal(project);
   };
 
