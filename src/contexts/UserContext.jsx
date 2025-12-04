@@ -24,6 +24,7 @@ const USE_FIREBASE = false; // FULL LOCAL MODE ONLY
    PROVIDER
 -------------------------------------*/
 export const UserProvider = ({ children }) => {
+
   /* -------------------------
         AUTH (LOCAL USER)
   --------------------------*/
@@ -51,8 +52,7 @@ export const UserProvider = ({ children }) => {
 
   const loadGeneratedProjectsLocal = async () => {
     try {
-      const p =
-        JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      const p = JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
       setGeneratedProjects(p);
       return p;
     } catch {
@@ -70,96 +70,12 @@ export const UserProvider = ({ children }) => {
 
     setGeneratedProjects((prev) => {
       const next = [...(prev || []), withId];
-      localStorage.setItem(
-        GENERATED_PROJECTS_KEY,
-        JSON.stringify(next)
-      );
+      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
       return next;
     });
 
     return withId;
   };
-
-  /* --------------------------------------
-        AUTH LISTENER (LOCAL MODE)
-  ---------------------------------------*/
-  useEffect(() => {
-    if (!USE_FIREBASE) {
-      loadGeneratedProjectsLocal();
-      setLoading(false);
-      return;
-    }
-  }, []);
-
-    /* --------------------------------------
-        CONNECT WITH useUserData HOOK
-  ---------------------------------------*/
-  const firestore = useUserData(user, {
-    setEnrolledCourses,
-    setCourseProgress,
-    setUser: (updater) => {
-      setUser((prev) => {
-        const next =
-          typeof updater === "function" ? updater(prev) : updater;
-        const merged = { ...(prev || {}), ...(next || {}) };
-        localStorage.setItem(USER_KEY, JSON.stringify(merged));
-        return merged;
-      });
-    },
-    setUserGoals,
-    setUserStats,
-  });
-
-  /**
- * Sync generatedProjects across per-user storage (via useUserData) and global key.
- * This runs on mount and whenever the user object changes so that:
- *  - Projects created in dashboard (per-user) appear in global key used by UserContext
- *  - Any pre-existing global list is adopted if per-user doc is empty
- */
-  useEffect(() => {
-    let mounted = true;
-
-    const syncProjects = async () => {
-      try {
-        // 1) Try to read remote/per-user copy (via hook)
-        const remote = await firestore?.loadGeneratedProjects?.();
-        if (Array.isArray(remote) && remote.length > 0) {
-          // remote has priority -> set and mirror to global key
-          if (!mounted) return;
-          setGeneratedProjects(remote);
-          try {
-            localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
-          } catch { }
-          return;
-        }
-
-        // 2) Fallback to global key if remote empty
-        try {
-          const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
-          const parsed = raw ? JSON.parse(raw) : [];
-          if (Array.isArray(parsed)) {
-            if (!mounted) return;
-            setGeneratedProjects(parsed);
-            return;
-          }
-        } catch { }
-
-        // 3) Final fallback: ensure empty array
-        if (!mounted) return;
-        setGeneratedProjects([]);
-      } catch (e) {
-        // safe fallback
-        if (!mounted) return;
-        setGeneratedProjects([]);
-      }
-    };
-
-    syncProjects();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, firestore]);
 
   /* --------------------------------------
         USER GOALS + PROGRESS
@@ -199,25 +115,15 @@ export const UserProvider = ({ children }) => {
         }
       }
 
-      localStorage.setItem(
-        PERSONA_STORAGE_KEY,
-        JSON.stringify(next)
-      );
+      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
 
-  /* --------------------------------------
-        SAFE TOP PERSONA
-  ---------------------------------------*/
   const getTopPersona = () => {
     const entries = Object.entries(personaScores || {});
     if (!entries.length)
-      return {
-        persona: "beginner",
-        score: 0,
-        all: [["beginner", 0]],
-      };
+      return { persona: "beginner", score: 0, all: [["beginner", 0]] };
 
     entries.sort((a, b) => b[1] - a[1]);
     const top = entries[0];
@@ -229,61 +135,91 @@ export const UserProvider = ({ children }) => {
     };
   };
 
+  /* --------------------------------------
+        CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
+  ---------------------------------------*/
+  const firestore = useUserData(user, {
+    setEnrolledCourses,
+    setCourseProgress,
+    setUser: (updater) => {
+      setUser((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        const merged = { ...(prev || {}), ...(next || {}) };
+        localStorage.setItem(USER_KEY, JSON.stringify(merged));
+        return merged;
+      });
+    },
+    setUserGoals,
+    setUserStats,
+  });
 
   /* --------------------------------------
-        SAVE GOALS
+        AUTH LISTENER (LOCAL MODE)
   ---------------------------------------*/
-  const saveUserGoals =
-    firestore?.saveUserGoals ||
-    (async (goals) => {
-      const payload = {
-        ...goals,
-        updatedAt: Date.now(),
-        createdAt: goals?.createdAt || Date.now(),
-      };
-
-      setUserGoals(payload);
-      localStorage.setItem(
-        USER_GOALS_KEY,
-        JSON.stringify(payload)
-      );
-      return payload;
-    });
-
-  /* --------------------------------------
-        ENROLL COURSE
-  ---------------------------------------*/
-  const enrollInCourse = async (courseSlug) => {
-    if (!user?.uid) return;
-
-    setEnrolledCourses((prev) =>
-      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
-    );
-
-    try {
-      await firestore?.enrollInCourse?.(courseSlug);
-    } catch {
-      // ignore
+  useEffect(() => {
+    if (!USE_FIREBASE) {
+      loadGeneratedProjectsLocal();
+      setLoading(false);
     }
-  };
+  }, []);
 
   /* --------------------------------------
-        PROJECTS SYNC
+        SYNC PROJECTS (MUST COME AFTER firestore DECLARATION)
+  ---------------------------------------*/
+  useEffect(() => {
+    let mounted = true;
+
+    const syncProjects = async () => {
+      try {
+        // 1) Try to read remote/per-user copy
+        const remote = await firestore?.loadGeneratedProjects?.();
+        if (Array.isArray(remote) && remote.length > 0) {
+          if (!mounted) return;
+          setGeneratedProjects(remote);
+          try {
+            localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
+          } catch {}
+          return;
+        }
+
+        // 2) Fallback to global key
+        try {
+          const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(parsed)) {
+            if (!mounted) return;
+            setGeneratedProjects(parsed);
+            return;
+          }
+        } catch {}
+
+        // 3) fallback to empty
+        if (!mounted) return;
+        setGeneratedProjects([]);
+      } catch {
+        if (!mounted) return;
+        setGeneratedProjects([]);
+      }
+    };
+
+    syncProjects();
+    return () => (mounted = false);
+  }, [user, firestore]);
+
+  /* --------------------------------------
+        PROJECT SAVE / LOAD API
   ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     try {
       const remote = await firestore?.loadGeneratedProjects?.();
       if (Array.isArray(remote)) {
         setGeneratedProjects(remote);
-        // mirror to global key for other tabs/components
         try {
           localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
-        } catch { }
+        } catch {}
         return remote;
       }
-    } catch {
-      // continue to fallback
-    }
+    } catch {}
 
     try {
       const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
@@ -297,24 +233,33 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-
   const saveGeneratedProject = async (project) => {
     try {
       const saved = await firestore?.saveGeneratedProject?.(project);
       if (saved) {
-        const next = [...(generatedProjects || []), saved];
+        const next = [...generatedProjects, saved];
         setGeneratedProjects(next);
         try {
           localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-        } catch { }
+        } catch {}
         return saved;
       }
-    } catch (e) {
-      console.warn("saveGeneratedProject failed in UserContext", e);
-    }
+    } catch {}
 
-    // fallback to local-only implementation
     return saveGeneratedProjectLocal(project);
+  };
+
+  /* --------------------------------------
+        ENROLL COURSE
+  ---------------------------------------*/
+  const enrollInCourse = async (courseSlug) => {
+    if (!user?.uid) return;
+    setEnrolledCourses((prev) =>
+      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
+    );
+    try {
+      await firestore?.enrollInCourse?.(courseSlug);
+    } catch {}
   };
 
   /* --------------------------------------
@@ -346,43 +291,33 @@ export const UserProvider = ({ children }) => {
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     setCourseProgress((prev) => {
       const existing =
-        prev?.[courseSlug] || {
-          completedLessons: [],
-          currentLessonIndex: 0,
-        };
+        prev?.[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
       const updated = Array.from(
         new Set([...(existing.completedLessons || []), lessonSlug])
       );
 
-      const next = {
+      try {
+        firestore?.completeLessonFS?.(courseSlug, lessonSlug);
+      } catch {}
+
+      return {
         ...prev,
         [courseSlug]: {
           completedLessons: updated,
           currentLessonIndex: updated.length,
         },
       };
-
-      try {
-        firestore?.completeLessonFS?.(courseSlug, lessonSlug);
-      } catch {
-        // ignore
-      }
-
-      return next;
     });
   };
 
   const isLessonCompleted = (courseSlug, lessonSlug) =>
     Boolean(
-      courseProgress?.[courseSlug]?.completedLessons?.includes(
-        lessonSlug
-      )
+      courseProgress?.[courseSlug]?.completedLessons?.includes(lessonSlug)
     );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed =
-      courseProgress?.[courseSlug]?.completedLessons || [];
+    const completed = courseProgress?.[courseSlug]?.completedLessons || [];
     return totalLessons
       ? Math.round((completed.length / totalLessons) * 100)
       : 0;
