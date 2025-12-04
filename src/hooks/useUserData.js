@@ -1,4 +1,8 @@
 // src/hooks/useUserData.js
+// Local-only implementation while Firebase is disabled.
+// Stores per-user data in localStorage under cc_userdoc_<uid>
+// and goals in cc_goals_<uid>.
+
 import { useEffect } from "react";
 
 const USE_FIREBASE = false;
@@ -16,6 +20,7 @@ export default function useUserData(
   user,
   { setEnrolledCourses, setCourseProgress, setUser, setUserGoals, setUserStats }
 ) {
+  // If we ever re-enable Firebase, this branch will be swapped out.
   if (USE_FIREBASE) {
     return {
       enrollInCourse: async () => {},
@@ -49,7 +54,9 @@ export default function useUserData(
     if (!canUseLocalStorage()) return;
     try {
       localStorage.setItem(userKey(uid), JSON.stringify(obj));
-    } catch {}
+    } catch {
+      // ignore
+    }
   };
 
   const readGoalsDoc = (uid) => {
@@ -64,10 +71,14 @@ export default function useUserData(
 
   const writeGoalsDoc = (uid, obj) => {
     if (!canUseLocalStorage()) return;
-    localStorage.setItem(goalsKey(uid), JSON.stringify(obj));
+    try {
+      localStorage.setItem(goalsKey(uid), JSON.stringify(obj));
+    } catch {
+      // ignore
+    }
   };
 
-  /** Not logged in → return no-op */
+  /** Not logged in → return no-op implementations */
   if (!user || !user.uid) {
     return {
       enrollInCourse: async () => {},
@@ -85,7 +96,7 @@ export default function useUserData(
 
   const uid = user.uid;
 
-  /** Create initial structure */
+  /** Create initial structure if missing */
   const ensureInitialLocalDoc = () => {
     const existing = readUserDoc(uid) || {};
 
@@ -131,9 +142,9 @@ export default function useUserData(
       const g = readGoalsDoc(uid);
       if (g) setUserGoals?.(g);
 
-      if (doc.isPremium && setUser)
+      if (doc.isPremium && setUser) {
         setUser((u) => (u ? { ...u, isPremium: true } : u));
-
+      }
     } catch (e) {
       console.warn("hydrateOnce failed", e);
     }
@@ -145,8 +156,7 @@ export default function useUserData(
 
     setEnrolledCourses?.(nextDoc.enrolledCourses || []);
     setCourseProgress?.(nextDoc.courseProgress || {});
-    setUserStats?.(nextDoc.userStats || {});   // ✔ FIXED
-
+    setUserStats?.(nextDoc.userStats || {});
     setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
   };
 
@@ -170,8 +180,9 @@ export default function useUserData(
     const doc = ensureInitialLocalDoc();
     const cp = { ...(doc.courseProgress || {}) };
 
-    const existing = cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-    const set = new Set(existing.completedLessons);
+    const existing =
+      cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+    const set = new Set(existing.completedLessons || []);
     set.add(lessonSlug);
 
     cp[courseSlug] = {
@@ -211,7 +222,10 @@ export default function useUserData(
     else if (last === yesterday) usrStats.streakDays = (usrStats.streakDays || 0) + 1;
     else usrStats.streakDays = 1;
 
-    usrStats.longestStreak = Math.max(usrStats.longestStreak || 0, usrStats.streakDays);
+    usrStats.longestStreak = Math.max(
+      usrStats.longestStreak || 0,
+      usrStats.streakDays
+    );
     usrStats.lastStudyDate = today;
 
     // weekly %
@@ -222,20 +236,37 @@ export default function useUserData(
       last7.push(d.toISOString().split("T")[0]);
     }
 
-    usrStats.weeklyMinutes = last7.reduce((sum, d) => sum + (usrStats.daily[d] || 0), 0);
+    usrStats.weeklyMinutes = last7.reduce(
+      (sum, d) => sum + (usrStats.daily[d] || 0),
+      0
+    );
 
     const goals = readGoalsDoc(uid) || {};
     const hrs = Number(goals.hoursPerWeek || 2);
     const wkGoal = hrs * 60;
 
-    usrStats.weeklyPct = wkGoal ? Math.round((usrStats.weeklyMinutes / wkGoal) * 100) : 0;
-    usrStats.readinessPct = Math.min(100, usrStats.weeklyPct + usrStats.streakDays * 3);
+    usrStats.weeklyPct = wkGoal
+      ? Math.round((usrStats.weeklyMinutes / wkGoal) * 100)
+      : 0;
+    usrStats.readinessPct = Math.min(
+      100,
+      usrStats.weeklyPct + usrStats.streakDays * 3
+    );
 
     // update course time
     const cp = { ...(doc.courseProgress || {}) };
-    const course = cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0, sessions: [], timeSpentMinutes: 0 };
+    const course =
+      cp[courseSlug] || {
+        completedLessons: [],
+        currentLessonIndex: 0,
+        sessions: [],
+        timeSpentMinutes: 0,
+      };
 
-    course.sessions = [...(course.sessions || []), { lesson: lessonSlug, minutes, ts: nowTs() }];
+    course.sessions = [
+      ...(course.sessions || []),
+      { lesson: lessonSlug, minutes, ts: nowTs() },
+    ];
     course.timeSpentMinutes = (course.timeSpentMinutes || 0) + minutes;
 
     cp[courseSlug] = course;
@@ -335,7 +366,7 @@ export default function useUserData(
     return withId;
   };
 
-  /** Public API (correct, real implementations) */
+  /** Public API */
   return {
     enrollInCourse,
     completeLessonFS,

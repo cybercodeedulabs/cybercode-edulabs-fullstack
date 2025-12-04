@@ -51,10 +51,12 @@ export const UserProvider = ({ children }) => {
 
   const loadGeneratedProjectsLocal = async () => {
     try {
-      const p = JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      const p =
+        JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
       setGeneratedProjects(p);
       return p;
     } catch {
+      setGeneratedProjects([]);
       return [];
     }
   };
@@ -67,8 +69,11 @@ export const UserProvider = ({ children }) => {
     };
 
     setGeneratedProjects((prev) => {
-      const next = [...prev, withId];
-      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+      const next = [...(prev || []), withId];
+      localStorage.setItem(
+        GENERATED_PROJECTS_KEY,
+        JSON.stringify(next)
+      );
       return next;
     });
 
@@ -124,7 +129,10 @@ export const UserProvider = ({ children }) => {
         }
       }
 
-      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(
+        PERSONA_STORAGE_KEY,
+        JSON.stringify(next)
+      );
       return next;
     });
   };
@@ -135,7 +143,11 @@ export const UserProvider = ({ children }) => {
   const getTopPersona = () => {
     const entries = Object.entries(personaScores || {});
     if (!entries.length)
-      return { persona: "beginner", score: 0, all: [["beginner", 0]] };
+      return {
+        persona: "beginner",
+        score: 0,
+        all: [["beginner", 0]],
+      };
 
     entries.sort((a, b) => b[1] - a[1]);
     const top = entries[0];
@@ -155,7 +167,8 @@ export const UserProvider = ({ children }) => {
     setCourseProgress,
     setUser: (updater) => {
       setUser((prev) => {
-        const next = typeof updater === "function" ? updater(prev) : updater;
+        const next =
+          typeof updater === "function" ? updater(prev) : updater;
         const merged = { ...(prev || {}), ...(next || {}) };
         localStorage.setItem(USER_KEY, JSON.stringify(merged));
         return merged;
@@ -178,7 +191,10 @@ export const UserProvider = ({ children }) => {
       };
 
       setUserGoals(payload);
-      localStorage.setItem(USER_GOALS_KEY, JSON.stringify(payload));
+      localStorage.setItem(
+        USER_GOALS_KEY,
+        JSON.stringify(payload)
+      );
       return payload;
     });
 
@@ -194,49 +210,52 @@ export const UserProvider = ({ children }) => {
 
     try {
       await firestore?.enrollInCourse?.(courseSlug);
-    } catch {}
+    } catch {
+      // ignore
+    }
   };
 
   /* --------------------------------------
         PROJECTS SYNC
   ---------------------------------------*/
-const loadGeneratedProjects = async () => {
-  try {
-    const remote = await firestore?.loadGeneratedProjects?.();
+  const loadGeneratedProjects = async () => {
+    try {
+      const remote = await firestore?.loadGeneratedProjects?.();
 
-    if (Array.isArray(remote)) {
-      setGeneratedProjects(remote);
-      return remote;
+      if (Array.isArray(remote)) {
+        setGeneratedProjects(remote);
+        return remote;
+      }
+
+      setGeneratedProjects([]);
+      return [];
+    } catch {
+      setGeneratedProjects([]);
+      return [];
+    }
+  };
+
+  const saveGeneratedProject = async (project) => {
+    try {
+      const saved =
+        await firestore?.saveGeneratedProject?.(project);
+
+      if (saved) {
+        const next = [...(generatedProjects || []), saved];
+        setGeneratedProjects(next);
+        localStorage.setItem(
+          GENERATED_PROJECTS_KEY,
+          JSON.stringify(next)
+        );
+        return saved;
+      }
+    } catch {
+      console.warn("saveGeneratedProject failed in UserContext");
     }
 
-    // Important fix: ensure generatedProjects is ALWAYS an array
-    setGeneratedProjects([]);
-    return [];
-  } catch {
-    setGeneratedProjects([]);
-    return [];
-  }
-};
-
-
-const saveGeneratedProject = async (project) => {
-  try {
-    const saved = await firestore?.saveGeneratedProject?.(project);
-
-    if (saved) {
-      const next = [...(generatedProjects || []), saved];
-      setGeneratedProjects(next);
-      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-      return saved;
-    }
-  } catch {
-    console.warn("saveGeneratedProject failed in UserContext");
-  }
-
-  // fallback
-  return saveGeneratedProjectLocal(project);
-};
-
+    // fallback
+    return saveGeneratedProjectLocal(project);
+  };
 
   /* --------------------------------------
         LOGOUT
@@ -286,18 +305,27 @@ const saveGeneratedProject = async (project) => {
 
       try {
         firestore?.completeLessonFS?.(courseSlug, lessonSlug);
-      } catch {}
+      } catch {
+        // ignore
+      }
 
       return next;
     });
   };
 
   const isLessonCompleted = (courseSlug, lessonSlug) =>
-    Boolean(courseProgress?.[courseSlug]?.completedLessons?.includes(lessonSlug));
+    Boolean(
+      courseProgress?.[courseSlug]?.completedLessons?.includes(
+        lessonSlug
+      )
+    );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed = courseProgress?.[courseSlug]?.completedLessons || [];
-    return totalLessons ? Math.round((completed.length / totalLessons) * 100) : 0;
+    const completed =
+      courseProgress?.[courseSlug]?.completedLessons || [];
+    return totalLessons
+      ? Math.round((completed.length / totalLessons) * 100)
+      : 0;
   };
 
   /* --------------------------------------
