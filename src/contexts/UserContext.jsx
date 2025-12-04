@@ -202,7 +202,7 @@ export const UserProvider = ({ children }) => {
 
     syncProjects();
     return () => (mounted = false);
-  }, [user, firestore]);
+  }, [user]);
 
   /* --------------------------------------
         PROJECT API (load/save)
