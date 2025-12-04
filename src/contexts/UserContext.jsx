@@ -24,7 +24,6 @@ const USE_FIREBASE = false; // FULL LOCAL MODE ONLY
    PROVIDER
 -------------------------------------*/
 export const UserProvider = ({ children }) => {
-
   /* -------------------------
         AUTH (LOCAL USER)
   --------------------------*/
@@ -136,7 +135,8 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
+        CONNECT WITH useUserData HOOK
+        (MUST COME BEFORE syncProjects!)
   ---------------------------------------*/
   const firestore = useUserData(user, {
     setEnrolledCourses,
@@ -164,14 +164,13 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   /* --------------------------------------
-        SYNC PROJECTS (MUST COME AFTER firestore DECLARATION)
+        SYNC PROJECTS (runs after firestore created)
   ---------------------------------------*/
   useEffect(() => {
     let mounted = true;
 
     const syncProjects = async () => {
       try {
-        // 1) Try to read remote/per-user copy
         const remote = await firestore?.loadGeneratedProjects?.();
         if (Array.isArray(remote) && remote.length > 0) {
           if (!mounted) return;
@@ -182,7 +181,7 @@ export const UserProvider = ({ children }) => {
           return;
         }
 
-        // 2) Fallback to global key
+        // fallback: global
         try {
           const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
           const parsed = raw ? JSON.parse(raw) : [];
@@ -193,7 +192,6 @@ export const UserProvider = ({ children }) => {
           }
         } catch {}
 
-        // 3) fallback to empty
         if (!mounted) return;
         setGeneratedProjects([]);
       } catch {
@@ -206,28 +204,8 @@ export const UserProvider = ({ children }) => {
     return () => (mounted = false);
   }, [user, firestore]);
 
-    /* --------------------------------------
-        SAVE GOALS
-  ---------------------------------------*/
-  const saveUserGoals =
-    firestore?.saveUserGoals ||
-    (async (goals) => {
-      const payload = {
-        ...goals,
-        updatedAt: Date.now(),
-        createdAt: goals?.createdAt || Date.now(),
-      };
-
-      setUserGoals(payload);
-      localStorage.setItem(
-        USER_GOALS_KEY,
-        JSON.stringify(payload)
-      );
-      return payload;
-    });
-
   /* --------------------------------------
-        PROJECT SAVE / LOAD API
+        PROJECT API (load/save)
   ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     try {
@@ -270,13 +248,40 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
+        SAVE USER GOALS  (MISSING EARLIER — NOW FIXED)
+  ---------------------------------------*/
+  const saveUserGoals = async (goals) => {
+    try {
+      const payload =
+        (await firestore?.saveUserGoals?.(goals)) ||
+        {
+          ...goals,
+          updatedAt: Date.now(),
+          createdAt: goals?.createdAt || Date.now(),
+        };
+
+      setUserGoals(payload);
+
+      try {
+        localStorage.setItem(USER_GOALS_KEY, JSON.stringify(payload));
+      } catch {}
+
+      return payload;
+    } catch {
+      return goals;
+    }
+  };
+
+  /* --------------------------------------
         ENROLL COURSE
   ---------------------------------------*/
   const enrollInCourse = async (courseSlug) => {
     if (!user?.uid) return;
+
     setEnrolledCourses((prev) =>
       prev.includes(courseSlug) ? prev : [...prev, courseSlug]
     );
+
     try {
       await firestore?.enrollInCourse?.(courseSlug);
     } catch {}
