@@ -206,6 +206,26 @@ export const UserProvider = ({ children }) => {
     return () => (mounted = false);
   }, [user, firestore]);
 
+    /* --------------------------------------
+        SAVE GOALS
+  ---------------------------------------*/
+  const saveUserGoals =
+    firestore?.saveUserGoals ||
+    (async (goals) => {
+      const payload = {
+        ...goals,
+        updatedAt: Date.now(),
+        createdAt: goals?.createdAt || Date.now(),
+      };
+
+      setUserGoals(payload);
+      localStorage.setItem(
+        USER_GOALS_KEY,
+        JSON.stringify(payload)
+      );
+      return payload;
+    });
+
   /* --------------------------------------
         PROJECT SAVE / LOAD API
   ---------------------------------------*/
