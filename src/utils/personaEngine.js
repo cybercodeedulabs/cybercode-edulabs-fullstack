@@ -1,4 +1,5 @@
 // src/utils/personaEngine.js
+
 export const PERSONAS_LIST = {
   security: "Security",
   developer: "Developer",
@@ -9,22 +10,36 @@ export const PERSONAS_LIST = {
   beginner: "Beginner",
 };
 
+/* ----------------------------------------
+   Infer persona from lesson or course title
+----------------------------------------- */
 export function inferPersonaFromTitle(title = "") {
   const t = (title || "").toLowerCase();
 
-  if (/\b(security|cyber|forensics|siem|ids|ips|vulnerability|incident|threat)\b/.test(t)) return "security";
-  if (/\b(devops|docker|kubernetes|ci\/cd|pipeline|cicd|terraform|iac)\b/.test(t)) return "devops";
-  if (/\b(aws|azure|gcp|cloud|private cloud|openstack|ec2|s3)\b/.test(t)) return "cloud";
-  if (/\b(data|ml|machine learning|pandas|numpy|scikit|ai|model)\b/.test(t)) return "data";
-  if (/\b(network|tcp|packet|routing|ccna|switch|router)\b/.test(t)) return "networking";
-  if (/\b(go|golang|python|java|javascript|node|react|full-stack|backend)\b/.test(t)) return "developer";
+  if (/\b(security|cyber|forensics|siem|ids|ips|vulnerability|incident|threat)\b/.test(t))
+    return "security";
+
+  if (/\b(devops|docker|kubernetes|ci\/cd|pipeline|cicd|terraform|iac)\b/.test(t))
+    return "devops";
+
+  if (/\b(aws|azure|gcp|cloud|private cloud|openstack|ec2|s3)\b/.test(t))
+    return "cloud";
+
+  if (/\b(data|ml|machine learning|pandas|numpy|scikit|ai|model)\b/.test(t))
+    return "data";
+
+  if (/\b(network|tcp|packet|routing|ccna|switch|router)\b/.test(t))
+    return "networking";
+
+  if (/\b(go|golang|python|java|javascript|node|react|full-stack|backend)\b/.test(t))
+    return "developer";
 
   return "beginner";
 }
 
-/**
- * quickLessonPersonaDelta
- */
+/* ----------------------------------------
+   Lesson-level Persona delta
+----------------------------------------- */
 export function quickLessonPersonaDelta(lesson = {}) {
   if (!lesson || !lesson.title) return {};
   const persona = inferPersonaFromTitle(lesson.title);
@@ -60,6 +75,7 @@ export function quickLessonPersonaDelta(lesson = {}) {
       deltas.developer = 2;
   }
 
+  // boost project-related lessons
   if (/(project|capstone|mini project)/i.test(lesson.title || "")) {
     Object.keys(deltas).forEach((k) => (deltas[k] = Math.round(deltas[k] * 1.25)));
   }
@@ -67,13 +83,13 @@ export function quickLessonPersonaDelta(lesson = {}) {
   return deltas;
 }
 
-/**
- * quickCoursePersonaDelta
- */
+/* ----------------------------------------
+   Course-level Persona delta
+----------------------------------------- */
 export function quickCoursePersonaDelta(course = {}) {
   if (!course) return {};
-  const title = course.title || "";
   const category = (course.category || "").toLowerCase();
+  const title = course.title || "";
 
   if (/cloud|devops|infrastructure/.test(category)) {
     return { cloud: 12, devops: 8 };
@@ -87,23 +103,30 @@ export function quickCoursePersonaDelta(course = {}) {
   if (/security|cyber|network|ccna/.test(category)) {
     return { security: 12, networking: 5 };
   }
+
   return quickLessonPersonaDelta({ title });
 }
 
-/**
- * normalizePersonaScores(scores)
- * Convert raw numeric scores into 0-100 percentages.
- */
+/* ----------------------------------------
+   Normalize scores safely
+----------------------------------------- */
 export function normalizePersonaScores(scores = {}) {
   try {
     const entries = Object.entries(scores || {});
     if (!entries.length) return {};
-    const max = Math.max(...entries.map(([, v]) => Number(v || 0)), 1);
+
+    const max = Math.max(
+      ...entries.map(([, v]) => Number(v || 0)),
+      1
+    );
+
     const normalized = {};
     entries.forEach(([k, v]) => {
-      const pct = Math.round((Number(v || 0) / max) * 100);
+      const raw = Number(v || 0);
+      const pct = isNaN(raw) ? 0 : Math.round((raw / max) * 100);
       normalized[k] = pct;
     });
+
     return normalized;
   } catch (err) {
     console.warn("normalizePersonaScores failed:", err);
@@ -111,17 +134,36 @@ export function normalizePersonaScores(scores = {}) {
   }
 }
 
-/**
- * topPersonaFromScores(scores)
- */
+/* ----------------------------------------
+   Top persona with safe fallback
+----------------------------------------- */
 export function topPersonaFromScores(scores = {}) {
-  const entries = Object.entries(scores || {}).sort((a, b) => b[1] - a[1]);
-  const top = entries[0] || [null, 0];
-  return {
-    persona: top[0],
-    score: top[1],
-    all: entries,
-  };
+  try {
+    const entries = Object.entries(scores || {}).sort((a, b) => b[1] - a[1]);
+
+    if (!entries.length) {
+      return {
+        persona: "beginner",
+        score: 0,
+        all: [["beginner", 0]],
+      };
+    }
+
+    const [persona, score] = entries[0];
+
+    return {
+      persona: persona || "beginner",
+      score: Number(score || 0),
+      all: entries,
+    };
+  } catch (err) {
+    console.warn("topPersonaFromScores failed:", err);
+    return {
+      persona: "beginner",
+      score: 0,
+      all: [["beginner", 0]],
+    };
+  }
 }
 
 export default {

@@ -11,6 +11,13 @@ const LOCAL_KEY_PREFIX = "cybercode_ai_roadmap_v4_safe_";
 export default function AIJobRoadmap({ goals }) {
   const { personaScores, userStats, user } = useUser();
 
+  // 🚨 FIX: Ensure roadmap never crashes when goals is null
+  const safeGoals = goals || {
+    targetRole: "Not Set",
+    hoursPerWeek: 0,
+    deadlineMonths: 0,
+  };
+
   const [loading, setLoading] = useState(false);
   const [aiText, setAiText] = useState(null);
   const [error, setError] = useState(null);
@@ -26,8 +33,13 @@ export default function AIJobRoadmap({ goals }) {
     }
   };
 
+  /* -------------------------
+     INITIAL LOAD + CACHE READ
+     ------------------------- */
   useEffect(() => {
+    // 🚨 FIX: Prevent crash & avoid fetching without goals
     if (!goals || loadedOnce.current) return;
+
     loadedOnce.current = true;
 
     try {
@@ -44,8 +56,16 @@ export default function AIJobRoadmap({ goals }) {
     fetchRoadmap();
   }, [goals]);
 
+  /* -------------------------
+     FETCH AI ROADMAP
+     ------------------------- */
   const fetchRoadmap = async () => {
-    if (!goals) return;
+    // 🚨 FIX: Don't fire AI if goals missing
+    if (!goals) {
+      setError("Please set your career goal to generate a roadmap.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -89,6 +109,7 @@ Do NOT wrap inside code blocks.
 
       const data = await res.json();
 
+      // rate-limit fallback
       if (res.status === 429 || data?.error?.toLowerCase?.().includes("rate")) {
         const raw = localStorage.getItem(cacheKey);
         if (raw) {
@@ -116,6 +137,9 @@ Do NOT wrap inside code blocks.
     }
   };
 
+  /* -------------------------
+     LOADING SKELETON UI
+     ------------------------- */
   if (!aiText && loading) {
     return (
       <div className="animate-pulse space-y-4 py-4">
@@ -125,6 +149,9 @@ Do NOT wrap inside code blocks.
     );
   }
 
+  /* -------------------------
+     PARSE AI MARKDOWN OUTPUT
+     ------------------------- */
   const parsed = useMemo(() => {
     if (!aiText) return { summary: "", months: [], projects: [], actions: [] };
 
@@ -178,8 +205,27 @@ Do NOT wrap inside code blocks.
     return { summary, months, projects, actions };
   }, [aiText]);
 
+  /* -------------------------
+     NO GOALS FOUND → FRIENDLY MESSAGE
+     ------------------------- */
+  if (!goals) {
+    return (
+      <div className="p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-300/30 dark:border-yellow-700/40 text-gray-700 dark:text-gray-200">
+        <h2 className="text-xl font-bold text-yellow-700 dark:text-yellow-300">
+          Career Goal Required
+        </h2>
+        <p className="mt-2 text-sm">
+          Please set your career goal first from Dashboard → Edit Goals.  
+          Then your personalized AI roadmap will load here.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+
+      {/* Outcome Summary */}
       {parsed.summary && (
         <div className="p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl shadow border border-indigo-200/30 dark:border-indigo-700/30">
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -192,7 +238,7 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
-      {/* Months */}
+      {/* Month-by-Month Cards */}
       {Array.isArray(parsed.months) && parsed.months.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -208,7 +254,7 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
-      {/* Projects */}
+      {/* Recommended Projects */}
       {Array.isArray(parsed.projects) && parsed.projects.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -230,7 +276,7 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
-      {/* Actions */}
+      {/* Action Items */}
       {Array.isArray(parsed.actions) && parsed.actions.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
@@ -250,6 +296,7 @@ Do NOT wrap inside code blocks.
         </div>
       )}
 
+      {/* Buttons */}
       <div className="mt-6 flex gap-3">
         <button onClick={fetchRoadmap} className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow">
           Regenerate Roadmap
