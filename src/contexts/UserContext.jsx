@@ -91,6 +91,25 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
+    /* --------------------------------------
+        CONNECT WITH useUserData HOOK
+  ---------------------------------------*/
+  const firestore = useUserData(user, {
+    setEnrolledCourses,
+    setCourseProgress,
+    setUser: (updater) => {
+      setUser((prev) => {
+        const next =
+          typeof updater === "function" ? updater(prev) : updater;
+        const merged = { ...(prev || {}), ...(next || {}) };
+        localStorage.setItem(USER_KEY, JSON.stringify(merged));
+        return merged;
+      });
+    },
+    setUserGoals,
+    setUserStats,
+  });
+
   /**
  * Sync generatedProjects across per-user storage (via useUserData) and global key.
  * This runs on mount and whenever the user object changes so that:
@@ -210,24 +229,6 @@ export const UserProvider = ({ children }) => {
     };
   };
 
-  /* --------------------------------------
-        CONNECT WITH useUserData HOOK
-  ---------------------------------------*/
-  const firestore = useUserData(user, {
-    setEnrolledCourses,
-    setCourseProgress,
-    setUser: (updater) => {
-      setUser((prev) => {
-        const next =
-          typeof updater === "function" ? updater(prev) : updater;
-        const merged = { ...(prev || {}), ...(next || {}) };
-        localStorage.setItem(USER_KEY, JSON.stringify(merged));
-        return merged;
-      });
-    },
-    setUserGoals,
-    setUserStats,
-  });
 
   /* --------------------------------------
         SAVE GOALS
