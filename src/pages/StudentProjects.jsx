@@ -25,36 +25,38 @@ export default function StudentProjects() {
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        {generatedProjects.map((p) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
-          >
-            <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
+        {Array.isArray(generatedProjects) &&
+          generatedProjects.length > 0 &&
+          generatedProjects.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
+            >
+              <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
 
-            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
-              {p.description}
-            </p>
+              <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+                {p.description}
+              </p>
 
-            {p.techStack?.length ? (
-              <div className="mt-3 text-xs text-gray-500">
-                Tech: {p.techStack.join(", ")}
+              {p.techStack?.length ? (
+                <div className="mt-3 text-xs text-gray-500">
+                  Tech: {p.techStack.join(", ")}
+                </div>
+              ) : null}
+
+              <div className="mt-4">
+                <Link
+                  to={`/student-projects/${p.id}`}
+                  className="text-sm text-indigo-600 hover:underline"
+                >
+                  View Details →
+                </Link>
               </div>
-            ) : null}
-
-            <div className="mt-4">
-              <Link
-                to={`/student-projects/${p.id}`}
-                className="text-sm text-indigo-600 hover:underline"
-              >
-                View Details →
-              </Link>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
       </div>
 
       {/* CTA */}

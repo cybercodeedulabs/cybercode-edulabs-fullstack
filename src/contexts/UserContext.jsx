@@ -18,7 +18,7 @@ const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
 const USER_GOALS_KEY = "cybercode_user_goals";
 const USER_KEY = "cybercodeUser";
 
-const USE_FIREBASE = false; // FULL LOCAL MODE
+const USE_FIREBASE = false; // FULL LOCAL MODE ONLY
 
 /* ------------------------------------
    PROVIDER
@@ -119,9 +119,9 @@ export const UserProvider = ({ children }) => {
       if (typeof obj === "string") {
         next[obj] = (next[obj] || 0) + delta;
       } else {
-        Object.entries(obj || {}).forEach(([k, v]) => {
+        for (const [k, v] of Object.entries(obj || {})) {
           next[k] = (next[k] || 0) + (v || 0);
-        });
+        }
       }
 
       localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
@@ -138,12 +138,11 @@ export const UserProvider = ({ children }) => {
       return { persona: "beginner", score: 0, all: [["beginner", 0]] };
 
     entries.sort((a, b) => b[1] - a[1]);
-
-    const top = entries[0] || ["beginner", 0];
+    const top = entries[0];
 
     return {
-      persona: top[0] || "beginner",
-      score: Number(top[1] || 0),
+      persona: top[0],
+      score: Number(top[1]),
       all: entries,
     };
   };
@@ -201,31 +200,43 @@ export const UserProvider = ({ children }) => {
   /* --------------------------------------
         PROJECTS SYNC
   ---------------------------------------*/
-  const loadGeneratedProjects = async () => {
-    try {
-      const remote = await firestore?.loadGeneratedProjects?.();
-      if (Array.isArray(remote)) {
-        setGeneratedProjects(remote);
-        return remote;
-      }
-    } catch {}
+const loadGeneratedProjects = async () => {
+  try {
+    const remote = await firestore?.loadGeneratedProjects?.();
 
-    return loadGeneratedProjectsLocal();
-  };
+    if (Array.isArray(remote)) {
+      setGeneratedProjects(remote);
+      return remote;
+    }
 
-  const saveGeneratedProject = async (project) => {
-    try {
-      const saved = await firestore?.saveGeneratedProject?.(project);
-      if (saved) {
-        const next = [...generatedProjects, saved];
-        setGeneratedProjects(next);
-        localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
-        return saved;
-      }
-    } catch {}
+    // Important fix: ensure generatedProjects is ALWAYS an array
+    setGeneratedProjects([]);
+    return [];
+  } catch {
+    setGeneratedProjects([]);
+    return [];
+  }
+};
 
-    return saveGeneratedProjectLocal(project);
-  };
+
+const saveGeneratedProject = async (project) => {
+  try {
+    const saved = await firestore?.saveGeneratedProject?.(project);
+
+    if (saved) {
+      const next = [...(generatedProjects || []), saved];
+      setGeneratedProjects(next);
+      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+      return saved;
+    }
+  } catch {
+    console.warn("saveGeneratedProject failed in UserContext");
+  }
+
+  // fallback
+  return saveGeneratedProjectLocal(project);
+};
+
 
   /* --------------------------------------
         LOGOUT
@@ -243,7 +254,6 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem(PERSONA_STORAGE_KEY);
     localStorage.removeItem(USER_GOALS_KEY);
 
-    // Clear cached AI roadmaps
     Object.keys(localStorage)
       .filter((k) => k.startsWith("cybercode_ai_roadmap"))
       .forEach((k) => localStorage.removeItem(k));
@@ -262,15 +272,15 @@ export const UserProvider = ({ children }) => {
           currentLessonIndex: 0,
         };
 
-      const newCompleted = Array.from(
+      const updated = Array.from(
         new Set([...(existing.completedLessons || []), lessonSlug])
       );
 
       const next = {
         ...prev,
         [courseSlug]: {
-          completedLessons: newCompleted,
-          currentLessonIndex: newCompleted.length,
+          completedLessons: updated,
+          currentLessonIndex: updated.length,
         },
       };
 
@@ -291,7 +301,7 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        CONTEXT RETURN
+        EXPORT CONTEXT
   ---------------------------------------*/
   return (
     <UserContext.Provider

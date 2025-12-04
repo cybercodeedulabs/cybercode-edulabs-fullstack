@@ -8,7 +8,10 @@ export default function StudentProjectDetail() {
   const { id } = useParams();
   const { generatedProjects = [] } = useUser();
 
+  if (!Array.isArray(generatedProjects)) return null;
+
   const project = generatedProjects.find((p) => String(p.id) === String(id));
+
 
   if (!project) {
     return (
