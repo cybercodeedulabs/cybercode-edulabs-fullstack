@@ -215,7 +215,7 @@ export const UserProvider = ({ children }) => {
       mounted = false;
     };
     // include firestore so it re-runs when hook reference changes
-  }, [user, firestore]);
+  }, [user]);
 
   /* --------------------------------------
         PROJECT API (load/save)
