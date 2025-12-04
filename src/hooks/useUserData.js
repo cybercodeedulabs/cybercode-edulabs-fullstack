@@ -54,7 +54,9 @@ export default function useUserData(
     if (!canUseLocalStorage()) return;
     try {
       localStorage.setItem(userKey(uid), JSON.stringify(obj));
-    } catch {}
+    } catch {
+      // ignore
+    }
   };
 
   const readGoalsDoc = (uid) => {
@@ -71,7 +73,9 @@ export default function useUserData(
     if (!canUseLocalStorage()) return;
     try {
       localStorage.setItem(goalsKey(uid), JSON.stringify(obj));
-    } catch {}
+    } catch {
+      // ignore
+    }
   };
 
   /** Not logged in → return no-op implementations */
@@ -148,22 +152,30 @@ export default function useUserData(
 
   /** Persist UI + localStorage together */
   const persistAndNotify = (nextDoc) => {
+    // write per-user doc
     try {
       writeUserDoc(uid, nextDoc);
     } catch (e) {
       console.warn("persistAndNotify writeUserDoc failed", e);
     }
 
-    // mirror generatedProjects to global key
+    // mirror generatedProjects to global key so other parts of app (UserContext) can read it
     try {
       if (Array.isArray(nextDoc.generatedProjects)) {
-        localStorage.setItem(
-          "cybercode_generated_projects_v1",
-          JSON.stringify(nextDoc.generatedProjects)
-        );
+        try {
+          localStorage.setItem(
+            "cybercode_generated_projects_v1",
+            JSON.stringify(nextDoc.generatedProjects)
+          );
+        } catch (err) {
+          // non-fatal
+        }
       }
-    } catch {}
+    } catch (e) {
+      // ignore
+    }
 
+    // update react state via callbacks
     try {
       setEnrolledCourses?.(nextDoc.enrolledCourses || []);
       setCourseProgress?.(nextDoc.courseProgress || {});
@@ -196,7 +208,6 @@ export default function useUserData(
 
     const existing =
       cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-
     const set = new Set(existing.completedLessons || []);
     set.add(lessonSlug);
 
@@ -263,7 +274,6 @@ export default function useUserData(
     usrStats.weeklyPct = wkGoal
       ? Math.round((usrStats.weeklyMinutes / wkGoal) * 100)
       : 0;
-
     usrStats.readinessPct = Math.min(
       100,
       usrStats.weeklyPct + usrStats.streakDays * 3
@@ -283,7 +293,6 @@ export default function useUserData(
       ...(course.sessions || []),
       { lesson: lessonSlug, minutes, ts: nowTs() },
     ];
-
     course.timeSpentMinutes = (course.timeSpentMinutes || 0) + minutes;
 
     cp[courseSlug] = course;
@@ -356,27 +365,21 @@ export default function useUserData(
 
     writeGoalsDoc(uid, payload);
     setUserGoals?.(payload);
+    return payload;
   };
 
   const loadGeneratedProjects = async () => {
     try {
       const doc = ensureInitialLocalDoc();
-      const list = Array.isArray(doc.generatedProjects)
-        ? doc.generatedProjects
-        : [];
-
+      const list = Array.isArray(doc.generatedProjects) ? doc.generatedProjects : [];
       // mirror to global key too
       try {
-        localStorage.setItem(
-          "cybercode_generated_projects_v1",
-          JSON.stringify(list)
-        );
+        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(list));
       } catch {}
-
       return list;
     } catch (e) {
       console.error("loadGeneratedProjects failed", e);
-
+      // fallback: try global key
       try {
         const raw = localStorage.getItem("cybercode_generated_projects_v1");
         const parsed = raw ? JSON.parse(raw) : [];
@@ -390,43 +393,33 @@ export default function useUserData(
   const saveGeneratedProject = async (project) => {
     try {
       const doc = readUserDoc(uid) || ensureInitialLocalDoc();
-      const gp = Array.isArray(doc.generatedProjects)
-        ? [...doc.generatedProjects]
-        : [];
-
+      const gp = Array.isArray(doc.generatedProjects) ? [...doc.generatedProjects] : [];
       const withId = {
         ...project,
         id: project.id || `${nowTs()}-${Math.random()}`,
         timestamp: nowTs(),
       };
-
       gp.push(withId);
 
+      // Persist to per-user doc + mirror global key via persistAndNotify
       persistAndNotify({
         ...doc,
         generatedProjects: gp,
         updatedAt: nowTs(),
       });
 
+      // Return the saved project for caller
       return withId;
     } catch (e) {
       console.error("saveGeneratedProject failed", e);
 
+      // As last-resort fallback, add to the global key directly
       try {
         const raw = localStorage.getItem("cybercode_generated_projects_v1");
-        const arr = raw ? JSON.parse(raw) : [];
-        const withId = {
-          ...project,
-          id: project.id || `${nowTs()}-${Math.random()}`,
-          timestamp: nowTs(),
-        };
-
+        const arr = raw ? (Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []) : [];
+        const withId = { ...project, id: project.id || `${nowTs()}-${Math.random()}`, timestamp: nowTs() };
         arr.push(withId);
-        localStorage.setItem(
-          "cybercode_generated_projects_v1",
-          JSON.stringify(arr)
-        );
-
+        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(arr));
         return withId;
       } catch {
         return project;

@@ -1,4 +1,3 @@
-// src/contexts/UserContext.jsx
 import React, {
   createContext,
   useContext,
@@ -69,7 +68,9 @@ export const UserProvider = ({ children }) => {
 
     setGeneratedProjects((prev) => {
       const next = [...(prev || []), withId];
-      localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+      try {
+        localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+      } catch {}
       return next;
     });
 
@@ -114,7 +115,9 @@ export const UserProvider = ({ children }) => {
         }
       }
 
-      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+      try {
+        localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
@@ -135,8 +138,7 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        CONNECT WITH useUserData HOOK
-        (MUST COME BEFORE syncProjects!)
+        CONNECT WITH useUserData HOOK (must be before sync)
   ---------------------------------------*/
   const firestore = useUserData(user, {
     setEnrolledCourses,
@@ -145,7 +147,9 @@ export const UserProvider = ({ children }) => {
       setUser((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         const merged = { ...(prev || {}), ...(next || {}) };
-        localStorage.setItem(USER_KEY, JSON.stringify(merged));
+        try {
+          localStorage.setItem(USER_KEY, JSON.stringify(merged));
+        } catch {}
         return merged;
       });
     },
@@ -165,12 +169,14 @@ export const UserProvider = ({ children }) => {
 
   /* --------------------------------------
         SYNC PROJECTS (runs after firestore created)
+        NOTE: include firestore in deps so hook re-runs when hook instance changes
   ---------------------------------------*/
   useEffect(() => {
     let mounted = true;
 
     const syncProjects = async () => {
       try {
+        // 1) Try to read remote/per-user copy (via hook)
         const remote = await firestore?.loadGeneratedProjects?.();
         if (Array.isArray(remote) && remote.length > 0) {
           if (!mounted) return;
@@ -181,7 +187,7 @@ export const UserProvider = ({ children }) => {
           return;
         }
 
-        // fallback: global
+        // 2) Fallback to global key if remote empty
         try {
           const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
           const parsed = raw ? JSON.parse(raw) : [];
@@ -192,17 +198,24 @@ export const UserProvider = ({ children }) => {
           }
         } catch {}
 
+        // 3) Final fallback: ensure empty array
         if (!mounted) return;
         setGeneratedProjects([]);
-      } catch {
+      } catch (e) {
+        // safe fallback
         if (!mounted) return;
         setGeneratedProjects([]);
       }
     };
 
+    // only run if firestore is available (safe)
     syncProjects();
-    return () => (mounted = false);
-  }, [user]);
+
+    return () => {
+      mounted = false;
+    };
+    // include firestore so it re-runs when hook reference changes
+  }, [user, firestore]);
 
   /* --------------------------------------
         PROJECT API (load/save)
@@ -217,7 +230,9 @@ export const UserProvider = ({ children }) => {
         } catch {}
         return remote;
       }
-    } catch {}
+    } catch {
+      // continue to fallback
+    }
 
     try {
       const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
@@ -235,20 +250,23 @@ export const UserProvider = ({ children }) => {
     try {
       const saved = await firestore?.saveGeneratedProject?.(project);
       if (saved) {
-        const next = [...generatedProjects, saved];
+        const next = [...(generatedProjects || []), saved];
         setGeneratedProjects(next);
         try {
           localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
         } catch {}
         return saved;
       }
-    } catch {}
+    } catch (e) {
+      // continue to fallback
+    }
 
+    // fallback to local-only implementation
     return saveGeneratedProjectLocal(project);
   };
 
   /* --------------------------------------
-        SAVE USER GOALS  (MISSING EARLIER — NOW FIXED)
+        SAVE USER GOALS
   ---------------------------------------*/
   const saveUserGoals = async (goals) => {
     try {
@@ -298,14 +316,20 @@ export const UserProvider = ({ children }) => {
     setUserGoals(null);
     setUserStats({});
 
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(GENERATED_PROJECTS_KEY);
-    localStorage.removeItem(PERSONA_STORAGE_KEY);
-    localStorage.removeItem(USER_GOALS_KEY);
+    try {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(GENERATED_PROJECTS_KEY);
+      localStorage.removeItem(PERSONA_STORAGE_KEY);
+      localStorage.removeItem(USER_GOALS_KEY);
+    } catch {}
 
-    Object.keys(localStorage)
+    Object.keys(localStorage || {})
       .filter((k) => k.startsWith("cybercode_ai_roadmap"))
-      .forEach((k) => localStorage.removeItem(k));
+      .forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      });
 
     window.location.href = "/";
   };

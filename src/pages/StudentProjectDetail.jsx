@@ -1,4 +1,3 @@
-// src/pages/StudentProjectDetail.jsx
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
@@ -8,18 +7,17 @@ export default function StudentProjectDetail() {
   const { id } = useParams();
   const { generatedProjects = [] } = useUser();
 
+  // defensive: make sure generatedProjects is an array
   if (!Array.isArray(generatedProjects)) {
-  // Wait for generatedProjects to be hydrated
-  return (
-    <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-      <p className="text-gray-500">Loading project…</p>
-    </div>
-  );
-}
-
+    // Wait for generatedProjects to be hydrated
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+        <p className="text-gray-500">Loading project…</p>
+      </div>
+    );
+  }
 
   const project = generatedProjects.find((p) => String(p.id) === String(id));
-
 
   if (!project) {
     return (
@@ -56,7 +54,7 @@ export default function StudentProjectDetail() {
 
       {/* Header */}
       <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
-        {project.title}
+        {project.title || "Untitled Project"}
       </h1>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
@@ -68,12 +66,12 @@ export default function StudentProjectDetail() {
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
         <h2 className="text-xl font-semibold mb-3">📘 Description</h2>
         <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-          {project.description}
+          {project.description || "No description provided."}
         </p>
       </div>
 
       {/* Tech Stack */}
-      {project.techStack?.length > 0 && (
+      {Array.isArray(project.techStack) && project.techStack.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">🛠 Tech Stack</h2>
           <ul className="list-disc ml-6 space-y-1 text-gray-700 dark:text-gray-300">
@@ -85,7 +83,7 @@ export default function StudentProjectDetail() {
       )}
 
       {/* Steps */}
-      {project.steps?.length > 0 && (
+      {Array.isArray(project.steps) && project.steps.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">📌 Project Steps</h2>
           <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
