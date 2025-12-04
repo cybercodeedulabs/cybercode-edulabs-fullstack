@@ -1,6 +1,5 @@
 // src/hooks/useUserData.js
 import { useEffect } from "react";
-import React from "react";
 
 const USE_FIREBASE = false;
 
