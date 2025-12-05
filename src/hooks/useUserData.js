@@ -10,7 +10,18 @@ const USE_FIREBASE = false;
 /** LocalStorage guard */
 const canUseLocalStorage = () => {
   try {
-    return typeof window !== "undefined" && !!window.localStorage;
+    if (typeof window === "undefined") return false;
+    if (!window.localStorage) return false;
+    // some browsers throw when accessing localStorage in certain modes
+    const testKey = "__cc_test__";
+    try {
+      window.localStorage.setItem(testKey, "1");
+      window.localStorage.removeItem(testKey);
+    } catch {
+      // localStorage exists but inaccessible (privacy mode / blocked)
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -19,10 +30,35 @@ const canUseLocalStorage = () => {
 /** safe parse helper */
 const safeParse = (raw, fallback = null) => {
   try {
-    if (!raw) return fallback;
+    if (raw === undefined || raw === null) return fallback;
+    // if raw is already an object/array, return it
+    if (typeof raw === "object") return raw;
+    if (typeof raw !== "string") return fallback;
+    if (raw.trim() === "") return fallback;
     return JSON.parse(raw);
   } catch {
     return fallback;
+  }
+};
+
+/** Safe wrappers for localStorage get/set that never throw up to callers */
+const safeGetItem = (key, fallback = null) => {
+  if (!canUseLocalStorage()) return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return safeParse(raw, fallback);
+  } catch {
+    return fallback;
+  }
+};
+
+const safeSetItem = (key, value) => {
+  if (!canUseLocalStorage()) return false;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
   }
 };
 
@@ -51,39 +87,39 @@ export default function useUserData(
   const nowTs = () => Date.now();
 
   const readUserDoc = (uid) => {
-    if (!canUseLocalStorage()) return null;
+    if (!uid) return null;
     try {
-      const raw = localStorage.getItem(userKey(uid));
-      const parsed = safeParse(raw, null);
-      return parsed || null;
+      const parsed = safeGetItem(userKey(uid), null);
+      // ensure parsed is object or null
+      if (parsed && typeof parsed === "object") return parsed;
+      return null;
     } catch {
       return null;
     }
   };
 
   const writeUserDoc = (uid, obj) => {
-    if (!canUseLocalStorage()) return;
+    if (!uid || !obj || typeof obj !== "object") return;
     try {
-      localStorage.setItem(userKey(uid), JSON.stringify(obj));
+      safeSetItem(userKey(uid), obj);
     } catch {
       // ignore
     }
   };
 
   const readGoalsDoc = (uid) => {
-    if (!canUseLocalStorage()) return null;
+    if (!uid) return null;
     try {
-      const raw = localStorage.getItem(goalsKey(uid));
-      return safeParse(raw, null);
+      return safeGetItem(goalsKey(uid), null);
     } catch {
       return null;
     }
   };
 
   const writeGoalsDoc = (uid, obj) => {
-    if (!canUseLocalStorage()) return;
+    if (!uid || !obj || typeof obj !== "object") return;
     try {
-      localStorage.setItem(goalsKey(uid), JSON.stringify(obj));
+      safeSetItem(goalsKey(uid), obj);
     } catch {
       // ignore
     }
@@ -107,6 +143,40 @@ export default function useUserData(
 
   const uid = user.uid;
 
+  /** Normalize userStats to a safe shape */
+  const defaultUserStats = () => ({
+    totalMinutes: 0,
+    daily: {},
+    streakDays: 0,
+    longestStreak: 0,
+    lastStudyDate: "",
+    weeklyMinutes: 0,
+    weeklyPct: 0,
+    readinessPct: 0,
+  });
+
+  /** Normalize courseProgress entry */
+  const normalizeCourseProgress = (cp) => {
+    if (!cp || typeof cp !== "object") return {};
+    const out = {};
+    Object.keys(cp).forEach((k) => {
+      const entry = cp[k] || {};
+      out[k] = {
+        completedLessons: Array.isArray(entry.completedLessons)
+          ? entry.completedLessons
+          : [],
+        currentLessonIndex:
+          typeof entry.currentLessonIndex === "number"
+            ? entry.currentLessonIndex
+            : (Array.isArray(entry.completedLessons) ? entry.completedLessons.length : 0),
+        sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
+        timeSpentMinutes: typeof entry.timeSpentMinutes === "number" ? entry.timeSpentMinutes : 0,
+        updatedAt: entry.updatedAt || null,
+      };
+    });
+    return out;
+  };
+
   /** Create initial structure if missing */
   const ensureInitialLocalDoc = () => {
     const existing = readUserDoc(uid) || {};
@@ -116,30 +186,34 @@ export default function useUserData(
         ? existing.enrolledCourses
         : [],
       projects: Array.isArray(existing.projects) ? existing.projects : [],
-      isPremium: existing.isPremium || false,
-      hasCertificationAccess: existing.hasCertificationAccess || false,
-      hasServerAccess: existing.hasServerAccess || false,
+      isPremium: Boolean(existing.isPremium),
+      hasCertificationAccess: Boolean(existing.hasCertificationAccess),
+      hasServerAccess: Boolean(existing.hasServerAccess),
 
-      courseProgress: existing.courseProgress || {},
+      courseProgress: normalizeCourseProgress(existing.courseProgress),
 
-      userStats: existing.userStats || {
-        totalMinutes: 0,
-        daily: {},
-        streakDays: 0,
-        longestStreak: 0,
-        lastStudyDate: "",
-        weeklyMinutes: 0,
-        weeklyPct: 0,
-        readinessPct: 0,
-      },
+      userStats:
+        existing.userStats && typeof existing.userStats === "object"
+          ? { ...defaultUserStats(), ...existing.userStats }
+          : defaultUserStats(),
 
       generatedProjects: Array.isArray(existing.generatedProjects)
         ? existing.generatedProjects
         : [],
-      updatedAt: existing.updatedAt || nowTs(),
+
+      updatedAt:
+        existing.updatedAt && (typeof existing.updatedAt === "number" || typeof existing.updatedAt === "string")
+          ? existing.updatedAt
+          : nowTs(),
     };
 
-    writeUserDoc(uid, base);
+    // Persist a normalized copy back (best-effort)
+    try {
+      safeSetItem(userKey(uid), base);
+    } catch {
+      // ignore
+    }
+
     return base;
   };
 
@@ -154,10 +228,10 @@ export default function useUserData(
         Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []
       );
       setCourseProgress?.(doc.courseProgress || {});
-      setUserStats?.(doc.userStats || {});
+      setUserStats?.(doc.userStats || defaultUserStats());
 
       const g = readGoalsDoc(uid);
-      if (g) setUserGoals?.(g);
+      if (g && typeof g === "object") setUserGoals?.(g);
 
       if (doc.isPremium && setUser) {
         setUser((u) => (u ? { ...u, isPremium: true } : u));
@@ -171,31 +245,36 @@ export default function useUserData(
   /** Persist UI + localStorage together */
   const persistAndNotify = (nextDoc) => {
     try {
-      writeUserDoc(uid, nextDoc);
+      if (!nextDoc || typeof nextDoc !== "object") return;
+      // Ensure full shape before writing
+      const safeNext = {
+        enrolledCourses: Array.isArray(nextDoc.enrolledCourses)
+          ? nextDoc.enrolledCourses
+          : [],
+        projects: Array.isArray(nextDoc.projects) ? nextDoc.projects : [],
+        isPremium: Boolean(nextDoc.isPremium),
+        hasCertificationAccess: Boolean(nextDoc.hasCertificationAccess),
+        hasServerAccess: Boolean(nextDoc.hasServerAccess),
+        courseProgress: normalizeCourseProgress(nextDoc.courseProgress),
+        userStats:
+          nextDoc.userStats && typeof nextDoc.userStats === "object"
+            ? { ...defaultUserStats(), ...nextDoc.userStats }
+            : defaultUserStats(),
+        generatedProjects: Array.isArray(nextDoc.generatedProjects)
+          ? nextDoc.generatedProjects
+          : [],
+        updatedAt: nextDoc.updatedAt || nowTs(),
+      };
+
+      writeUserDoc(uid, safeNext);
     } catch (e) {
       console.warn("persistAndNotify writeUserDoc failed", e);
     }
 
     // mirror generatedProjects to global key
     try {
-      if (Array.isArray(nextDoc.generatedProjects)) {
-        try {
-          localStorage.setItem(
-            "cybercode_generated_projects_v1",
-            JSON.stringify(nextDoc.generatedProjects)
-          );
-        } catch (err) {
-          // non-fatal
-        }
-      } else {
-        // ensure global key is at least an empty array, never leave it undefined or non-array
-        try {
-          localStorage.setItem(
-            "cybercode_generated_projects_v1",
-            JSON.stringify([])
-          );
-        } catch {}
-      }
+      const gp = Array.isArray(nextDoc && nextDoc.generatedProjects) ? nextDoc.generatedProjects : [];
+      safeSetItem("cybercode_generated_projects_v1", gp);
     } catch (e) {
       // ignore
     }
@@ -206,8 +285,8 @@ export default function useUserData(
         Array.isArray(nextDoc.enrolledCourses) ? nextDoc.enrolledCourses : []
       );
       setCourseProgress?.(nextDoc.courseProgress || {});
-      setUserStats?.(nextDoc.userStats || {});
-      setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
+      setUserStats?.(nextDoc.userStats || defaultUserStats());
+      setUser?.((u) => (u ? { ...u, isPremium: Boolean(nextDoc.isPremium) } : u));
     } catch (e) {
       console.warn("persistAndNotify state update failed", e);
     }
@@ -219,14 +298,12 @@ export default function useUserData(
 
   const enrollInCourse = async (courseSlug) => {
     const doc = ensureInitialLocalDoc();
-    const set = new Set(
-      Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []
-    );
-    set.add(courseSlug);
+    const arr = Array.isArray(doc.enrolledCourses) ? [...doc.enrolledCourses] : [];
+    if (!arr.includes(courseSlug)) arr.push(courseSlug);
 
     persistAndNotify({
       ...doc,
-      enrolledCourses: Array.from(set),
+      enrolledCourses: arr,
       updatedAt: nowTs(),
     });
   };
@@ -235,18 +312,17 @@ export default function useUserData(
     const doc = ensureInitialLocalDoc();
     const cp = { ...(doc.courseProgress || {}) };
 
-    const existing =
-      cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-    const set = new Set(
-      Array.isArray(existing.completedLessons) ? existing.completedLessons : []
-    );
-    set.add(lessonSlug);
+    const existing = cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+    const completed = Array.isArray(existing.completedLessons) ? [...existing.completedLessons] : [];
+    if (!completed.includes(lessonSlug)) completed.push(lessonSlug);
 
     cp[courseSlug] = {
       ...existing,
-      completedLessons: Array.from(set),
-      currentLessonIndex: set.size,
+      completedLessons: completed,
+      currentLessonIndex: completed.length,
       updatedAt: nowTs(),
+      sessions: Array.isArray(existing.sessions) ? existing.sessions : [],
+      timeSpentMinutes: typeof existing.timeSpentMinutes === "number" ? existing.timeSpentMinutes : 0,
     };
 
     persistAndNotify({
@@ -260,7 +336,7 @@ export default function useUserData(
     if (!minutes || minutes <= 0) return;
 
     const doc = ensureInitialLocalDoc();
-    const usrStats = { ...(doc.userStats || {}) };
+    const usrStats = { ...(doc.userStats || defaultUserStats()) };
 
     const today = new Date().toISOString().split("T")[0];
     usrStats.daily = usrStats.daily || {};
@@ -286,7 +362,7 @@ export default function useUserData(
     );
     usrStats.lastStudyDate = today;
 
-    // weekly %
+    // weekly aggregation
     const last7 = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
@@ -308,7 +384,7 @@ export default function useUserData(
       : 0;
     usrStats.readinessPct = Math.min(
       100,
-      usrStats.weeklyPct + usrStats.streakDays * 3
+      usrStats.weeklyPct + (usrStats.streakDays || 0) * 3
     );
 
     // update course time
@@ -328,7 +404,11 @@ export default function useUserData(
 
     course.timeSpentMinutes = (course.timeSpentMinutes || 0) + minutes;
 
-    cp[courseSlug] = course;
+    cp[courseSlug] = {
+      ...course,
+      completedLessons: Array.isArray(course.completedLessons) ? course.completedLessons : [],
+      currentLessonIndex: typeof course.currentLessonIndex === "number" ? course.currentLessonIndex : (Array.isArray(course.completedLessons) ? course.completedLessons.length : 0),
+    };
 
     persistAndNotify({
       ...doc,
@@ -344,16 +424,7 @@ export default function useUserData(
     persistAndNotify({
       ...doc,
       courseProgress: {},
-      userStats: {
-        totalMinutes: 0,
-        daily: {},
-        streakDays: 0,
-        longestStreak: 0,
-        lastStudyDate: "",
-        weeklyMinutes: 0,
-        weeklyPct: 0,
-        readinessPct: 0,
-      },
+      userStats: defaultUserStats(),
       updatedAt: nowTs(),
     });
   };
@@ -390,6 +461,7 @@ export default function useUserData(
   };
 
   const saveUserGoals = async (goals) => {
+    if (!goals || typeof goals !== "object") return;
     const payload = {
       ...goals,
       updatedAt: nowTs(),
@@ -399,7 +471,7 @@ export default function useUserData(
     writeGoalsDoc(uid, payload);
     setUserGoals?.(payload);
     try {
-      localStorage.setItem("cc_goals_" + uid, JSON.stringify(payload));
+      safeSetItem("cc_goals_" + uid, payload);
     } catch {}
   };
 
@@ -412,19 +484,15 @@ export default function useUserData(
 
       // mirror to global key too
       try {
-        localStorage.setItem(
-          "cybercode_generated_projects_v1",
-          JSON.stringify(list)
-        );
+        safeSetItem("cybercode_generated_projects_v1", list);
       } catch {}
 
-      return list;
+      return Array.isArray(list) ? list : [];
     } catch (e) {
       console.error("loadGeneratedProjects failed", e);
       // fallback: try global key
       try {
-        const raw = localStorage.getItem("cybercode_generated_projects_v1");
-        const parsed = safeParse(raw, []);
+        const parsed = safeGetItem("cybercode_generated_projects_v1", []);
         return Array.isArray(parsed) ? parsed : [];
       } catch {
         return [];
@@ -434,6 +502,7 @@ export default function useUserData(
 
   const saveGeneratedProject = async (project) => {
     try {
+      if (!project || typeof project !== "object") return project;
       const doc = readUserDoc(uid) || ensureInitialLocalDoc();
       const gp = Array.isArray(doc.generatedProjects) ? [...doc.generatedProjects] : [];
       const withId = {
@@ -457,11 +526,10 @@ export default function useUserData(
 
       // As last-resort fallback, add to the global key directly
       try {
-        const raw = localStorage.getItem("cybercode_generated_projects_v1");
-        const arr = safeParse(raw, []);
+        const arr = safeGetItem("cybercode_generated_projects_v1", []);
         const withId = { ...project, id: project.id || `${nowTs()}-${Math.random()}`, timestamp: nowTs() };
         const nextArr = Array.isArray(arr) ? [...arr, withId] : [withId];
-        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(nextArr));
+        safeSetItem("cybercode_generated_projects_v1", nextArr);
         return withId;
       } catch {
         return project;
