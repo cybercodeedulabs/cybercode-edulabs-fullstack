@@ -16,6 +16,16 @@ const canUseLocalStorage = () => {
   }
 };
 
+/** safe parse helper */
+const safeParse = (raw, fallback = null) => {
+  try {
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function useUserData(
   user,
   { setEnrolledCourses, setCourseProgress, setUser, setUserGoals, setUserStats }
@@ -44,7 +54,8 @@ export default function useUserData(
     if (!canUseLocalStorage()) return null;
     try {
       const raw = localStorage.getItem(userKey(uid));
-      return raw ? JSON.parse(raw) : null;
+      const parsed = safeParse(raw, null);
+      return parsed || null;
     } catch {
       return null;
     }
@@ -63,7 +74,7 @@ export default function useUserData(
     if (!canUseLocalStorage()) return null;
     try {
       const raw = localStorage.getItem(goalsKey(uid));
-      return raw ? JSON.parse(raw) : null;
+      return safeParse(raw, null);
     } catch {
       return null;
     }
@@ -101,8 +112,10 @@ export default function useUserData(
     const existing = readUserDoc(uid) || {};
 
     const base = {
-      enrolledCourses: existing.enrolledCourses || [],
-      projects: existing.projects || [],
+      enrolledCourses: Array.isArray(existing.enrolledCourses)
+        ? existing.enrolledCourses
+        : [],
+      projects: Array.isArray(existing.projects) ? existing.projects : [],
       isPremium: existing.isPremium || false,
       hasCertificationAccess: existing.hasCertificationAccess || false,
       hasServerAccess: existing.hasServerAccess || false,
@@ -120,7 +133,9 @@ export default function useUserData(
         readinessPct: 0,
       },
 
-      generatedProjects: existing.generatedProjects || [],
+      generatedProjects: Array.isArray(existing.generatedProjects)
+        ? existing.generatedProjects
+        : [],
       updatedAt: existing.updatedAt || nowTs(),
     };
 
@@ -135,7 +150,7 @@ export default function useUserData(
 
       const doc = ensureInitialLocalDoc();
 
-      setEnrolledCourses?.(doc.enrolledCourses || []);
+      setEnrolledCourses?.(Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []);
       setCourseProgress?.(doc.courseProgress || {});
       setUserStats?.(doc.userStats || {});
 
@@ -148,6 +163,7 @@ export default function useUserData(
     } catch (e) {
       console.warn("hydrateOnce failed", e);
     }
+    // uid is safe
   }, [uid]);
 
   /** Persist UI + localStorage together */
@@ -169,13 +185,19 @@ export default function useUserData(
         } catch (err) {
           // non-fatal
         }
+      } else {
+        // ensure global key is at least an empty array, never leave it undefined or non-array
+        try {
+          localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify([]));
+        } catch {}
       }
     } catch (e) {
       // ignore
     }
 
+    // update react state via callbacks
     try {
-      setEnrolledCourses?.(nextDoc.enrolledCourses || []);
+      setEnrolledCourses?.(Array.isArray(nextDoc.enrolledCourses) ? nextDoc.enrolledCourses : []);
       setCourseProgress?.(nextDoc.courseProgress || {});
       setUserStats?.(nextDoc.userStats || {});
       setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
@@ -190,12 +212,12 @@ export default function useUserData(
 
   const enrollInCourse = async (courseSlug) => {
     const doc = ensureInitialLocalDoc();
-    const set = new Set(doc.enrolledCourses || []);
+    const set = new Set(Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []);
     set.add(courseSlug);
 
     persistAndNotify({
       ...doc,
-      enrolledCourses: [...set],
+      enrolledCourses: Array.from(set),
       updatedAt: nowTs(),
     });
   };
@@ -206,12 +228,12 @@ export default function useUserData(
 
     const existing =
       cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-    const set = new Set(existing.completedLessons || []);
+    const set = new Set(Array.isArray(existing.completedLessons) ? existing.completedLessons : []);
     set.add(lessonSlug);
 
     cp[courseSlug] = {
       ...existing,
-      completedLessons: [...set],
+      completedLessons: Array.from(set),
       currentLessonIndex: set.size,
       updatedAt: nowTs(),
     };
@@ -288,9 +310,10 @@ export default function useUserData(
       };
 
     course.sessions = [
-      ...(course.sessions || []),
+      ...(Array.isArray(course.sessions) ? course.sessions : []),
       { lesson: lessonSlug, minutes, ts: nowTs() },
     ];
+
     course.timeSpentMinutes = (course.timeSpentMinutes || 0) + minutes;
 
     cp[courseSlug] = course;
@@ -363,30 +386,34 @@ export default function useUserData(
 
     writeGoalsDoc(uid, payload);
     setUserGoals?.(payload);
+    try {
+      localStorage.setItem("cc_goals_" + uid, JSON.stringify(payload));
+    } catch {}
   };
 
   const loadGeneratedProjects = async () => {
     try {
       const doc = ensureInitialLocalDoc();
       const list = Array.isArray(doc.generatedProjects) ? doc.generatedProjects : [];
+
       // mirror to global key too
       try {
         localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(list));
       } catch {}
+
       return list;
     } catch (e) {
       console.error("loadGeneratedProjects failed", e);
       // fallback: try global key
       try {
         const raw = localStorage.getItem("cybercode_generated_projects_v1");
-        const parsed = raw ? JSON.parse(raw) : [];
+        const parsed = safeParse(raw, []);
         return Array.isArray(parsed) ? parsed : [];
       } catch {
         return [];
       }
     }
   };
-
 
   const saveGeneratedProject = async (project) => {
     try {
@@ -414,17 +441,16 @@ export default function useUserData(
       // As last-resort fallback, add to the global key directly
       try {
         const raw = localStorage.getItem("cybercode_generated_projects_v1");
-        const arr = raw ? (Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : []) : [];
+        const arr = safeParse(raw, []);
         const withId = { ...project, id: project.id || `${nowTs()}-${Math.random()}`, timestamp: nowTs() };
-        arr.push(withId);
-        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(arr));
+        const nextArr = Array.isArray(arr) ? [...arr, withId] : [withId];
+        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(nextArr));
         return withId;
       } catch {
         return project;
       }
     }
   };
-
 
   /** Public API */
   return {

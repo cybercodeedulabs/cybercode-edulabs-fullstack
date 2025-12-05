@@ -43,7 +43,9 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [generatedProjects, setGeneratedProjects] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
@@ -51,7 +53,9 @@ export const UserProvider = ({ children }) => {
 
   const loadGeneratedProjectsLocal = async () => {
     try {
-      const p = JSON.parse(localStorage.getItem(GENERATED_PROJECTS_KEY)) || [];
+      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const p = Array.isArray(parsed) ? parsed : [];
       setGeneratedProjects(p);
       return p;
     } catch {
@@ -68,7 +72,8 @@ export const UserProvider = ({ children }) => {
     };
 
     setGeneratedProjects((prev) => {
-      const next = [...(prev || []), withId];
+      const base = Array.isArray(prev) ? prev : [];
+      const next = [...base, withId];
       try {
         localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
       } catch {}
@@ -83,7 +88,9 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [userGoals, setUserGoals] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(USER_GOALS_KEY)) || null;
+      const raw = localStorage.getItem(USER_GOALS_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed || null;
     } catch {
       return null;
     }
@@ -98,7 +105,9 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [personaScores, setPersonaScores] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem(PERSONA_STORAGE_KEY)) || {};
+      const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed || {};
     } catch {
       return {};
     }
@@ -160,17 +169,14 @@ export const UserProvider = ({ children }) => {
 
   /* --------------------------------------
         HYDRATION GATE
-        - Ensures app renders only after we have attempted to load projects/goals/stats
   ---------------------------------------*/
   const [hydrated, setHydrated] = useState(false);
 
   /* --------------------------------------
         AUTH LISTENER (LOCAL MODE)
-        - Initial quick load for global key to render shell fast
   ---------------------------------------*/
   useEffect(() => {
     if (!USE_FIREBASE) {
-      // quick local load (not the authoritative per-user load)
       loadGeneratedProjectsLocal();
       setLoading(false);
     }
@@ -179,15 +185,13 @@ export const UserProvider = ({ children }) => {
 
   /* --------------------------------------
         SYNC PROJECTS (runs after firestore created)
-        - IMPORTANT: do NOT include `firestore` in deps (it causes loops in some setups)
-        - We run sync when `user` changes (login/logout) so per-user data loads deterministically
+        - Only runs when user changes to avoid loops
   ---------------------------------------*/
   useEffect(() => {
     let mounted = true;
 
     const syncProjects = async () => {
       try {
-        // 1) Try to read remote/per-user copy (via hook)
         const remote = await firestore?.loadGeneratedProjects?.();
         if (Array.isArray(remote) && remote.length > 0) {
           if (!mounted) return;
@@ -198,7 +202,7 @@ export const UserProvider = ({ children }) => {
           return;
         }
 
-        // 2) Fallback to global key if remote empty
+        // fallback: global
         try {
           const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
           const parsed = raw ? JSON.parse(raw) : [];
@@ -209,15 +213,12 @@ export const UserProvider = ({ children }) => {
           }
         } catch {}
 
-        // 3) Final fallback: ensure empty array
         if (!mounted) return;
         setGeneratedProjects([]);
-      } catch (e) {
-        // safe fallback
+      } catch {
         if (!mounted) return;
         setGeneratedProjects([]);
       } finally {
-        // mark hydrated only after sync finishes at least once
         if (mounted) {
           setHydrated(true);
           setLoading(false);
@@ -226,7 +227,6 @@ export const UserProvider = ({ children }) => {
     };
 
     syncProjects();
-
     return () => {
       mounted = false;
     };
@@ -267,7 +267,8 @@ export const UserProvider = ({ children }) => {
     try {
       const saved = await firestore?.saveGeneratedProject?.(project);
       if (saved) {
-        const next = [...(generatedProjects || []), saved];
+        const base = Array.isArray(generatedProjects) ? generatedProjects : [];
+        const next = [...base, saved];
         setGeneratedProjects(next);
         try {
           localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
@@ -275,7 +276,6 @@ export const UserProvider = ({ children }) => {
         return saved;
       }
     } catch (e) {
-      // continue to fallback
       console.warn("saveGeneratedProject failed in UserContext", e);
     }
 
@@ -284,7 +284,7 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        SAVE USER GOALS  (keeps parity with useUserData hook)
+        SAVE USER GOALS
   ---------------------------------------*/
   const saveUserGoals = async (goals) => {
     try {
@@ -313,11 +313,9 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const enrollInCourse = async (courseSlug) => {
     if (!user?.uid) return;
-
     setEnrolledCourses((prev) =>
       prev.includes(courseSlug) ? prev : [...prev, courseSlug]
     );
-
     try {
       await firestore?.enrollInCourse?.(courseSlug);
     } catch {}
@@ -361,7 +359,7 @@ export const UserProvider = ({ children }) => {
         prev?.[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
       const updated = Array.from(
-        new Set([...(existing.completedLessons || []), lessonSlug])
+        new Set([...(Array.isArray(existing.completedLessons) ? existing.completedLessons : []), lessonSlug])
       );
 
       try {
@@ -380,11 +378,14 @@ export const UserProvider = ({ children }) => {
 
   const isLessonCompleted = (courseSlug, lessonSlug) =>
     Boolean(
-      courseProgress?.[courseSlug]?.completedLessons?.includes(lessonSlug)
+      Array.isArray(courseProgress?.[courseSlug]?.completedLessons) &&
+        courseProgress[courseSlug].completedLessons.includes(lessonSlug)
     );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed = courseProgress?.[courseSlug]?.completedLessons || [];
+    const completed = Array.isArray(courseProgress?.[courseSlug]?.completedLessons)
+      ? courseProgress[courseSlug].completedLessons
+      : [];
     return totalLessons
       ? Math.round((completed.length / totalLessons) * 100)
       : 0;
@@ -399,7 +400,7 @@ export const UserProvider = ({ children }) => {
         user,
         setUser,
         loading,
-        hydrated, // important flag for consumers
+        hydrated,
         logout,
 
         enrolledCourses,
@@ -428,7 +429,6 @@ export const UserProvider = ({ children }) => {
         setUserStats,
       }}
     >
-      {/* hydration gate: show loading placeholder until context is ready */}
       {hydrated ? (
         children
       ) : (
