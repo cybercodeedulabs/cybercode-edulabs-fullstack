@@ -135,7 +135,7 @@ export const UserProvider = ({ children }) => {
       const next = [...base, withId];
       try {
         safeSetItem(GENERATED_PROJECTS_KEY, next);
-      } catch {}
+      } catch { }
       return next;
     });
 
@@ -184,7 +184,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         safeSetItem(PERSONA_STORAGE_KEY, next);
-      } catch {}
+      } catch { }
       return next;
     });
   };
@@ -207,22 +207,41 @@ export const UserProvider = ({ children }) => {
   /* --------------------------------------
         CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
   ---------------------------------------*/
-  const firestore = useUserData(user, {
-    setEnrolledCourses,
-    setCourseProgress,
-    setUser: (updater) => {
-      setUser((prev) => {
-        const next = typeof updater === "function" ? updater(prev) : updater;
-        const merged = { ...(prev || {}), ...(next || {}) };
-        try {
-          safeSetItem(USER_KEY, merged);
-        } catch {}
-        return merged;
-      });
-    },
-    setUserGoals,
-    setUserStats,
-  });
+  /* --------------------------------------
+        CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
+  ---------------------------------------*/
+
+  // If user is NOT logged in → return no-op API to prevent hydration crashes
+  const firestore = user?.uid
+    ? useUserData(user, {
+      setEnrolledCourses,
+      setCourseProgress,
+      setUser: (updater) => {
+        setUser((prev) => {
+          const next = typeof updater === "function" ? updater(prev) : updater;
+          const merged = { ...(prev || {}), ...(next || {}) };
+          try {
+            safeSetItem(USER_KEY, merged);
+          } catch { }
+          return merged;
+        });
+      },
+      setUserGoals,
+      setUserStats,
+    })
+    : {
+      enrollInCourse: async () => { },
+      completeLessonFS: async () => { },
+      recordStudySession: async () => { },
+      resetMyProgress: async () => { },
+      grantCertificationAccess: async () => { },
+      grantServerAccess: async () => { },
+      grantFullPremium: async () => { },
+      saveUserGoals: async () => { },
+      loadGeneratedProjects: async () => [],
+      saveGeneratedProject: async (p) => p,
+    };
+
 
   /* --------------------------------------
         HYDRATION GATE
@@ -251,7 +270,7 @@ export const UserProvider = ({ children }) => {
       if (!Array.isArray(existing)) {
         safeSetItem(GENERATED_PROJECTS_KEY, []);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   /* --------------------------------------
@@ -277,7 +296,7 @@ export const UserProvider = ({ children }) => {
           setGeneratedProjects(remoteArr);
           try {
             safeSetItem(GENERATED_PROJECTS_KEY, remoteArr);
-          } catch {}
+          } catch { }
           return;
         }
 
@@ -329,7 +348,7 @@ export const UserProvider = ({ children }) => {
         setGeneratedProjects(remote);
         try {
           safeSetItem(GENERATED_PROJECTS_KEY, remote);
-        } catch {}
+        } catch { }
         return remote;
       }
     } catch {
@@ -360,7 +379,7 @@ export const UserProvider = ({ children }) => {
         setGeneratedProjects(next);
         try {
           safeSetItem(GENERATED_PROJECTS_KEY, next);
-        } catch {}
+        } catch { }
         return saved;
       }
     } catch (e) {
@@ -390,7 +409,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         safeSetItem(USER_GOALS_KEY, payload);
-      } catch {}
+      } catch { }
 
       return payload;
     } catch {
@@ -409,7 +428,7 @@ export const UserProvider = ({ children }) => {
     });
     try {
       firestore?.enrollInCourse?.(courseSlug);
-    } catch {}
+    } catch { }
   };
 
   /* --------------------------------------
@@ -430,7 +449,7 @@ export const UserProvider = ({ children }) => {
         window.localStorage.removeItem(PERSONA_STORAGE_KEY);
         window.localStorage.removeItem(USER_GOALS_KEY);
       }
-    } catch {}
+    } catch { }
 
     try {
       if (canUseLocalStorage()) {
@@ -440,15 +459,15 @@ export const UserProvider = ({ children }) => {
           .forEach((k) => {
             try {
               window.localStorage.removeItem(k);
-            } catch {}
+            } catch { }
           });
       }
-    } catch {}
+    } catch { }
 
     // Redirect to root
     try {
       window.location.href = "/";
-    } catch {}
+    } catch { }
   };
 
   /* --------------------------------------
@@ -467,7 +486,7 @@ export const UserProvider = ({ children }) => {
 
       try {
         firestore?.completeLessonFS?.(courseSlug, lessonSlug);
-      } catch {}
+      } catch { }
 
       return {
         ...safePrev,
@@ -487,7 +506,7 @@ export const UserProvider = ({ children }) => {
   const isLessonCompleted = (courseSlug, lessonSlug) =>
     Boolean(
       Array.isArray(courseProgress?.[courseSlug]?.completedLessons) &&
-        courseProgress[courseSlug].completedLessons.includes(lessonSlug)
+      courseProgress[courseSlug].completedLessons.includes(lessonSlug)
     );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {

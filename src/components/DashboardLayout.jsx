@@ -6,8 +6,17 @@ import { useUser } from "../contexts/UserContext";
 import { Icon } from "@iconify/react";
 
 const DashboardLayout = () => {
-  const { user } = useUser();
+  const { user, loading, hydrated } = useUser();
   const navigate = useNavigate();
+
+  // 🚧 Do not render dashboard shell until user is ready
+  if (loading || !hydrated || !user?.uid) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center text-gray-500">
+        Loading dashboard…
+      </div>
+    );
+  }
 
   return (
     <div className="cloud-console flex min-h-screen bg-slate-100 dark:bg-slate-900">
