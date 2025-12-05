@@ -4,7 +4,6 @@ import React, {
   useContext,
   useState,
   useEffect,
-  useMemo,
 } from "react";
 
 import useUserData from "../hooks/useUserData";
@@ -208,45 +207,22 @@ export const UserProvider = ({ children }) => {
   /* --------------------------------------
         CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
   ---------------------------------------*/
-  let firestore = null;
-  try {
-    // Guard the hook call - it should be pure but wrap defensively
-    firestore = useUserData(user, {
-      setEnrolledCourses,
-      setCourseProgress,
-      setUser: (updater) => {
-        setUser((prev) => {
-          try {
-            const next = typeof updater === "function" ? updater(prev) : updater;
-            const merged = { ...(prev || {}), ...(next || {}) };
-            try {
-              safeSetItem(USER_KEY, merged);
-            } catch {}
-            return merged;
-          } catch {
-            return prev;
-          }
-        });
-      },
-      setUserGoals,
-      setUserStats,
-    });
-  } catch (err) {
-    // If the hook throws for any reason, log and fallback to safe no-op API
-    console.error("useUserData hook threw an error:", err);
-    firestore = {
-      enrollInCourse: async () => {},
-      completeLessonFS: async () => {},
-      recordStudySession: async () => {},
-      resetMyProgress: async () => {},
-      grantCertificationAccess: async () => {},
-      grantServerAccess: async () => {},
-      grantFullPremium: async () => {},
-      saveUserGoals: async () => {},
-      loadGeneratedProjects: async () => [],
-      saveGeneratedProject: async (p) => p,
-    };
-  }
+  const firestore = useUserData(user, {
+    setEnrolledCourses,
+    setCourseProgress,
+    setUser: (updater) => {
+      setUser((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        const merged = { ...(prev || {}), ...(next || {}) };
+        try {
+          safeSetItem(USER_KEY, merged);
+        } catch {}
+        return merged;
+      });
+    },
+    setUserGoals,
+    setUserStats,
+  });
 
   /* --------------------------------------
         HYDRATION GATE
@@ -255,28 +231,13 @@ export const UserProvider = ({ children }) => {
 
   /* --------------------------------------
         AUTH LISTENER (LOCAL MODE)
-        - setHydrated early after local reads so children don't render with undefined props
   ---------------------------------------*/
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        // Always load local generated projects first (fast)
-        await loadGeneratedProjectsLocal();
-      } catch (err) {
-        console.warn("loadGeneratedProjectsLocal failed", err);
-      } finally {
-        // mark hydrated so consumer components can render asap with safe defaults
-        if (mounted) {
-          setHydrated(true);
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    if (!USE_FIREBASE) {
+      // Ensure we always load local generated projects on mount
+      loadGeneratedProjectsLocal();
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -289,16 +250,12 @@ export const UserProvider = ({ children }) => {
 
     const syncProjects = async () => {
       try {
-        let remote = null;
-        try {
-          if (firestore && typeof firestore.loadGeneratedProjects === "function") {
-            // call safely (wrap in try/catch in case it throws)
-            remote = await firestore.loadGeneratedProjects();
-          }
-        } catch (err) {
-          console.warn("firestore.loadGeneratedProjects threw", err);
-          remote = null;
-        }
+        const loader =
+          firestore && typeof firestore.loadGeneratedProjects === "function"
+            ? firestore.loadGeneratedProjects()
+            : Promise.resolve([]);
+
+        const remote = await loader;
 
         const remoteArr = Array.isArray(remote) ? remote : [];
 
@@ -343,27 +300,24 @@ export const UserProvider = ({ children }) => {
     };
     // intentionally only user in deps to avoid reactive loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, /* keep firestore stable by not adding it to deps */]);
+  }, [user]);
 
   /* --------------------------------------
         PROJECT API (load/save)
   ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     try {
-      if (firestore && typeof firestore.loadGeneratedProjects === "function") {
+      const loader =
+        firestore && typeof firestore.loadGeneratedProjects === "function"
+          ? firestore.loadGeneratedProjects()
+          : null;
+      const remote = loader ? await loader : null;
+      if (Array.isArray(remote)) {
+        setGeneratedProjects(remote);
         try {
-          const remote = await firestore.loadGeneratedProjects();
-          if (Array.isArray(remote)) {
-            const arr = remote;
-            setGeneratedProjects(arr);
-            try {
-              safeSetItem(GENERATED_PROJECTS_KEY, arr);
-            } catch {}
-            return arr;
-          }
-        } catch (err) {
-          console.warn("firestore.loadGeneratedProjects failed", err);
-        }
+          safeSetItem(GENERATED_PROJECTS_KEY, remote);
+        } catch {}
+        return remote;
       }
     } catch {
       // continue to fallback
@@ -382,24 +336,22 @@ export const UserProvider = ({ children }) => {
 
   const saveGeneratedProject = async (project) => {
     try {
-      if (firestore && typeof firestore.saveGeneratedProject === "function") {
+      const saver =
+        firestore && typeof firestore.saveGeneratedProject === "function"
+          ? firestore.saveGeneratedProject(project)
+          : null;
+      const saved = saver ? await saver : null;
+      if (saved) {
+        const base = Array.isArray(generatedProjects) ? generatedProjects : [];
+        const next = [...base, saved];
+        setGeneratedProjects(next);
         try {
-          const saved = await firestore.saveGeneratedProject(project);
-          if (saved) {
-            const base = Array.isArray(generatedProjects) ? generatedProjects : [];
-            const next = [...base, saved];
-            setGeneratedProjects(next);
-            try {
-              safeSetItem(GENERATED_PROJECTS_KEY, next);
-            } catch {}
-            return saved;
-          }
-        } catch (err) {
-          console.warn("firestore.saveGeneratedProject threw", err);
-        }
+          safeSetItem(GENERATED_PROJECTS_KEY, next);
+        } catch {}
+        return saved;
       }
-    } catch (err) {
-      console.warn("saveGeneratedProject firestore path failed", err);
+    } catch (e) {
+      console.warn("saveGeneratedProject failed in UserContext", e);
     }
 
     // fallback to local-only implementation
@@ -413,14 +365,7 @@ export const UserProvider = ({ children }) => {
     try {
       const payload =
         (firestore && typeof firestore.saveUserGoals === "function"
-          ? await (async () => {
-              try {
-                return await firestore.saveUserGoals(goals);
-              } catch (err) {
-                console.warn("firestore.saveUserGoals threw", err);
-                return null;
-              }
-            })()
+          ? await firestore.saveUserGoals(goals)
           : null) ||
         {
           ...goals,
@@ -544,59 +489,43 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        CONTEXT VALUE (memoized + safe)
-  ---------------------------------------*/
-  const contextValue = useMemo(() => {
-    return {
-      user,
-      setUser,
-      loading: Boolean(loading),
-      hydrated: Boolean(hydrated),
-      logout,
-
-      enrolledCourses: Array.isArray(enrolledCourses) ? enrolledCourses : [],
-      enrollInCourse,
-
-      courseProgress: courseProgress && typeof courseProgress === "object" ? courseProgress : {},
-      setCourseProgress,
-
-      personaScores: personaScores && typeof personaScores === "object" ? personaScores : {},
-      updatePersonaScore,
-      getTopPersona,
-
-      userGoals: userGoals && typeof userGoals === "object" ? userGoals : null,
-      setUserGoals,
-      saveUserGoals,
-
-      generatedProjects: Array.isArray(generatedProjects) ? generatedProjects : [],
-      loadGeneratedProjects,
-      saveGeneratedProject,
-
-      completeLessonFS,
-      isLessonCompleted,
-      getCourseCompletion,
-
-      userStats: userStats && typeof userStats === "object" ? userStats : {},
-      setUserStats,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    user,
-    loading,
-    hydrated,
-    enrolledCourses,
-    courseProgress,
-    personaScores,
-    userGoals,
-    generatedProjects,
-    userStats,
-  ]);
-
-  /* --------------------------------------
-        EXPORT (render)
+        EXPORT CONTEXT
   ---------------------------------------*/
   return (
-    <UserContext.Provider value={contextValue}>
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,
+        loading,
+        hydrated,
+        logout,
+
+        enrolledCourses,
+        enrollInCourse,
+
+        courseProgress,
+        setCourseProgress,
+
+        personaScores,
+        updatePersonaScore,
+        getTopPersona,
+
+        userGoals,
+        setUserGoals,
+        saveUserGoals,
+
+        generatedProjects,
+        loadGeneratedProjects,
+        saveGeneratedProject,
+
+        completeLessonFS,
+        isLessonCompleted,
+        getCourseCompletion,
+
+        userStats,
+        setUserStats,
+      }}
+    >
       {hydrated ? (
         children
       ) : (
