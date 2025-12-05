@@ -5,6 +5,4 @@
 
 [build.environment]
   NODE_VERSION = "18"
-
-[build]
-  environment = { NETLIFY_USE_LEGACY_BUILD_IMAGE = "true" }
+  NETLIFY_USE_LEGACY_BUILD_IMAGE = "true"
