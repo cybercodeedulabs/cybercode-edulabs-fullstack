@@ -242,6 +242,19 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   /* --------------------------------------
+        Ensure global generatedProjects key exists (avoid null)
+  ---------------------------------------*/
+  useEffect(() => {
+    if (!canUseLocalStorage()) return;
+    try {
+      const existing = safeGetItem(GENERATED_PROJECTS_KEY, null);
+      if (!Array.isArray(existing)) {
+        safeSetItem(GENERATED_PROJECTS_KEY, []);
+      }
+    } catch {}
+  }, []);
+
+  /* --------------------------------------
         SYNC PROJECTS (runs after firestore created)
         - Only runs when user changes to avoid loops
   ---------------------------------------*/

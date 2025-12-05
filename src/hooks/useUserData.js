@@ -2,6 +2,9 @@
 // Local-only implementation while Firebase is disabled.
 // Stores per-user data in localStorage under cc_userdoc_<uid>
 // and goals in cc_goals_<uid>.
+//
+// This version is hardened with defensive guards to avoid crashes
+// when keys are missing or malformed in localStorage.
 
 import { useEffect } from "react";
 
@@ -15,12 +18,8 @@ const canUseLocalStorage = () => {
 
     // Some browsers throw on access in private mode
     const testKey = "__cc_test__";
-    try {
-      window.localStorage.setItem(testKey, "1");
-      window.localStorage.removeItem(testKey);
-    } catch {
-      return false;
-    }
+    window.localStorage.setItem(testKey, "1");
+    window.localStorage.removeItem(testKey);
 
     return true;
   } catch {
@@ -60,13 +59,6 @@ const safeSetItem = (key, value) => {
     return false;
   }
 };
-
-/* ---------------------------
-   Small helpers for safety
-   ---------------------------*/
-const ensureObject = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
-const ensureArray = (v) => (Array.isArray(v) ? v : []);
-const safeLen = (v) => (Array.isArray(v) ? v.length : 0);
 
 /**
  * useUserData
@@ -113,22 +105,31 @@ export default function useUserData(
 
     const normalizeCourseProgress = (cp) => {
       try {
-        const src = ensureObject(cp);
+        if (!cp || typeof cp !== "object") return {};
         const out = {};
-        Object.keys(src).forEach((k) => {
-          const entry = ensureObject(src[k]);
-          const completed = ensureArray(entry.completedLessons);
+        Object.keys(cp).forEach((k) => {
+          const entry = cp[k] || {};
+          const completed = Array.isArray(entry.completedLessons)
+            ? entry.completedLessons
+            : [];
+
           out[k] = {
             completedLessons: completed,
             currentLessonIndex:
-              typeof entry.currentLessonIndex === "number" ? entry.currentLessonIndex : completed.length,
-            sessions: ensureArray(entry.sessions),
-            timeSpentMinutes: typeof entry.timeSpentMinutes === "number" ? entry.timeSpentMinutes : 0,
+              typeof entry.currentLessonIndex === "number"
+                ? entry.currentLessonIndex
+                : completed.length,
+            sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
+            timeSpentMinutes:
+              typeof entry.timeSpentMinutes === "number"
+                ? entry.timeSpentMinutes
+                : 0,
             updatedAt: entry.updatedAt || null,
           };
         });
         return out;
       } catch (err) {
+        // If anything goes wrong here, return empty progress
         console.warn("normalizeCourseProgress failed", err);
         return {};
       }
@@ -146,11 +147,7 @@ export default function useUserData(
 
     const writeUserDoc = (uid, obj) => {
       if (!uid || typeof obj !== "object") return;
-      try {
-        safeSetItem(userKey(uid), obj);
-      } catch {
-        // ignore
-      }
+      safeSetItem(userKey(uid), obj);
     };
 
     const readGoalsDoc = (uid) => {
@@ -183,24 +180,35 @@ export default function useUserData(
 
     /** Normalize and create initial data */
     const ensureInitialLocalDoc = () => {
-      const rawExisting = readUserDoc(uid) || {};
-      const existing = ensureObject(rawExisting);
+      const existing = readUserDoc(uid) || {};
 
       const base = {
-        enrolledCourses: ensureArray(existing.enrolledCourses),
-        projects: ensureArray(existing.projects),
+        enrolledCourses: Array.isArray(existing.enrolledCourses)
+          ? [...existing.enrolledCourses]
+          : [],
+
+        projects: Array.isArray(existing.projects) ? [...existing.projects] : [],
+
         isPremium: Boolean(existing.isPremium),
         hasCertificationAccess: Boolean(existing.hasCertificationAccess),
         hasServerAccess: Boolean(existing.hasServerAccess),
+
         courseProgress: normalizeCourseProgress(existing.courseProgress),
+
         userStats:
           existing.userStats && typeof existing.userStats === "object"
             ? { ...defaultUserStats(), ...existing.userStats }
             : defaultUserStats(),
-        generatedProjects: ensureArray(existing.generatedProjects),
+
+        // Always return a new array copy (never undefined)
+        generatedProjects: Array.isArray(existing.generatedProjects)
+          ? [...existing.generatedProjects]
+          : [],
+
         updatedAt:
           existing.updatedAt &&
-          (typeof existing.updatedAt === "number" || typeof existing.updatedAt === "string")
+          (typeof existing.updatedAt === "number" ||
+            typeof existing.updatedAt === "string")
             ? existing.updatedAt
             : nowTs(),
       };
@@ -227,48 +235,26 @@ export default function useUserData(
           console.debug("Hydrated user doc:", uid, doc);
         } catch {}
 
-        try {
-          setEnrolledCourses?.(ensureArray(doc.enrolledCourses));
-        } catch (e) {
-          try {
-            setEnrolledCourses?.([]);
-          } catch {}
-        }
-
-        try {
-          setCourseProgress?.(ensureObject(doc.courseProgress));
-        } catch (e) {
-          try {
-            setCourseProgress?.({});
-          } catch {}
-        }
-
-        try {
-          setUserStats?.(doc.userStats && typeof doc.userStats === "object" ? doc.userStats : defaultUserStats());
-        } catch (e) {
-          try {
-            setUserStats?.(defaultUserStats());
-          } catch {}
-        }
+        setEnrolledCourses?.(
+          Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []
+        );
+        setCourseProgress?.(doc.courseProgress || {});
+        setUserStats?.(doc.userStats || defaultUserStats());
 
         const g = readGoalsDoc(uid);
         if (g && typeof g === "object") {
-          try {
-            setUserGoals?.(g);
-          } catch {}
+          setUserGoals?.(g);
         }
 
         if (doc.isPremium && setUser) {
-          try {
-            setUser((u) => (u ? { ...u, isPremium: true } : u));
-          } catch {}
+          setUser((u) => (u ? { ...u, isPremium: true } : u));
         }
       } catch (e) {
         // Never allow hydration to throw
         console.error("useUserData hydrate error", e);
       }
       // uid is stable
-    }, [uid, setEnrolledCourses, setCourseProgress, setUser, setUserGoals, setUserStats]);
+    }, [uid]);
 
     /** Persist + state update */
     const persistAndNotify = (nextDoc) => {
@@ -276,8 +262,10 @@ export default function useUserData(
         if (!nextDoc || typeof nextDoc !== "object") return;
 
         const safeNext = {
-          enrolledCourses: ensureArray(nextDoc.enrolledCourses),
-          projects: ensureArray(nextDoc.projects),
+          enrolledCourses: Array.isArray(nextDoc.enrolledCourses)
+            ? [...nextDoc.enrolledCourses]
+            : [],
+          projects: Array.isArray(nextDoc.projects) ? [...nextDoc.projects] : [],
           isPremium: Boolean(nextDoc.isPremium),
           hasCertificationAccess: Boolean(nextDoc.hasCertificationAccess),
           hasServerAccess: Boolean(nextDoc.hasServerAccess),
@@ -286,7 +274,9 @@ export default function useUserData(
             nextDoc.userStats && typeof nextDoc.userStats === "object"
               ? { ...defaultUserStats(), ...nextDoc.userStats }
               : defaultUserStats(),
-          generatedProjects: ensureArray(nextDoc.generatedProjects),
+          generatedProjects: Array.isArray(nextDoc.generatedProjects)
+            ? [...nextDoc.generatedProjects]
+            : [],
           updatedAt: nextDoc.updatedAt || nowTs(),
         };
 
@@ -294,24 +284,18 @@ export default function useUserData(
 
         // ensure global mirror exists and is an array
         try {
-          safeSetItem("cybercode_generated_projects_v1", ensureArray(safeNext.generatedProjects));
-        } catch {}
+          safeSetItem(
+            "cybercode_generated_projects_v1",
+            Array.isArray(safeNext.generatedProjects) ? safeNext.generatedProjects : []
+          );
+        } catch (err) {
+          // ignore
+        }
 
-        try {
-          setEnrolledCourses?.(ensureArray(safeNext.enrolledCourses));
-        } catch {}
-
-        try {
-          setCourseProgress?.(ensureObject(safeNext.courseProgress));
-        } catch {}
-
-        try {
-          setUserStats?.(safeNext.userStats);
-        } catch {}
-
-        try {
-          setUser?.((u) => (u ? { ...u, isPremium: safeNext.isPremium } : u));
-        } catch {}
+        setEnrolledCourses?.(safeNext.enrolledCourses);
+        setCourseProgress?.(safeNext.courseProgress);
+        setUserStats?.(safeNext.userStats);
+        setUser?.((u) => (u ? { ...u, isPremium: safeNext.isPremium } : u));
       } catch (e) {
         console.warn("persistAndNotify failed", e);
       }
@@ -324,7 +308,9 @@ export default function useUserData(
     const enrollInCourse = async (courseSlug) => {
       try {
         const doc = ensureInitialLocalDoc();
-        const list = ensureArray(doc.enrolledCourses);
+        const list = Array.isArray(doc.enrolledCourses)
+          ? [...doc.enrolledCourses]
+          : [];
         if (!list.includes(courseSlug)) list.push(courseSlug);
 
         persistAndNotify({
@@ -340,16 +326,18 @@ export default function useUserData(
     const completeLessonFS = async (courseSlug, lessonSlug) => {
       try {
         const doc = ensureInitialLocalDoc();
-        const cp = ensureObject(doc.courseProgress);
+        const cp = { ...(doc.courseProgress || {}) };
 
-        const existing = ensureObject(cp[courseSlug]) || {
+        const existing = cp[courseSlug] || {
           completedLessons: [],
           currentLessonIndex: 0,
           sessions: [],
           timeSpentMinutes: 0,
         };
 
-        const completed = ensureArray(existing.completedLessons);
+        const completed = Array.isArray(existing.completedLessons)
+          ? [...existing.completedLessons]
+          : [];
 
         if (!completed.includes(lessonSlug)) completed.push(lessonSlug);
 
@@ -358,8 +346,11 @@ export default function useUserData(
           completedLessons: completed,
           currentLessonIndex: completed.length,
           updatedAt: nowTs(),
-          sessions: ensureArray(existing.sessions),
-          timeSpentMinutes: typeof existing.timeSpentMinutes === "number" ? existing.timeSpentMinutes : 0,
+          sessions: Array.isArray(existing.sessions) ? existing.sessions : [],
+          timeSpentMinutes:
+            typeof existing.timeSpentMinutes === "number"
+              ? existing.timeSpentMinutes
+              : 0,
         };
 
         persistAndNotify({
@@ -392,10 +383,14 @@ export default function useUserData(
 
         const last = usrStats.lastStudyDate || "";
         if (last === today) usrStats.streakDays = usrStats.streakDays || 1;
-        else if (last === yesterday) usrStats.streakDays = (usrStats.streakDays || 0) + 1;
+        else if (last === yesterday)
+          usrStats.streakDays = (usrStats.streakDays || 0) + 1;
         else usrStats.streakDays = 1;
 
-        usrStats.longestStreak = Math.max(usrStats.longestStreak || 0, usrStats.streakDays);
+        usrStats.longestStreak = Math.max(
+          usrStats.longestStreak || 0,
+          usrStats.streakDays
+        );
         usrStats.lastStudyDate = today;
 
         const dates = [];
@@ -405,30 +400,51 @@ export default function useUserData(
           dates.push(d.toISOString().split("T")[0]);
         }
 
-        usrStats.weeklyMinutes = dates.reduce((sum, d) => sum + (usrStats.daily[d] || 0), 0);
+        usrStats.weeklyMinutes = dates.reduce(
+          (sum, d) => sum + (usrStats.daily[d] || 0),
+          0
+        );
 
         const goals = readGoalsDoc(uid) || {};
         const hrs = Number(goals.hoursPerWeek || 2);
         const wkGoal = hrs * 60;
 
-        usrStats.weeklyPct = wkGoal ? Math.round((usrStats.weeklyMinutes / wkGoal) * 100) : 0;
-        usrStats.readinessPct = Math.min(100, usrStats.weeklyPct + (usrStats.streakDays || 0) * 3);
+        usrStats.weeklyPct = wkGoal
+          ? Math.round((usrStats.weeklyMinutes / wkGoal) * 100)
+          : 0;
 
-        const cp = ensureObject(doc.courseProgress);
-        const course = ensureObject(cp[courseSlug]) || {
-          completedLessons: [],
-          currentLessonIndex: 0,
-          sessions: [],
-          timeSpentMinutes: 0,
-        };
+        usrStats.readinessPct = Math.min(
+          100,
+          usrStats.weeklyPct + (usrStats.streakDays || 0) * 3
+        );
 
-        course.sessions = [...ensureArray(course.sessions), { lesson: lessonSlug, minutes, ts: nowTs() }];
+        const cp = { ...(doc.courseProgress || {}) };
+        const course =
+          cp[courseSlug] || {
+            completedLessons: [],
+            currentLessonIndex: 0,
+            sessions: [],
+            timeSpentMinutes: 0,
+          };
+
+        course.sessions = [
+          ...(Array.isArray(course.sessions) ? course.sessions : []),
+          { lesson: lessonSlug, minutes, ts: nowTs() },
+        ];
+
         course.timeSpentMinutes = (course.timeSpentMinutes || 0) + minutes;
 
         cp[courseSlug] = {
           ...course,
-          completedLessons: ensureArray(course.completedLessons),
-          currentLessonIndex: typeof course.currentLessonIndex === "number" ? course.currentLessonIndex : ensureArray(course.completedLessons).length,
+          completedLessons: Array.isArray(course.completedLessons)
+            ? course.completedLessons
+            : [],
+          currentLessonIndex:
+            typeof course.currentLessonIndex === "number"
+              ? course.currentLessonIndex
+              : (Array.isArray(course.completedLessons)
+                  ? course.completedLessons.length
+                  : 0),
         };
 
         persistAndNotify({
@@ -510,12 +526,8 @@ export default function useUserData(
         };
 
         writeGoalsDoc(uid, payload);
-        try {
-          setUserGoals?.(payload);
-        } catch {}
-        try {
-          safeSetItem("cc_goals_" + uid, payload);
-        } catch {}
+        setUserGoals?.(payload);
+        safeSetItem("cc_goals_" + uid, payload);
       } catch (e) {
         console.warn("saveUserGoals error", e);
       }
@@ -524,18 +536,24 @@ export default function useUserData(
     const loadGeneratedProjects = async () => {
       try {
         const doc = ensureInitialLocalDoc();
-        const list = ensureArray(doc.generatedProjects);
+        const list = Array.isArray(doc.generatedProjects)
+          ? [...doc.generatedProjects]
+          : [];
 
+        // ensure global mirror exists and is array
         try {
-          safeSetItem("cybercode_generated_projects_v1", list);
+          safeSetItem(
+            "cybercode_generated_projects_v1",
+            Array.isArray(list) ? list : []
+          );
         } catch {}
 
-        return ensureArray(list);
+        return Array.isArray(list) ? list : [];
       } catch (e) {
         console.error("loadGeneratedProjects failed", e);
 
         const parsed = safeGetItem("cybercode_generated_projects_v1", []);
-        return ensureArray(parsed);
+        return Array.isArray(parsed) ? parsed : [];
       }
     };
 
@@ -544,7 +562,9 @@ export default function useUserData(
         if (!project || typeof project !== "object") return project;
 
         const doc = readUserDoc(uid) || ensureInitialLocalDoc();
-        const gp = ensureArray(doc.generatedProjects);
+        const gp = Array.isArray(doc.generatedProjects)
+          ? [...doc.generatedProjects]
+          : [];
 
         const withId = {
           ...project,
@@ -564,18 +584,16 @@ export default function useUserData(
       } catch (e) {
         console.error("saveGeneratedProject failed", e);
 
-        const arr = ensureArray(safeGetItem("cybercode_generated_projects_v1", []));
+        const arr = safeGetItem("cybercode_generated_projects_v1", []);
         const withId = {
           ...project,
           id: project.id || `${nowTs()}-${Math.random()}`,
           timestamp: nowTs(),
         };
 
-        const next = [...arr, withId];
+        const next = Array.isArray(arr) ? [...arr, withId] : [withId];
 
-        try {
-          safeSetItem("cybercode_generated_projects_v1", next);
-        } catch {}
+        safeSetItem("cybercode_generated_projects_v1", next);
 
         return withId;
       }
