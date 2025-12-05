@@ -103,54 +103,60 @@ export default function useUserData(
       readinessPct: 0,
     });
 
- const normalizeCourseProgress = (cp) => {
-  try {
-    if (!cp || typeof cp !== "object") return {};
+    /**
+     * normalizeCourseProgress
+     * - ONLY accepts plain objects (rejects arrays/primitives)
+     * - ensures every course entry is an object with arrays where expected
+     */
+    const isPlainObject = (v) =>
+      v !== null && typeof v === "object" && Object.prototype.toString.call(v) === "[object Object]";
 
-    const out = {};
+    const normalizeCourseProgress = (cp) => {
+      try {
+        if (!cp || !isPlainObject(cp)) return {};
 
-    Object.keys(cp).forEach((k) => {
-      const entry = cp[k];
+        const out = {};
 
-      // HARD FIX: skip undefined/null/broken entries
-      if (!entry || typeof entry !== "object") {
-        out[k] = {
-          completedLessons: [],
-          currentLessonIndex: 0,
-          sessions: [],
-          timeSpentMinutes: 0,
-          updatedAt: null,
-        };
-        return;
+        Object.keys(cp).forEach((k) => {
+          const entry = cp[k];
+
+          // HARD FIX: skip undefined/null/broken entries
+          if (!isPlainObject(entry)) {
+            out[k] = {
+              completedLessons: [],
+              currentLessonIndex: 0,
+              sessions: [],
+              timeSpentMinutes: 0,
+              updatedAt: null,
+            };
+            return;
+          }
+
+          const completed = Array.isArray(entry.completedLessons)
+            ? entry.completedLessons
+            : [];
+
+          out[k] = {
+            completedLessons: completed,
+            currentLessonIndex:
+              typeof entry.currentLessonIndex === "number"
+                ? entry.currentLessonIndex
+                : completed.length,
+            sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
+            timeSpentMinutes:
+              typeof entry.timeSpentMinutes === "number"
+                ? entry.timeSpentMinutes
+                : 0,
+            updatedAt: entry.updatedAt || null,
+          };
+        });
+
+        return out;
+      } catch (err) {
+        console.warn("normalizeCourseProgress failed", err);
+        return {};
       }
-
-      const completed = Array.isArray(entry.completedLessons)
-        ? entry.completedLessons
-        : [];
-
-      out[k] = {
-        completedLessons: completed,
-        currentLessonIndex:
-          typeof entry.currentLessonIndex === "number"
-            ? entry.currentLessonIndex
-            : completed.length,
-
-        sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
-        timeSpentMinutes:
-          typeof entry.timeSpentMinutes === "number"
-            ? entry.timeSpentMinutes
-            : 0,
-        updatedAt: entry.updatedAt || null,
-      };
-    });
-
-    return out;
-  } catch (err) {
-    console.warn("normalizeCourseProgress failed", err);
-    return {};
-  }
-};
-
+    };
 
     const readUserDoc = (uid) => {
       if (!uid) return null;
@@ -345,12 +351,14 @@ export default function useUserData(
         const doc = ensureInitialLocalDoc();
         const cp = { ...(doc.courseProgress || {}) };
 
-        const existing = cp[courseSlug] || {
-          completedLessons: [],
-          currentLessonIndex: 0,
-          sessions: [],
-          timeSpentMinutes: 0,
-        };
+        const existing = isPlainObject(cp[courseSlug])
+          ? cp[courseSlug]
+          : {
+              completedLessons: [],
+              currentLessonIndex: 0,
+              sessions: [],
+              timeSpentMinutes: 0,
+            };
 
         const completed = Array.isArray(existing.completedLessons)
           ? [...existing.completedLessons]
@@ -436,13 +444,14 @@ export default function useUserData(
         );
 
         const cp = { ...(doc.courseProgress || {}) };
-        const course =
-          cp[courseSlug] || {
-            completedLessons: [],
-            currentLessonIndex: 0,
-            sessions: [],
-            timeSpentMinutes: 0,
-          };
+        const course = isPlainObject(cp[courseSlug])
+          ? cp[courseSlug]
+          : {
+              completedLessons: [],
+              currentLessonIndex: 0,
+              sessions: [],
+              timeSpentMinutes: 0,
+            };
 
         course.sessions = [
           ...(Array.isArray(course.sessions) ? course.sessions : []),
