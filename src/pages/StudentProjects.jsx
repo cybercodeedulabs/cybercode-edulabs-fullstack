@@ -1,13 +1,20 @@
+// src/pages/StudentProjects.jsx
 import React from "react";
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 export default function StudentProjects() {
-  const { generatedProjects = [] } = useUser();
+  const { generatedProjects = [], hydrated } = useUser();
 
-  // ensure we always have an array (defensive)
-  const list = Array.isArray(generatedProjects) ? generatedProjects : [];
+  // wait until UserContext has finished hydrating
+  if (!hydrated) {
+    return (
+      <section className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200">
+        <div className="text-center text-gray-500">Loading projects…</div>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200">
@@ -20,45 +27,45 @@ export default function StudentProjects() {
         🔥 AI-Generated Projects (from Dashboard)
       </h2>
 
-      {!list.length && (
+      {!generatedProjects.length && (
         <p className="text-gray-500 mb-10">
           No AI-generated projects yet. Create one from your Dashboard →
         </p>
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        {list.map((p) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
-          >
-            <h3 className="font-bold text-lg text-indigo-600">
-              {p.title || "Untitled Project"}
-            </h3>
+        {Array.isArray(generatedProjects) &&
+          generatedProjects.length > 0 &&
+          generatedProjects.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
+            >
+              <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
 
-            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
-              {p.description || "No description provided."}
-            </p>
+              <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+                {p.description}
+              </p>
 
-            {Array.isArray(p.techStack) && p.techStack.length ? (
-              <div className="mt-3 text-xs text-gray-500">
-                Tech: {p.techStack.join(", ")}
+              {p.techStack?.length ? (
+                <div className="mt-3 text-xs text-gray-500">
+                  Tech: {p.techStack.join(", ")}
+                </div>
+              ) : null}
+
+              <div className="mt-4">
+                <Link
+                  to={`/student-projects/${p.id}`}
+                  className="text-sm text-indigo-600 hover:underline"
+                >
+                  View Details →
+                </Link>
               </div>
-            ) : null}
-
-            <div className="mt-4">
-              <Link
-                to={`/student-projects/${p.id}`}
-                className="text-sm text-indigo-600 hover:underline"
-              >
-                View Details →
-              </Link>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
       </div>
 
       {/* CTA */}

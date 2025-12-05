@@ -152,14 +152,13 @@ export default function useUserData(
 
   /** Persist UI + localStorage together */
   const persistAndNotify = (nextDoc) => {
-    // write per-user doc
     try {
       writeUserDoc(uid, nextDoc);
     } catch (e) {
       console.warn("persistAndNotify writeUserDoc failed", e);
     }
 
-    // mirror generatedProjects to global key so other parts of app (UserContext) can read it
+    // mirror generatedProjects to global key
     try {
       if (Array.isArray(nextDoc.generatedProjects)) {
         try {
@@ -175,7 +174,6 @@ export default function useUserData(
       // ignore
     }
 
-    // update react state via callbacks
     try {
       setEnrolledCourses?.(nextDoc.enrolledCourses || []);
       setCourseProgress?.(nextDoc.courseProgress || {});
@@ -365,7 +363,6 @@ export default function useUserData(
 
     writeGoalsDoc(uid, payload);
     setUserGoals?.(payload);
-    return payload;
   };
 
   const loadGeneratedProjects = async () => {
@@ -389,6 +386,7 @@ export default function useUserData(
       }
     }
   };
+
 
   const saveGeneratedProject = async (project) => {
     try {
@@ -426,6 +424,7 @@ export default function useUserData(
       }
     }
   };
+
 
   /** Public API */
   return {

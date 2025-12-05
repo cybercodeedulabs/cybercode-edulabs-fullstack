@@ -1,3 +1,4 @@
+// src/contexts/UserContext.jsx
 import React, {
   createContext,
   useContext,
@@ -138,7 +139,7 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        CONNECT WITH useUserData HOOK (must be before sync)
+        CONNECT WITH useUserData HOOK (MUST COME BEFORE syncProjects!)
   ---------------------------------------*/
   const firestore = useUserData(user, {
     setEnrolledCourses,
@@ -158,18 +159,28 @@ export const UserProvider = ({ children }) => {
   });
 
   /* --------------------------------------
+        HYDRATION GATE
+        - Ensures app renders only after we have attempted to load projects/goals/stats
+  ---------------------------------------*/
+  const [hydrated, setHydrated] = useState(false);
+
+  /* --------------------------------------
         AUTH LISTENER (LOCAL MODE)
+        - Initial quick load for global key to render shell fast
   ---------------------------------------*/
   useEffect(() => {
     if (!USE_FIREBASE) {
+      // quick local load (not the authoritative per-user load)
       loadGeneratedProjectsLocal();
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* --------------------------------------
         SYNC PROJECTS (runs after firestore created)
-        NOTE: include firestore in deps so hook re-runs when hook instance changes
+        - IMPORTANT: do NOT include `firestore` in deps (it causes loops in some setups)
+        - We run sync when `user` changes (login/logout) so per-user data loads deterministically
   ---------------------------------------*/
   useEffect(() => {
     let mounted = true;
@@ -205,16 +216,22 @@ export const UserProvider = ({ children }) => {
         // safe fallback
         if (!mounted) return;
         setGeneratedProjects([]);
+      } finally {
+        // mark hydrated only after sync finishes at least once
+        if (mounted) {
+          setHydrated(true);
+          setLoading(false);
+        }
       }
     };
 
-    // only run if firestore is available (safe)
     syncProjects();
 
     return () => {
       mounted = false;
     };
-    // include firestore so it re-runs when hook reference changes
+    // intentionally only user in deps to avoid reactive loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   /* --------------------------------------
@@ -259,6 +276,7 @@ export const UserProvider = ({ children }) => {
       }
     } catch (e) {
       // continue to fallback
+      console.warn("saveGeneratedProject failed in UserContext", e);
     }
 
     // fallback to local-only implementation
@@ -266,7 +284,7 @@ export const UserProvider = ({ children }) => {
   };
 
   /* --------------------------------------
-        SAVE USER GOALS
+        SAVE USER GOALS  (keeps parity with useUserData hook)
   ---------------------------------------*/
   const saveUserGoals = async (goals) => {
     try {
@@ -381,6 +399,7 @@ export const UserProvider = ({ children }) => {
         user,
         setUser,
         loading,
+        hydrated, // important flag for consumers
         logout,
 
         enrolledCourses,
@@ -409,7 +428,14 @@ export const UserProvider = ({ children }) => {
         setUserStats,
       }}
     >
-      {children}
+      {/* hydration gate: show loading placeholder until context is ready */}
+      {hydrated ? (
+        children
+      ) : (
+        <div className="w-full min-h-screen flex items-center justify-center text-gray-500">
+          Loading...
+        </div>
+      )}
     </UserContext.Provider>
   );
 };
