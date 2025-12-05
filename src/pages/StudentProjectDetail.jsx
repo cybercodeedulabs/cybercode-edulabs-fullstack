@@ -1,141 +1,44 @@
+// src/pages/StudentProjectDetail.jsx
 import React from "react";
-import { useParams, Link } from "react-router-dom";
-import { useUser } from "../contexts/UserContext";
-import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+
+/**
+ * Temporary stub for StudentProjectDetail (Option 3)
+ * - Prevents rendering the detailed project view which relied on fragile project shapes.
+ * - Keeps routing intact and provides a friendly message + CTA.
+ */
 
 export default function StudentProjectDetail() {
-  const { id } = useParams();
-  const { generatedProjects = [], hydrated } = useUser();
-
-  // Wait for hydration
-  if (!hydrated) {
-    return (
-      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <p className="text-gray-500">Loading project…</p>
-      </div>
-    );
-  }
-
-  if (!Array.isArray(generatedProjects)) {
-    return (
-      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <p className="text-gray-500">No projects available.</p>
-      </div>
-    );
-  }
-
-  const project = generatedProjects.find((p) => String(p?.id) === String(id));
-
-  if (!project) {
-    return (
-      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-2xl font-bold text-red-500 mb-4">
-          Project Not Found
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          The project you are looking for does not exist.
-        </p>
-        <Link
-          to="/student-projects"
-          className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow"
-        >
-          Back to Projects
-        </Link>
-      </div>
-    );
-  }
-
-  // Defensive normalizations
-  const techStack = Array.isArray(project.techStack) ? project.techStack : [];
-  const steps = Array.isArray(project.steps) ? project.steps : [];
-
-  const createdTs = project.timestamp || project.createdAt || Date.now();
-  const createdDate = new Date(createdTs).toLocaleDateString();
-
   return (
-    <motion.section
-      className="max-w-4xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
-      {/* Back Button */}
-      <Link
-        to="/student-projects"
-        className="inline-block mb-8 text-indigo-600 dark:text-indigo-400 hover:underline"
-      >
-        ← Back to Projects
-      </Link>
+    <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border shadow p-8">
+        <h1 className="text-2xl font-bold text-indigo-600 mb-4">Project Detail - Under Maintenance</h1>
 
-      {/* Header */}
-      <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
-        {project.title || "Untitled Project"}
-      </h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          The detailed project view is temporarily disabled while we fix a data consistency issue.
+          Projects are still safe — you can view the project list in the showcase or recreate the project from the Dashboard.
+        </p>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Created on {createdDate}
-      </p>
+        <div className="flex justify-center gap-3">
+          <Link
+            to="/student-projects"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700"
+          >
+            Back to Projects
+          </Link>
 
-      {/* Description */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
-        <h2 className="text-xl font-semibold mb-3">📘 Description</h2>
-        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-          {project.description || "No description provided."}
+          <Link
+            to="/dashboard#projects"
+            className="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg"
+          >
+            Create / Manage Projects
+          </Link>
+        </div>
+
+        <p className="mt-4 text-sm text-gray-500">
+          If you need access to a specific project urgently, let me know which one (ID or title) and I will inspect the raw data.
         </p>
       </div>
-
-      {/* Tech Stack */}
-      {techStack.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
-          <h2 className="text-xl font-semibold mb-3">🛠 Tech Stack</h2>
-          <ul className="list-disc ml-6 space-y-1 text-gray-700 dark:text-gray-300">
-            {techStack.map((t, i) => (
-              <li key={i}>{t}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Steps */}
-      {steps.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
-          <h2 className="text-xl font-semibold mb-3">📌 Project Steps</h2>
-          <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
-            {steps.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Difficulty */}
-      {project.difficulty && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
-          <h2 className="text-xl font-semibold mb-3">⚡ Difficulty</h2>
-          <p className="text-gray-700 dark:text-gray-300">
-            {project.difficulty}
-          </p>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex gap-4 mt-8">
-        <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition">
-          Export as PDF (Coming Soon)
-        </button>
-
-        <button
-          onClick={() =>
-            window.dispatchEvent(
-              new CustomEvent("open-ai-assistant", {
-                detail: { focus: true, context: project },
-              })
-            )
-          }
-          className="px-6 py-3 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 transition"
-        >
-          Improve with AI
-        </button>
-      </div>
-    </motion.section>
+    </div>
   );
 }
