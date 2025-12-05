@@ -1,11 +1,10 @@
-// src/pages/RoadmapPage.jsx
 import React from "react";
 import { useUser } from "../contexts/UserContext";
 import GoalSummaryCard from "../components/GoalSummaryCard";
 import AIJobRoadmap from "../components/AIJobRoadmap";
 
 export default function RoadmapPage() {
-  const { userGoals } = useUser();
+  const { userGoals = null } = useUser();
 
   return (
     <section className="max-w-6xl mx-auto px-6 py-12 text-gray-800 dark:text-gray-200">

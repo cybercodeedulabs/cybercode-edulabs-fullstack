@@ -1,4 +1,3 @@
-// src/components/GoalRoadmap.jsx
 import React, { useMemo } from "react";
 
 /**
@@ -11,8 +10,9 @@ export default function GoalRoadmap({ goals }) {
     if (!goals) return null;
     const { skills = {}, hoursPerWeek = 6, deadlineMonths = 6, targetRole } = goals;
 
-    // score roughly from skills
-    const avgSkill = Math.round(Object.values(skills).reduce((a, b) => a + b, 0) / Math.max(Object.keys(skills).length, 1));
+    const skillValues = Array.isArray(Object.values(skills)) ? Object.values(skills) : [];
+    const sum = skillValues.reduce((a, b) => a + (Number(b) || 0), 0);
+    const avgSkill = Math.round(sum / Math.max(skillValues.length, 1));
     const months = Number(deadlineMonths || 6);
     const weekly = Number(hoursPerWeek || 6);
 

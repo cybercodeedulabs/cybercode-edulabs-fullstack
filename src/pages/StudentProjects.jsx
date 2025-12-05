@@ -1,4 +1,3 @@
-// src/pages/StudentProjects.jsx
 import React from "react";
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
@@ -16,6 +15,8 @@ export default function StudentProjects() {
     );
   }
 
+  const hasProjects = Array.isArray(generatedProjects) && generatedProjects.length > 0;
+
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200">
       <h1 className="text-3xl font-bold text-indigo-600 mb-8">
@@ -27,45 +28,47 @@ export default function StudentProjects() {
         🔥 AI-Generated Projects (from Dashboard)
       </h2>
 
-      {!generatedProjects.length && (
+      {!hasProjects && (
         <p className="text-gray-500 mb-10">
           No AI-generated projects yet. Create one from your Dashboard →
         </p>
       )}
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        {Array.isArray(generatedProjects) &&
-          generatedProjects.length > 0 &&
-          generatedProjects.map((p) => (
-            <motion.div
-              key={p.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
-            >
-              <h3 className="font-bold text-lg text-indigo-600">{p.title}</h3>
+        {hasProjects &&
+          generatedProjects.map((p) => {
+            const techIsArray = Array.isArray(p?.techStack);
+            return (
+              <motion.div
+                key={p.id || JSON.stringify(p).slice(0, 40)}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow p-5"
+              >
+                <h3 className="font-bold text-lg text-indigo-600">{p?.title || "Untitled Project"}</h3>
 
-              <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
-                {p.description}
-              </p>
+                <p className="text-sm mt-2 text-gray-700 dark:text-gray-300 line-clamp-3">
+                  {p?.description || "No description provided."}
+                </p>
 
-              {p.techStack?.length ? (
-                <div className="mt-3 text-xs text-gray-500">
-                  Tech: {p.techStack.join(", ")}
+                {techIsArray && p.techStack.length > 0 ? (
+                  <div className="mt-3 text-xs text-gray-500">
+                    Tech: {p.techStack.join(", ")}
+                  </div>
+                ) : null}
+
+                <div className="mt-4">
+                  <Link
+                    to={`/student-projects/${p.id}`}
+                    className="text-sm text-indigo-600 hover:underline"
+                  >
+                    View Details →
+                  </Link>
                 </div>
-              ) : null}
-
-              <div className="mt-4">
-                <Link
-                  to={`/student-projects/${p.id}`}
-                  className="text-sm text-indigo-600 hover:underline"
-                >
-                  View Details →
-                </Link>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
       </div>
 
       {/* CTA */}

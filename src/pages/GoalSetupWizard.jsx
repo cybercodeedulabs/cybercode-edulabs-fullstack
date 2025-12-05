@@ -1,4 +1,3 @@
-// src/pages/GoalSetupWizard.jsx
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -26,50 +25,44 @@ export default function GoalSetupWizard() {
   const { user, saveUserGoals } = useUser();
   const navigate = useNavigate();
 
+  const defaultMeta = {
+    currentStatus: "",
+    motivation: "",
+    targetRole: "",
+    salaryExpectation: "",
+    hoursPerWeek: 6,
+    deadlineMonths: 6,
+    learningStyle: "Hands-on Labs",
+  };
+
+  const defaultSkills = {
+    programming: 30,
+    cloud: 30,
+    networking: 30,
+    cybersecurity: 20,
+    softSkills: 50,
+  };
+
   // split state: meta and skills (reduces re-renders)
   const [meta, setMeta] = useState(() => {
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
-      return raw ? JSON.parse(raw).meta : {
-        currentStatus: "",
-        motivation: "",
-        targetRole: "",
-        salaryExpectation: "",
-        hoursPerWeek: 6,
-        deadlineMonths: 6,
-        learningStyle: "Hands-on Labs",
-      };
+      if (!raw) return defaultMeta;
+      const parsed = JSON.parse(raw);
+      return (parsed && parsed.meta) ? { ...defaultMeta, ...parsed.meta } : defaultMeta;
     } catch {
-      return {
-        currentStatus: "",
-        motivation: "",
-        targetRole: "",
-        salaryExpectation: "",
-        hoursPerWeek: 6,
-        deadlineMonths: 6,
-        learningStyle: "Hands-on Labs",
-      };
+      return defaultMeta;
     }
   });
 
   const [skills, setSkills] = useState(() => {
     try {
       const raw = localStorage.getItem(LOCAL_KEY);
-      return raw ? JSON.parse(raw).skills : {
-        programming: 30,
-        cloud: 30,
-        networking: 30,
-        cybersecurity: 20,
-        softSkills: 50,
-      };
+      if (!raw) return defaultSkills;
+      const parsed = JSON.parse(raw);
+      return (parsed && parsed.skills) ? { ...defaultSkills, ...parsed.skills } : defaultSkills;
     } catch {
-      return {
-        programming: 30,
-        cloud: 30,
-        networking: 30,
-        cybersecurity: 20,
-        softSkills: 50,
-      };
+      return defaultSkills;
     }
   });
 
@@ -79,15 +72,17 @@ export default function GoalSetupWizard() {
   // autosave draft
   useEffect(() => {
     const draft = { meta, skills };
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(draft));
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(draft));
+    } catch {}
   }, [meta, skills]);
 
   const updateMeta = useCallback((key, value) => {
-    setMeta((m) => ({ ...m, [key]: value }));
+    setMeta((m) => ({ ...(m || defaultMeta), [key]: value }));
   }, []);
 
   const updateSkill = useCallback((k, v) => {
-    setSkills((s) => ({ ...s, [k]: v }));
+    setSkills((s) => ({ ...(s || defaultSkills), [k]: v }));
   }, []);
 
   const payload = useMemo(() => ({ ...meta, skills }), [meta, skills]);
@@ -99,7 +94,9 @@ export default function GoalSetupWizard() {
     if (!user) return alert("Please login first.");
     try {
       await saveUserGoals(payload);
-      localStorage.removeItem(LOCAL_KEY);
+      try {
+        localStorage.removeItem(LOCAL_KEY);
+      } catch {}
       navigate("/dashboard");
     } catch (err) {
       console.error("Save goals error:", err);

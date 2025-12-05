@@ -1,4 +1,3 @@
-// src/pages/StudentProjectDetail.jsx
 import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
@@ -25,7 +24,7 @@ export default function StudentProjectDetail() {
     );
   }
 
-  const project = generatedProjects.find((p) => String(p.id) === String(id));
+  const project = generatedProjects.find((p) => String(p?.id) === String(id));
 
   if (!project) {
     return (
@@ -46,6 +45,13 @@ export default function StudentProjectDetail() {
     );
   }
 
+  // Defensive normalizations
+  const techStack = Array.isArray(project.techStack) ? project.techStack : [];
+  const steps = Array.isArray(project.steps) ? project.steps : [];
+
+  const createdTs = project.timestamp || project.createdAt || Date.now();
+  const createdDate = new Date(createdTs).toLocaleDateString();
+
   return (
     <motion.section
       className="max-w-4xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200"
@@ -62,28 +68,27 @@ export default function StudentProjectDetail() {
 
       {/* Header */}
       <h1 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mb-4">
-        {project.title}
+        {project.title || "Untitled Project"}
       </h1>
 
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Created on{" "}
-        {new Date(project.timestamp || project.createdAt || Date.now()).toLocaleDateString()}
+        Created on {createdDate}
       </p>
 
       {/* Description */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
         <h2 className="text-xl font-semibold mb-3">📘 Description</h2>
         <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-          {project.description}
+          {project.description || "No description provided."}
         </p>
       </div>
 
       {/* Tech Stack */}
-      {project.techStack?.length > 0 && (
+      {techStack.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">🛠 Tech Stack</h2>
           <ul className="list-disc ml-6 space-y-1 text-gray-700 dark:text-gray-300">
-            {project.techStack.map((t, i) => (
+            {techStack.map((t, i) => (
               <li key={i}>{t}</li>
             ))}
           </ul>
@@ -91,11 +96,11 @@ export default function StudentProjectDetail() {
       )}
 
       {/* Steps */}
-      {project.steps?.length > 0 && (
+      {steps.length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6 mb-10 border">
           <h2 className="text-xl font-semibold mb-3">📌 Project Steps</h2>
           <ul className="list-disc ml-6 space-y-2 text-gray-700 dark:text-gray-300">
-            {project.steps.map((s, i) => (
+            {steps.map((s, i) => (
               <li key={i}>{s}</li>
             ))}
           </ul>
