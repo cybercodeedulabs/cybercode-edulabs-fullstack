@@ -21,6 +21,67 @@ const USER_KEY = "cybercodeUser";
 const USE_FIREBASE = false; // FULL LOCAL MODE ONLY
 
 /* ------------------------------------
+   SAFE LOCALSTORAGE HELPERS
+   (prevent throws during hydration / privacy mode)
+-------------------------------------*/
+const canUseLocalStorage = (() => {
+  let cached = null;
+  return () => {
+    if (cached !== null) return cached;
+    try {
+      if (typeof window === "undefined" || !window.localStorage) {
+        cached = false;
+        return cached;
+      }
+      const testKey = "__cc_test__";
+      try {
+        window.localStorage.setItem(testKey, "1");
+        window.localStorage.removeItem(testKey);
+        cached = true;
+      } catch {
+        cached = false;
+      }
+      return cached;
+    } catch {
+      cached = false;
+      return cached;
+    }
+  };
+})();
+
+const safeParse = (raw, fallback = null) => {
+  try {
+    if (raw === undefined || raw === null) return fallback;
+    if (typeof raw === "object") return raw;
+    if (typeof raw !== "string") return fallback;
+    if (raw.trim() === "") return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+};
+
+const safeGetItem = (key, fallback = null) => {
+  if (!canUseLocalStorage()) return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return safeParse(raw, fallback);
+  } catch {
+    return fallback;
+  }
+};
+
+const safeSetItem = (key, value) => {
+  if (!canUseLocalStorage()) return false;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/* ------------------------------------
    PROVIDER
 -------------------------------------*/
 export const UserProvider = ({ children }) => {
@@ -29,8 +90,8 @@ export const UserProvider = ({ children }) => {
   --------------------------*/
   const [user, setUser] = useState(() => {
     try {
-      const raw = localStorage.getItem(USER_KEY);
-      return raw ? JSON.parse(raw) : null;
+      const parsed = safeGetItem(USER_KEY, null);
+      return parsed || null;
     } catch {
       return null;
     }
@@ -43,8 +104,7 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [generatedProjects, setGeneratedProjects] = useState(() => {
     try {
-      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
+      const parsed = safeGetItem(GENERATED_PROJECTS_KEY, []);
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -53,11 +113,10 @@ export const UserProvider = ({ children }) => {
 
   const loadGeneratedProjectsLocal = async () => {
     try {
-      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      const p = Array.isArray(parsed) ? parsed : [];
-      setGeneratedProjects(p);
-      return p;
+      const p = safeGetItem(GENERATED_PROJECTS_KEY, []);
+      const arr = Array.isArray(p) ? p : [];
+      setGeneratedProjects(arr);
+      return arr;
     } catch {
       setGeneratedProjects([]);
       return [];
@@ -75,7 +134,7 @@ export const UserProvider = ({ children }) => {
       const base = Array.isArray(prev) ? prev : [];
       const next = [...base, withId];
       try {
-        localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+        safeSetItem(GENERATED_PROJECTS_KEY, next);
       } catch {}
       return next;
     });
@@ -88,8 +147,7 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [userGoals, setUserGoals] = useState(() => {
     try {
-      const raw = localStorage.getItem(USER_GOALS_KEY);
-      const parsed = raw ? JSON.parse(raw) : null;
+      const parsed = safeGetItem(USER_GOALS_KEY, null);
       return parsed || null;
     } catch {
       return null;
@@ -105,9 +163,8 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const [personaScores, setPersonaScores] = useState(() => {
     try {
-      const raw = localStorage.getItem(PERSONA_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : {};
-      return parsed || {};
+      const parsed = safeGetItem(PERSONA_STORAGE_KEY, {});
+      return parsed && typeof parsed === "object" ? parsed : {};
     } catch {
       return {};
     }
@@ -126,7 +183,7 @@ export const UserProvider = ({ children }) => {
       }
 
       try {
-        localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(next));
+        safeSetItem(PERSONA_STORAGE_KEY, next);
       } catch {}
       return next;
     });
@@ -134,7 +191,7 @@ export const UserProvider = ({ children }) => {
 
   const getTopPersona = () => {
     const entries = Object.entries(personaScores || {});
-    if (!entries.length)
+    if (!entries || entries.length === 0)
       return { persona: "beginner", score: 0, all: [["beginner", 0]] };
 
     entries.sort((a, b) => b[1] - a[1]);
@@ -158,7 +215,7 @@ export const UserProvider = ({ children }) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         const merged = { ...(prev || {}), ...(next || {}) };
         try {
-          localStorage.setItem(USER_KEY, JSON.stringify(merged));
+          safeSetItem(USER_KEY, merged);
         } catch {}
         return merged;
       });
@@ -177,6 +234,7 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   useEffect(() => {
     if (!USE_FIREBASE) {
+      // Ensure we always load local generated projects on mount
       loadGeneratedProjectsLocal();
       setLoading(false);
     }
@@ -192,29 +250,32 @@ export const UserProvider = ({ children }) => {
 
     const syncProjects = async () => {
       try {
-        const remote = await (firestore && typeof firestore.loadGeneratedProjects === "function"
-          ? firestore.loadGeneratedProjects()
-          : Promise.resolve([]));
+        const loader =
+          firestore && typeof firestore.loadGeneratedProjects === "function"
+            ? firestore.loadGeneratedProjects()
+            : Promise.resolve([]);
 
-        if (Array.isArray(remote) && remote.length > 0) {
+        const remote = await loader;
+
+        const remoteArr = Array.isArray(remote) ? remote : [];
+
+        if (remoteArr.length > 0) {
           if (!mounted) return;
-          setGeneratedProjects(remote);
+          setGeneratedProjects(remoteArr);
           try {
-            localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
+            safeSetItem(GENERATED_PROJECTS_KEY, remoteArr);
           } catch {}
           return;
         }
 
         // fallback: global
-        try {
-          const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
-          const parsed = raw ? JSON.parse(raw) : [];
-          if (Array.isArray(parsed)) {
-            if (!mounted) return;
-            setGeneratedProjects(parsed);
-            return;
-          }
-        } catch {}
+        const raw = safeGetItem(GENERATED_PROJECTS_KEY, []);
+        const parsed = Array.isArray(raw) ? raw : [];
+        if (parsed.length > 0) {
+          if (!mounted) return;
+          setGeneratedProjects(parsed);
+          return;
+        }
 
         if (!mounted) return;
         setGeneratedProjects([]);
@@ -246,14 +307,15 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     try {
-      const remote =
+      const loader =
         firestore && typeof firestore.loadGeneratedProjects === "function"
-          ? await firestore.loadGeneratedProjects()
+          ? firestore.loadGeneratedProjects()
           : null;
+      const remote = loader ? await loader : null;
       if (Array.isArray(remote)) {
         setGeneratedProjects(remote);
         try {
-          localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(remote));
+          safeSetItem(GENERATED_PROJECTS_KEY, remote);
         } catch {}
         return remote;
       }
@@ -262,8 +324,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const raw = localStorage.getItem(GENERATED_PROJECTS_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
+      const parsed = safeGetItem(GENERATED_PROJECTS_KEY, []);
       const arr = Array.isArray(parsed) ? parsed : [];
       setGeneratedProjects(arr);
       return arr;
@@ -275,16 +336,17 @@ export const UserProvider = ({ children }) => {
 
   const saveGeneratedProject = async (project) => {
     try {
-      const saved =
+      const saver =
         firestore && typeof firestore.saveGeneratedProject === "function"
-          ? await firestore.saveGeneratedProject(project)
+          ? firestore.saveGeneratedProject(project)
           : null;
+      const saved = saver ? await saver : null;
       if (saved) {
         const base = Array.isArray(generatedProjects) ? generatedProjects : [];
         const next = [...base, saved];
         setGeneratedProjects(next);
         try {
-          localStorage.setItem(GENERATED_PROJECTS_KEY, JSON.stringify(next));
+          safeSetItem(GENERATED_PROJECTS_KEY, next);
         } catch {}
         return saved;
       }
@@ -314,7 +376,7 @@ export const UserProvider = ({ children }) => {
       setUserGoals(payload);
 
       try {
-        localStorage.setItem(USER_GOALS_KEY, JSON.stringify(payload));
+        safeSetItem(USER_GOALS_KEY, payload);
       } catch {}
 
       return payload;
@@ -328,9 +390,10 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const enrollInCourse = async (courseSlug) => {
     if (!user?.uid) return;
-    setEnrolledCourses((prev) =>
-      prev.includes(courseSlug) ? prev : [...prev, courseSlug]
-    );
+    setEnrolledCourses((prev) => {
+      const arr = Array.isArray(prev) ? prev : [];
+      return arr.includes(courseSlug) ? arr : [...arr, courseSlug];
+    });
     try {
       firestore?.enrollInCourse?.(courseSlug);
     } catch {}
@@ -348,21 +411,31 @@ export const UserProvider = ({ children }) => {
     setUserStats({});
 
     try {
-      localStorage.removeItem(USER_KEY);
-      localStorage.removeItem(GENERATED_PROJECTS_KEY);
-      localStorage.removeItem(PERSONA_STORAGE_KEY);
-      localStorage.removeItem(USER_GOALS_KEY);
+      if (canUseLocalStorage()) {
+        window.localStorage.removeItem(USER_KEY);
+        window.localStorage.removeItem(GENERATED_PROJECTS_KEY);
+        window.localStorage.removeItem(PERSONA_STORAGE_KEY);
+        window.localStorage.removeItem(USER_GOALS_KEY);
+      }
     } catch {}
 
-    Object.keys(localStorage || {})
-      .filter((k) => k.startsWith("cybercode_ai_roadmap"))
-      .forEach((k) => {
-        try {
-          localStorage.removeItem(k);
-        } catch {}
-      });
+    try {
+      if (canUseLocalStorage()) {
+        const keys = Object.keys(window.localStorage || {});
+        keys
+          .filter((k) => typeof k === "string" && k.startsWith("cybercode_ai_roadmap"))
+          .forEach((k) => {
+            try {
+              window.localStorage.removeItem(k);
+            } catch {}
+          });
+      }
+    } catch {}
 
-    window.location.href = "/";
+    // Redirect to root
+    try {
+      window.location.href = "/";
+    } catch {}
   };
 
   /* --------------------------------------
@@ -370,27 +443,29 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const completeLessonFS = async (courseSlug, lessonSlug) => {
     setCourseProgress((prev) => {
+      const safePrev = prev && typeof prev === "object" ? prev : {};
       const existing =
-        prev?.[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
+        safePrev[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
-      const updated = Array.from(
-        new Set([
-          ...(Array.isArray(existing.completedLessons)
-            ? existing.completedLessons
-            : []),
-          lessonSlug,
-        ])
-      );
+      const completedBase = Array.isArray(existing.completedLessons)
+        ? existing.completedLessons
+        : [];
+      const updated = Array.from(new Set([...completedBase, lessonSlug]));
 
       try {
         firestore?.completeLessonFS?.(courseSlug, lessonSlug);
       } catch {}
 
       return {
-        ...prev,
+        ...safePrev,
         [courseSlug]: {
           completedLessons: updated,
           currentLessonIndex: updated.length,
+          sessions: Array.isArray(existing.sessions) ? existing.sessions : [],
+          timeSpentMinutes:
+            typeof existing.timeSpentMinutes === "number"
+              ? existing.timeSpentMinutes
+              : 0,
         },
       };
     });
