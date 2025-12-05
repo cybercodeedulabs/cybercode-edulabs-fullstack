@@ -1,4 +1,4 @@
-// src/App.jsx
+// src/App.jsx New frontend
 import React, { useState, useEffect, Suspense } from "react";
 import {
   BrowserRouter as Router,
