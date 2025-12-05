@@ -1,6 +1,10 @@
 [build]
-  functions = "netlify/functions"
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "18"
+
+[build]
+  environment = { NETLIFY_USE_LEGACY_BUILD_IMAGE = "true" }
