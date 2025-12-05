@@ -150,7 +150,9 @@ export default function useUserData(
 
       const doc = ensureInitialLocalDoc();
 
-      setEnrolledCourses?.(Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []);
+      setEnrolledCourses?.(
+        Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []
+      );
       setCourseProgress?.(doc.courseProgress || {});
       setUserStats?.(doc.userStats || {});
 
@@ -163,8 +165,8 @@ export default function useUserData(
     } catch (e) {
       console.warn("hydrateOnce failed", e);
     }
-    // uid is safe
-  }, [uid]);
+    // uid is stable
+  }, [uid, setEnrolledCourses, setCourseProgress, setUser, setUserGoals, setUserStats]);
 
   /** Persist UI + localStorage together */
   const persistAndNotify = (nextDoc) => {
@@ -188,7 +190,10 @@ export default function useUserData(
       } else {
         // ensure global key is at least an empty array, never leave it undefined or non-array
         try {
-          localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify([]));
+          localStorage.setItem(
+            "cybercode_generated_projects_v1",
+            JSON.stringify([])
+          );
         } catch {}
       }
     } catch (e) {
@@ -197,7 +202,9 @@ export default function useUserData(
 
     // update react state via callbacks
     try {
-      setEnrolledCourses?.(Array.isArray(nextDoc.enrolledCourses) ? nextDoc.enrolledCourses : []);
+      setEnrolledCourses?.(
+        Array.isArray(nextDoc.enrolledCourses) ? nextDoc.enrolledCourses : []
+      );
       setCourseProgress?.(nextDoc.courseProgress || {});
       setUserStats?.(nextDoc.userStats || {});
       setUser?.((u) => (u ? { ...u, isPremium: nextDoc.isPremium } : u));
@@ -212,7 +219,9 @@ export default function useUserData(
 
   const enrollInCourse = async (courseSlug) => {
     const doc = ensureInitialLocalDoc();
-    const set = new Set(Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []);
+    const set = new Set(
+      Array.isArray(doc.enrolledCourses) ? doc.enrolledCourses : []
+    );
     set.add(courseSlug);
 
     persistAndNotify({
@@ -228,7 +237,9 @@ export default function useUserData(
 
     const existing =
       cp[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
-    const set = new Set(Array.isArray(existing.completedLessons) ? existing.completedLessons : []);
+    const set = new Set(
+      Array.isArray(existing.completedLessons) ? existing.completedLessons : []
+    );
     set.add(lessonSlug);
 
     cp[courseSlug] = {
@@ -265,7 +276,8 @@ export default function useUserData(
 
     const last = usrStats.lastStudyDate || "";
     if (last === today) usrStats.streakDays = usrStats.streakDays || 1;
-    else if (last === yesterday) usrStats.streakDays = (usrStats.streakDays || 0) + 1;
+    else if (last === yesterday)
+      usrStats.streakDays = (usrStats.streakDays || 0) + 1;
     else usrStats.streakDays = 1;
 
     usrStats.longestStreak = Math.max(
@@ -394,11 +406,16 @@ export default function useUserData(
   const loadGeneratedProjects = async () => {
     try {
       const doc = ensureInitialLocalDoc();
-      const list = Array.isArray(doc.generatedProjects) ? doc.generatedProjects : [];
+      const list = Array.isArray(doc.generatedProjects)
+        ? doc.generatedProjects
+        : [];
 
       // mirror to global key too
       try {
-        localStorage.setItem("cybercode_generated_projects_v1", JSON.stringify(list));
+        localStorage.setItem(
+          "cybercode_generated_projects_v1",
+          JSON.stringify(list)
+        );
       } catch {}
 
       return list;

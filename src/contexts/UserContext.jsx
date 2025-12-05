@@ -192,7 +192,10 @@ export const UserProvider = ({ children }) => {
 
     const syncProjects = async () => {
       try {
-        const remote = await firestore?.loadGeneratedProjects?.();
+        const remote = await (firestore && typeof firestore.loadGeneratedProjects === "function"
+          ? firestore.loadGeneratedProjects()
+          : Promise.resolve([]));
+
         if (Array.isArray(remote) && remote.length > 0) {
           if (!mounted) return;
           setGeneratedProjects(remote);
@@ -215,7 +218,9 @@ export const UserProvider = ({ children }) => {
 
         if (!mounted) return;
         setGeneratedProjects([]);
-      } catch {
+      } catch (err) {
+        // safe fallback
+        console.warn("syncProjects error", err);
         if (!mounted) return;
         setGeneratedProjects([]);
       } finally {
@@ -226,7 +231,9 @@ export const UserProvider = ({ children }) => {
       }
     };
 
+    // only run sync when user changes or on first mount of provider
     syncProjects();
+
     return () => {
       mounted = false;
     };
@@ -239,7 +246,10 @@ export const UserProvider = ({ children }) => {
   ---------------------------------------*/
   const loadGeneratedProjects = async () => {
     try {
-      const remote = await firestore?.loadGeneratedProjects?.();
+      const remote =
+        firestore && typeof firestore.loadGeneratedProjects === "function"
+          ? await firestore.loadGeneratedProjects()
+          : null;
       if (Array.isArray(remote)) {
         setGeneratedProjects(remote);
         try {
@@ -265,7 +275,10 @@ export const UserProvider = ({ children }) => {
 
   const saveGeneratedProject = async (project) => {
     try {
-      const saved = await firestore?.saveGeneratedProject?.(project);
+      const saved =
+        firestore && typeof firestore.saveGeneratedProject === "function"
+          ? await firestore.saveGeneratedProject(project)
+          : null;
       if (saved) {
         const base = Array.isArray(generatedProjects) ? generatedProjects : [];
         const next = [...base, saved];
@@ -289,7 +302,9 @@ export const UserProvider = ({ children }) => {
   const saveUserGoals = async (goals) => {
     try {
       const payload =
-        (await firestore?.saveUserGoals?.(goals)) ||
+        (firestore && typeof firestore.saveUserGoals === "function"
+          ? await firestore.saveUserGoals(goals)
+          : null) ||
         {
           ...goals,
           updatedAt: Date.now(),
@@ -317,7 +332,7 @@ export const UserProvider = ({ children }) => {
       prev.includes(courseSlug) ? prev : [...prev, courseSlug]
     );
     try {
-      await firestore?.enrollInCourse?.(courseSlug);
+      firestore?.enrollInCourse?.(courseSlug);
     } catch {}
   };
 
@@ -359,7 +374,12 @@ export const UserProvider = ({ children }) => {
         prev?.[courseSlug] || { completedLessons: [], currentLessonIndex: 0 };
 
       const updated = Array.from(
-        new Set([...(Array.isArray(existing.completedLessons) ? existing.completedLessons : []), lessonSlug])
+        new Set([
+          ...(Array.isArray(existing.completedLessons)
+            ? existing.completedLessons
+            : []),
+          lessonSlug,
+        ])
       );
 
       try {
@@ -383,7 +403,9 @@ export const UserProvider = ({ children }) => {
     );
 
   const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed = Array.isArray(courseProgress?.[courseSlug]?.completedLessons)
+    const completed = Array.isArray(
+      courseProgress?.[courseSlug]?.completedLessons
+    )
       ? courseProgress[courseSlug].completedLessons
       : [];
     return totalLessons
