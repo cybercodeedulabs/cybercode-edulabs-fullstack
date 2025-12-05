@@ -444,31 +444,35 @@ export const UserProvider = ({ children }) => {
 
     try {
       if (canUseLocalStorage()) {
+        // remove global keys
         window.localStorage.removeItem(USER_KEY);
         window.localStorage.removeItem(GENERATED_PROJECTS_KEY);
         window.localStorage.removeItem(PERSONA_STORAGE_KEY);
         window.localStorage.removeItem(USER_GOALS_KEY);
-      }
-    } catch { }
 
-    try {
-      if (canUseLocalStorage()) {
-        const keys = Object.keys(window.localStorage || {});
+        // remove ALL per-user documents (CRITICAL FIX)
+        const keys = Object.keys(window.localStorage);
         keys
-          .filter((k) => typeof k === "string" && k.startsWith("cybercode_ai_roadmap"))
-          .forEach((k) => {
+          .filter(k => typeof k === "string" && k.startsWith("cc_userdoc_"))
+          .forEach(k => {
             try {
               window.localStorage.removeItem(k);
             } catch { }
           });
+
+        // remove roadmap drafts
+        keys
+          .filter(k => k.startsWith("cybercode_ai_roadmap"))
+          .forEach(k => window.localStorage.removeItem(k));
       }
     } catch { }
 
-    // Redirect to root
+    // redirect to homepage
     try {
       window.location.href = "/";
     } catch { }
   };
+
 
   /* --------------------------------------
         LESSON PROGRESS
