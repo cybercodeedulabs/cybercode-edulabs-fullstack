@@ -103,37 +103,54 @@ export default function useUserData(
       readinessPct: 0,
     });
 
-    const normalizeCourseProgress = (cp) => {
-      try {
-        if (!cp || typeof cp !== "object") return {};
-        const out = {};
-        Object.keys(cp).forEach((k) => {
-          const entry = cp[k] || {};
-          const completed = Array.isArray(entry.completedLessons)
-            ? entry.completedLessons
-            : [];
+ const normalizeCourseProgress = (cp) => {
+  try {
+    if (!cp || typeof cp !== "object") return {};
 
-          out[k] = {
-            completedLessons: completed,
-            currentLessonIndex:
-              typeof entry.currentLessonIndex === "number"
-                ? entry.currentLessonIndex
-                : completed.length,
-            sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
-            timeSpentMinutes:
-              typeof entry.timeSpentMinutes === "number"
-                ? entry.timeSpentMinutes
-                : 0,
-            updatedAt: entry.updatedAt || null,
-          };
-        });
-        return out;
-      } catch (err) {
-        // If anything goes wrong here, return empty progress
-        console.warn("normalizeCourseProgress failed", err);
-        return {};
+    const out = {};
+
+    Object.keys(cp).forEach((k) => {
+      const entry = cp[k];
+
+      // HARD FIX: skip undefined/null/broken entries
+      if (!entry || typeof entry !== "object") {
+        out[k] = {
+          completedLessons: [],
+          currentLessonIndex: 0,
+          sessions: [],
+          timeSpentMinutes: 0,
+          updatedAt: null,
+        };
+        return;
       }
-    };
+
+      const completed = Array.isArray(entry.completedLessons)
+        ? entry.completedLessons
+        : [];
+
+      out[k] = {
+        completedLessons: completed,
+        currentLessonIndex:
+          typeof entry.currentLessonIndex === "number"
+            ? entry.currentLessonIndex
+            : completed.length,
+
+        sessions: Array.isArray(entry.sessions) ? entry.sessions : [],
+        timeSpentMinutes:
+          typeof entry.timeSpentMinutes === "number"
+            ? entry.timeSpentMinutes
+            : 0,
+        updatedAt: entry.updatedAt || null,
+      };
+    });
+
+    return out;
+  } catch (err) {
+    console.warn("normalizeCourseProgress failed", err);
+    return {};
+  }
+};
+
 
     const readUserDoc = (uid) => {
       if (!uid) return null;
