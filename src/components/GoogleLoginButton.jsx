@@ -10,42 +10,69 @@ export default function GoogleLoginButton() {
 
   const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  const handleLogin = () => {
-    if (!window.google || !CLIENT_ID) {
-      alert("Google Sign-In unavailable. Please try again.");
-      return;
-    }
+ const handleLogin = () => {
+  if (!window.google || !CLIENT_ID) {
+    alert("Google Sign-In unavailable. Please try again.");
+    return;
+  }
 
-    window.google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: (response) => {
-        try {
-          const userData = decodeJwt(response.credential);
+  window.google.accounts.id.initialize({
+    client_id: CLIENT_ID,
+    callback: (response) => {
+      try {
+        const userData = decodeJwt(response.credential);
 
-          const userObj = {
-            name: userData.name,
-            email: userData.email,
-            photo: userData.picture,
-            uid: `google-${userData.sub}`,
-          };
+        const userObj = {
+          name: userData.name,
+          email: userData.email,
+          photo: userData.picture,
+          uid: `google-${userData.sub}`,
+        };
 
-          localStorage.setItem("cybercodeUser", JSON.stringify(userObj));
-          setUser(userObj);
+        // Save session user
+        localStorage.setItem("cybercodeUser", JSON.stringify(userObj));
+        setUser(userObj);
 
-          const redirect =
-            sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+        // 🔥 ENSURE FULL INITIAL cc_userdoc_<uid>
+        const docKey = `cc_userdoc_${userObj.uid}`;
+        const existing = JSON.parse(localStorage.getItem(docKey) || "null");
 
-          sessionStorage.removeItem("redirectAfterLogin");
-          navigate(redirect);
-        } catch (err) {
-          console.error("Login error:", err);
-          alert("Login failed. Try again.");
-        }
-      },
-    });
+        const normalized = {
+          enrolledCourses: existing?.enrolledCourses || [],
+          projects: existing?.projects || [],
+          isPremium: existing?.isPremium || false,
+          hasCertificationAccess: existing?.hasCertificationAccess || false,
+          hasServerAccess: existing?.hasServerAccess || false,
+          courseProgress: existing?.courseProgress || {},
+          userStats: existing?.userStats || {
+            totalMinutes: 0,
+            daily: {},
+            streakDays: 0,
+            longestStreak: 0,
+            lastStudyDate: "",
+          },
+          generatedProjects: existing?.generatedProjects || [],
+          updatedAt: Date.now(),
+        };
 
-    window.google.accounts.id.prompt();
-  };
+        localStorage.setItem(docKey, JSON.stringify(normalized));
+
+        // Redirect back
+        const redirect =
+          sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+        sessionStorage.removeItem("redirectAfterLogin");
+
+        navigate(redirect);
+      } catch (err) {
+        console.error("Login error:", err);
+        alert("Login failed. Try again.");
+      }
+    },
+  });
+
+  window.google.accounts.id.prompt();
+};
+
 
   // Decode JWT returned by Google
   function decodeJwt(token) {
