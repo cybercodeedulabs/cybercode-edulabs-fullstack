@@ -1,6 +1,5 @@
 // src/App.jsx
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -12,6 +11,7 @@ import { motion } from "framer-motion";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 
+// Components
 import AIAssistant from "./components/AIAssistant";
 import ScrollToTop from "./components/ScrollToTop";
 import VoiceWelcome from "./components/VoiceWelcome";
@@ -21,10 +21,13 @@ import Footer from "./components/Footer";
 import CourseCategoryTabs from "./components/CourseCategoryTabs";
 import FeatureItem from "./components/FeatureItem";
 import RegistrationCTA from "./components/RegistrationCTA";
-
 import CourseDetail from "./components/CourseDetail";
 import LessonDetail from "./components/LessonDetail";
+import DashboardLayout from "./components/DashboardLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Testimonials from "./components/Testimonials";
 
+// Pages
 import Courses from "./pages/Courses";
 import Register from "./pages/Register";
 import DemoClass from "./pages/DemoClass";
@@ -38,11 +41,8 @@ import Enroll from "./pages/Enroll";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import Pricing from "./pages/Pricing";
 import EditProfile from "./pages/EditProfile";
-
 import GoalSetupWizard from "./pages/GoalSetupWizard";
 import RoadmapPage from "./pages/RoadmapPage";
-import DashboardLayout from "./components/DashboardLayout";
-
 import CybercodeCloud from "./pages/CybercodeCloud";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
@@ -52,23 +52,34 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Payment from "./pages/Payment";
-
-import { useUser } from "./contexts/UserContext";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Podcast from "./pages/Podcast";
 import Community from "./pages/Community";
 import StudentProjects from "./pages/StudentProjects";
 import StudentProjectDetail from "./pages/StudentProjectDetail";
 import PodcastEpisode from "./pages/PodcastEpisode";
-import Testimonials from "./components/Testimonials";
 import CertificatePage from "./pages/CertificatePage";
 
-/**
- * LayoutWrapper
- * Hides header for dashboard/experiment only (cloud keeps header now).
- */
+// Context
+import { useUser } from "./contexts/UserContext";
+
+/* -------------------------------------------------
+   SAFE LINK — Prevents crashes when "to" is undefined
+--------------------------------------------------- */
+function SafeLink({ to, children, ...rest }) {
+  if (!to) return <span {...rest}>{children}</span>;
+  return (
+    <Link to={to} {...rest}>
+      {children}
+    </Link>
+  );
+}
+
+/* -------------------------------------------------
+   HEADER / FOOTER LAYOUT WRAPPER
+--------------------------------------------------- */
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
+
   const hideHeader =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/experiment");
@@ -82,9 +93,12 @@ const LayoutWrapper = ({ children }) => {
   );
 };
 
-/* HOMEPAGE (unchanged) */
+/* -------------------------------------------------
+   HOMEPAGE (No risky logic changed)
+--------------------------------------------------- */
 function HomePage() {
-  const { user, logout } = useUser();
+  const ctx = useUser() || { user: null, logout: () => {} };
+  const { user, logout } = ctx;
 
   return (
     <>
@@ -104,7 +118,9 @@ function HomePage() {
           >
             Learn. Build. Deploy.
             <br />
-            <span className="text-indigo-400">All in One Tech Ecosystem.</span>
+            <span className="text-indigo-400">
+              All in One Tech Ecosystem.
+            </span>
           </motion.h1>
 
           <motion.p
@@ -125,12 +141,12 @@ function HomePage() {
           >
             {user ? (
               <>
-                <Link
+                <SafeLink
                   to="/dashboard"
                   className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white text-lg"
                 >
-                  👋 Welcome {user.name?.split(" ")[0]} — Dashboard
-                </Link>
+                  👋 Welcome {user.name?.split(" ")[0] ?? "User"} — Dashboard
+                </SafeLink>
                 <button
                   onClick={logout}
                   className="px-8 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white text-lg"
@@ -140,25 +156,25 @@ function HomePage() {
               </>
             ) : (
               <>
-                <Link
+                <SafeLink
                   to="/courses"
                   className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white text-lg"
                 >
                   Explore Courses
-                </Link>
-                <Link
+                </SafeLink>
+                <SafeLink
                   to="/demo"
                   className="px-8 py-3 bg-white text-gray-900 hover:bg-gray-200 rounded-lg text-lg"
                 >
                   Free Demo Class
-                </Link>
-                <Link
+                </SafeLink>
+                <SafeLink
                   to="/register"
                   className="px-8 py-3 bg-gray-100 text-gray-900 border hover:bg-gray-200 rounded-lg text-lg flex items-center gap-2"
                 >
                   <img src="/images/google.svg" className="w-5 h-5" />
                   Sign in with Google
-                </Link>
+                </SafeLink>
               </>
             )}
           </motion.div>
@@ -177,18 +193,18 @@ function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <Link
+              <SafeLink
                 to="/cloud"
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
               >
                 Explore Cloud Platform
-              </Link>
-              <Link
+              </SafeLink>
+              <SafeLink
                 to="/cloud"
                 className="px-6 py-3 bg-white dark:bg-gray-800 border dark:border-gray-600 shadow rounded-lg"
               >
                 Join Waitlist
-              </Link>
+              </SafeLink>
             </div>
           </div>
 
@@ -247,13 +263,13 @@ function HomePage() {
   );
 }
 
-/* MAIN APP COMPONENT */
+/* -------------------------------------------------
+   MAIN APP INNER ROUTES (Stabilized)
+--------------------------------------------------- */
 function AppInner() {
-  // we keep showAI state but mount assistant only on learning/dashboard areas
-  const [showAI, setShowAI] = useState(false);
   const location = useLocation();
+  const [showAI, setShowAI] = useState(false);
 
-  // define where AI assistant is useful — only mount on these sections
   const aiAllowed = [
     "/dashboard",
     "/courses",
@@ -264,129 +280,128 @@ function AppInner() {
   ];
 
   useEffect(() => {
-    // decide whether to mount AI based on current path
     const path = location.pathname || "/";
     const allowed = aiAllowed.some((p) => path.startsWith(p));
+
     if (allowed) {
-      // small delay to avoid heavy blocking at initial navigation
       const t = setTimeout(() => setShowAI(true), 300);
       return () => clearTimeout(t);
     } else {
       setShowAI(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   return (
     <>
       <LayoutWrapper>
         <main className="flex-grow">
-          <Routes>
-            {/* PUBLIC ROUTES */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/demo" element={<DemoClass />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/podcast" element={<Podcast />} />
-            <Route path="/podcast/:id" element={<PodcastEpisode />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/student-projects" element={<StudentProjects />} />
-            <Route
-              path="/student-projects/:id"
-              element={<StudentProjectDetail />}
-            />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/cloud" element={<CybercodeCloud />} />
-            <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+          <Suspense fallback={<div className="p-8 text-center">Loading…</div>}>
+            <Routes>
+              {/* PUBLIC ROUTES */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/demo" element={<DemoClass />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/podcast" element={<Podcast />} />
+              <Route path="/podcast/:id" element={<PodcastEpisode />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/student-projects" element={<StudentProjects />} />
+              <Route path="/student-projects/:id" element={<StudentProjectDetail />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/cloud" element={<CybercodeCloud />} />
+              <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+              <Route path="/legal" element={<LegalIndex />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/cookie" element={<CookiePolicy />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/payment" element={<Payment />} />
 
-            <Route path="/legal" element={<LegalIndex />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfUse />} />
-            <Route path="/refund" element={<RefundPolicy />} />
-            <Route path="/cookie" element={<CookiePolicy />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/payment" element={<Payment />} />
+              <Route path="/courses/:courseSlug" element={<CourseDetail />} />
 
-            {/* NOTE: Course page is PUBLIC so visitors can view course details before login */}
-            <Route path="/courses/:courseSlug" element={<CourseDetail />} />
+              {/* PROTECTED ROUTES */}
+              <Route
+                path="/courses/:courseSlug/lessons/:lessonSlug"
+                element={
+                  <ProtectedRoute>
+                    <LessonDetail />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* PROTECTED ROUTES */}
-            <Route
-              path="/courses/:courseSlug/lessons/:lessonSlug"
-              element={
-                <ProtectedRoute>
-                  <LessonDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/certificate/:courseSlug"
-              element={
-                <ProtectedRoute>
-                  <CertificatePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/labs"
-              element={
-                <ProtectedRoute>
-                  <Labs />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/certificate/:courseSlug"
+                element={
+                  <ProtectedRoute>
+                    <CertificatePage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* ENROLL is public — allows friendly redirect-to-login flow inside page */}
-            <Route path="/enroll/:courseSlug" element={<Enroll />} />
+              <Route
+                path="/labs"
+                element={
+                  <ProtectedRoute>
+                    <Labs />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* DASHBOARD (protected layout + nested routes) */}
-            <Route
-              path="/dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="roadmap" element={<RoadmapPage />} />
-            </Route>
+              {/* ENROLL (public) */}
+              <Route path="/enroll/:courseSlug" element={<Enroll />} />
 
-            {/* GOALS */}
-            <Route
-              path="/set-goals"
-              element={
-                <ProtectedRoute>
-                  <GoalSetupWizard />
-                </ProtectedRoute>
-              }
-            />
+              {/* DASHBOARD */}
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="roadmap" element={<RoadmapPage />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* GOALS */}
+              <Route
+                path="/set-goals"
+                element={
+                  <ProtectedRoute>
+                    <GoalSetupWizard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* FALLBACK */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <CookieBanner />
       </LayoutWrapper>
 
-      {/* Conditionally mount AI assistant to reduce load on non-learning pages */}
       {showAI && <AIAssistant />}
     </>
   );
 }
 
+/* -------------------------------------------------
+   APP ROOT (Router + Providers)
+--------------------------------------------------- */
 function App() {
   return (
     <ThemeProvider>
       <Router>
         <ScrollToTop />
         <VoiceWelcome />
-
         <AppInner />
       </Router>
     </ThemeProvider>

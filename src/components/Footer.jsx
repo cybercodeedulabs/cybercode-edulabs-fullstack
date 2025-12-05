@@ -7,15 +7,15 @@ function Footer() {
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-20">
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-10 text-gray-700 dark:text-gray-300">
-
+        
         {/* A. Brand / Description */}
         <div>
           <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mb-3">
             Cybercode Suite
           </h2>
           <p className="text-sm leading-relaxed mb-4">
-            A unified learning & cloud ecosystem — from real-time IT courses to India’s upcoming
-            developer cloud platform.
+            A unified learning & cloud ecosystem — from real-time IT courses 
+            to India’s upcoming developer cloud platform.
           </p>
 
           {/* Socials */}
@@ -28,6 +28,7 @@ function Footer() {
             >
               <Icon icon="mdi:linkedin" width={18} height={18} />
             </a>
+
             <a
               href="https://youtube.com/@cybercodeedulabs"
               target="_blank"

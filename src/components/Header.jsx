@@ -11,13 +11,33 @@ function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // 🌙 Global theme
   const { darkMode, setDarkMode } = useTheme();
-
-  const { user, logout } = useUser();
+  const { user, logout, loading, hydrated } = useUser();
   const navigate = useNavigate();
 
-  // Rotating taglines
+  // 🛡 Prevent header from rendering before hydration (fixes React #311)
+  if (loading || !hydrated) {
+    return (
+      <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-md">
+        <div className="px-3 py-2 max-w-[1280px] mx-auto">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+        </div>
+      </header>
+    );
+  }
+
+  // Safe fallbacks
+  const displayName =
+    user?.name ||
+    user?.email?.split("@")[0] ||
+    "Learner";
+
+  const displayPhoto =
+    user?.photo ||
+    user?.picture ||
+    "/images/default-avatar.png";
+
+  // Taglines
   const taglines = useMemo(
     () => [
       "India’s First Cloud & EdTech Hybrid",
@@ -35,7 +55,6 @@ function Header() {
     return () => clearInterval(interval);
   }, [taglines.length]);
 
-  // Scroll shadow
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handler);
@@ -43,11 +62,9 @@ function Header() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/");
+    await logout(); // logout already redirects
   };
 
-  // 🧠 Memoize links to avoid infinite renders
   const links = useMemo(
     () => [
       { name: "Home", to: "/" },
@@ -63,7 +80,6 @@ function Header() {
 
   const navClassFor = (link) => {
     const base = ["transition-all", "font-medium"];
-
     if (link.highlight)
       return [
         ...base,
@@ -71,25 +87,14 @@ function Header() {
         "dark:text-indigo-400",
         "font-semibold",
       ].join(" ");
-
     if (link.demo)
       return [
         ...base,
-        "px-4",
-        "py-1.5",
-        "bg-green-600",
-        "hover:bg-green-700",
-        "text-white",
-        "rounded-full",
-        "shadow-xl",
-        "animate-pulse-slow",
+        "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-xl animate-pulse-slow",
       ].join(" ");
-
     return [
       ...base,
-      "text-gray-800",
-      "dark:text-gray-200",
-      "hover:text-indigo-500",
+      "text-gray-800 dark:text-gray-200 hover:text-indigo-500",
     ].join(" ");
   };
 
@@ -99,15 +104,13 @@ function Header() {
         scrolled ? "shadow-lg" : "shadow-md"
       }`}
     >
-      {/* VISION STRIP */}
+      {/* Vision Strip */}
       <div className="bg-indigo-600 text-white text-xs md:text-sm py-1.5 overflow-hidden">
         <p className="animate-marquee font-medium tracking-wide">
-          ☁️ Cybercode Cloud — India's Own Developer Cloud • ⚡ EduLabs —
-          Real-Time IT Courses & Labs • 🌐 Learn, Build & Deploy
+          ☁️ Cybercode Cloud — India's Own Developer Cloud • ⚡ EduLabs — Real-Time IT Courses & Labs • 🌐 Learn, Build & Deploy
         </p>
       </div>
 
-      {/* MAIN HEADER */}
       <div className="px-3 py-2 md:px-6 md:py-3 flex justify-between items-center max-w-[1280px] mx-auto">
         {/* Logo */}
         <div
@@ -127,28 +130,17 @@ function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {links.map((link) =>
-            link.demo ? (
-              <Link key={link.name} to={link.to} className={navClassFor(link)}>
-                <span className="flex items-center gap-2">
-                  <span>Demo Class</span>
-                  <span className="bg-white text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
-                    FREE
-                  </span>
-                </span>
-              </Link>
-            ) : (
-              <Link key={link.name} to={link.to} className={navClassFor(link)}>
-                {link.name === "Cloud" ? "☁️ Cloud" : link.name}
-              </Link>
-            )
-          )}
+          {links.map((link) => (
+            <Link key={link.name} to={link.to} className={navClassFor(link)}>
+              {link.name === "Cloud" ? "☁️ Cloud" : link.name}
+            </Link>
+          ))}
 
           {/* Auth */}
           {user ? (
             <div className="flex items-center space-x-3">
               <img
-                src={user.photo}
+                src={displayPhoto}
                 className="w-9 h-9 rounded-full cursor-pointer border hover:scale-105"
                 onClick={() => navigate("/dashboard")}
               />
@@ -187,7 +179,7 @@ function Header() {
           </button>
         </nav>
 
-        {/* MOBILE NAV BUTTONS */}
+        {/* Mobile Menu Buttons */}
         <div className="flex items-center space-x-2 md:hidden">
           <button
             onClick={() => setDarkMode(!darkMode)}
@@ -195,7 +187,6 @@ function Header() {
           >
             {darkMode ? "☀️" : "🌙"}
           </button>
-
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
@@ -209,7 +200,7 @@ function Header() {
         </div>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* Mobile Menu */}
       <div
         className={`md:hidden bg-white dark:bg-gray-800 border-t shadow-md ${
           menuOpen ? "block" : "hidden"
@@ -234,8 +225,11 @@ function Header() {
           {user ? (
             <>
               <div className="flex items-center space-x-3 mt-3">
-                <img src={user.photo} className="w-8 h-8 rounded-full border" />
-                <span>{user.name}</span>
+                <img
+                  src={displayPhoto}
+                  className="w-8 h-8 rounded-full border"
+                />
+                <span>{displayName}</span>
               </div>
               <button
                 onClick={handleLogout}

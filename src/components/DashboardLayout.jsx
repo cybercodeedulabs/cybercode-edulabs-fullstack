@@ -5,25 +5,47 @@ import Sidebar from "./Sidebar";
 import { useUser } from "../contexts/UserContext";
 import { Icon } from "@iconify/react";
 
+/**
+ * Ultra-stable Dashboard Layout
+ * - Matches ProtectedRoute logic exactly
+ * - Uses user.email (universal identity)
+ * - Never renders layout shell before hydration is 100% complete
+ */
 const DashboardLayout = () => {
   const { user, loading, hydrated } = useUser();
   const navigate = useNavigate();
 
-  // 🚧 Do not render dashboard shell until user is ready
-  if (loading || !hydrated || !user?.uid) {
+  // 🟡 Prevent premature dashboard rendering
+  if (loading || !hydrated) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center text-gray-500">
-        Loading dashboard…
+      <div className="w-full min-h-screen flex items-center justify-center text-gray-600 dark:text-gray-300">
+        <div className="text-center space-y-2">
+          <div className="text-xl font-semibold">Loading dashboard…</div>
+          <div className="text-sm opacity-70">Please wait…</div>
+        </div>
       </div>
     );
   }
 
+  // 🔴 If user is not authenticated → do NOT show dashboard shell
+  if (!user || !user.email) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center text-gray-600 dark:text-gray-300">
+        <div className="text-center space-y-2">
+          <div className="text-xl font-semibold">Access denied</div>
+          <div className="text-sm opacity-70">Please sign in again.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🟢 Safe to render full dashboard layout
   return (
     <div className="cloud-console flex min-h-screen bg-slate-100 dark:bg-slate-900">
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        {/* Internal dashboard header */}
+        {/* INTERNAL DASHBOARD HEADER */}
         <header className="bg-slate-800 dark:bg-slate-900 text-white px-6 py-3 flex items-center justify-between border-b border-slate-700">
           <div className="flex items-center gap-4">
             <button

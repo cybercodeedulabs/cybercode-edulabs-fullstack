@@ -48,7 +48,7 @@ export default function LessonDetail() {
     enrolledCourses = [],
     courseProgress = {},
     updatePersonaScore,
-    completeLessonFS,
+    completeLessonLocal,
     setCourseProgress,
     recordStudySession, // ⏱ used for time tracking
   } = useUser();
@@ -144,7 +144,7 @@ export default function LessonDetail() {
   }
 
   // ------------------------------------------------------
-  // FIRESTORE-BACKED LESSON COMPLETION
+  // LOCAL-ONLY LESSON COMPLETION
   // ------------------------------------------------------
   const handleComplete = async () => {
     if (!user) {
@@ -164,39 +164,11 @@ export default function LessonDetail() {
       // prevent the blocking effect from immediately redirecting while update propagates
       setSuppressRedirect(true);
 
-      // completeLessonFS should update Firestore and also update context state via snapshot
-      if (typeof completeLessonFS === "function") {
-        await completeLessonFS(courseSlug, lessonSlug);
-
-        // optimistic local update: if setCourseProgress provided, update local immediately
-        if (typeof setCourseProgress === "function") {
-          setCourseProgress((prev = {}) => {
-            const prevCourse = prev[courseSlug] || {
-              completedLessons: [],
-              currentLessonIndex: 0,
-            };
-            const already =
-              Array.isArray(prevCourse.completedLessons) &&
-              prevCourse.completedLessons.includes(lessonSlug);
-            if (already) return prev; // already present
-
-            const nextCompleted = Array.isArray(prevCourse.completedLessons)
-              ? [...prevCourse.completedLessons, lessonSlug]
-              : [lessonSlug];
-
-            return {
-              ...prev,
-              [courseSlug]: {
-                ...prevCourse,
-                completedLessons: nextCompleted,
-                currentLessonIndex: nextCompleted.length,
-                updatedAt: new Date().toISOString(),
-              },
-            };
-          });
-        }
+      if (typeof completeLessonLocal === "function") {
+        // completeLessonLocal updates context state and per-user doc
+        await completeLessonLocal(courseSlug, lessonSlug);
       } else {
-        console.warn("completeLessonFS not available.");
+        console.warn("completeLessonLocal not available on context.");
       }
 
       // award persona points for completing this lesson (full deltas)
@@ -236,7 +208,7 @@ export default function LessonDetail() {
   };
 
   // ------------------------------------------------------
-  // CODE RUNNER LOGIC (UNCHANGED from your file)
+  // CODE RUNNER LOGIC (UNCHANGED)
   // ------------------------------------------------------
   const handleRunCode = async (idx, language, defaultCode) => {
     const code = codeInputs[idx] ?? defaultCode ?? "";

@@ -1,11 +1,36 @@
 // src/pages/Register.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 import { useUser } from "../contexts/UserContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const { user } = useUser();
+  const { user, loading, hydrated } = useUser();
+  const navigate = useNavigate();
+
+  // 🛡 1. Wait for hydration before rendering Register UI
+  if (loading || !hydrated) {
+    return (
+      <section className="w-full min-h-screen flex items-center justify-center text-gray-500 dark:text-gray-300">
+        Loading…
+      </section>
+    );
+  }
+
+  // 🟢 2. Auto-redirect if user is already signed in
+  useEffect(() => {
+    if (!user || !user.email) return;
+
+    const saved = sessionStorage.getItem("redirectAfterLogin");
+
+    if (saved) {
+      sessionStorage.removeItem("redirectAfterLogin");
+      navigate(saved, { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   return (
     <section className="relative bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 py-24 px-6">
@@ -45,39 +70,31 @@ export default function Register() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.6 }}
         >
-          {user ? (
-            <p className="text-lg font-medium text-green-600 dark:text-green-400">
-              ✅ Welcome, {user.name}!
-            </p>
-          ) : (
-            <GoogleLoginButton />
-          )}
+          <GoogleLoginButton />
         </motion.div>
 
         {/* Footer */}
-        {!user && (
-          <motion.p
-            className="text-sm text-gray-500 dark:text-gray-400 mt-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
+        <motion.p
+          className="text-sm text-gray-500 dark:text-gray-400 mt-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+        >
+          By registering, you agree to our{" "}
+          <a
+            href="/terms"
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
           >
-            By registering, you agree to our{" "}
-            <a
-              href="/terms"
-              className="text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              Terms of Use
-            </a>{" "}
-            and{" "}
-            <a
-              href="/privacy"
-              className="text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              Privacy Policy
-            </a>.
-          </motion.p>
-        )}
+            Terms of Use
+          </a>{" "}
+          and{" "}
+          <a
+            href="/privacy"
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Privacy Policy
+          </a>.
+        </motion.p>
       </div>
     </section>
   );

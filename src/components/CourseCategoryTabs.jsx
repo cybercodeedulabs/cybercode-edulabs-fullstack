@@ -1,4 +1,4 @@
-// src/components/ui/CourseCategoryTabs.jsx
+// src/components/CourseCategoryTabs.jsx
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,6 @@ const defaultCourseCategories = {
   ],
 };
 
-
 // COURSE CARD
 function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
   return (
@@ -60,9 +59,7 @@ function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
           {title}
         </Link>
 
-        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-          {description}
-        </p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{description}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -90,7 +87,6 @@ function CourseCard({ title, slug, description, isEnrolled, onEnroll }) {
   );
 }
 
-
 // MAIN COMPONENT
 export default function CourseCategoryTabs() {
   const courseCategories = useMemo(() => defaultCourseCategories, []);
@@ -105,32 +101,39 @@ export default function CourseCategoryTabs() {
   const { user, enrolledCourses = [], enrollInCourse } = useUser();
   const navigate = useNavigate();
 
-  // FIXED EFFECT
+  // Move underline under active category
   useEffect(() => {
     const idx = categories.indexOf(activeCategory);
     const activeTab = tabRefs.current[idx];
 
     if (activeTab && tabsContainerRef.current) {
-      const containerRect = tabsContainerRef.current.getBoundingClientRect();
-      const tabRect = activeTab.getBoundingClientRect();
+      const container = tabsContainerRef.current.getBoundingClientRect();
+      const tab = activeTab.getBoundingClientRect();
 
       setUnderlineStyle({
-        width: tabRect.width,
-        left: tabRect.left - containerRect.left,
+        width: tab.width,
+        left: tab.left - container.left,
       });
     }
-  }, [activeCategory, categories.length]); // <— SAFE DEPENDENCIES
+  }, [activeCategory, categories.length]);
 
-  const handleEnroll = (slug) => {
+  // Safe enrollment
+  const handleEnroll = async (slug) => {
     if (!user) return navigate("/register");
 
     enrollInCourse(slug);
 
-    const courseLessons = lessonsData?.[slug] || [];
-    const firstLessonSlug = courseLessons[0]?.slug;
+    // Allow React state to commit
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    if (firstLessonSlug) navigate(`/courses/${slug}/lessons/${firstLessonSlug}`);
-    else navigate(`/courses/${slug}`);
+    const courseLessons = lessonsData?.[slug] || [];
+    const firstLesson = courseLessons?.[0]?.slug;
+
+    if (firstLesson) {
+      navigate(`/courses/${slug}/lessons/${firstLesson}`);
+    } else {
+      navigate(`/courses/${slug}`);
+    }
   };
 
   return (
@@ -164,6 +167,7 @@ export default function CourseCategoryTabs() {
         />
       </div>
 
+      {/* COURSES GRID */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeCategory}
