@@ -702,7 +702,7 @@ app.get('/api/users', (req, res) => {
   ]);
 });
 
-app.listen(4000, () => console.log('✅ API running at http://localhost:4000'));`
+app.listen(process.env.PORT || 4000, () => console.log('✅ API running'));`
     },
     {
       type: "text",
@@ -722,7 +722,7 @@ function UserList() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:4000/api/users")
+    fetch("https://example.com/api/users")
       .then(res => res.json())
       .then(data => setUsers(data))
       .catch(err => console.error(err));
