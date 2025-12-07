@@ -636,6 +636,23 @@ export const UserProvider = ({ children }) => {
   );
 
   // ---------- GOALS ----------
+
+    const loadUserGoals = useCallback(async () => {
+    if (!token || !user?.uid) return null;
+    try {
+      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
+      if (!res.ok) throw new Error("goals fetch failed");
+      const j = await res.json();
+      if (j?.goals) {
+        setUserGoalsState(j.goals);
+        return j.goals;
+      }
+      return null;
+    } catch (err) {
+      console.warn("loadUserGoals failed", err);
+      return null;
+    }
+  }, [API, token, user]);
   /**
    * saveUserGoals supports:
    *  - saveUserGoals(hoursNumber)   // legacy behavior
@@ -714,22 +731,7 @@ export const UserProvider = ({ children }) => {
     [API, token, user, authHeaders, loadUserGoals]
   );
 
-  const loadUserGoals = useCallback(async () => {
-    if (!token || !user?.uid) return null;
-    try {
-      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
-      if (!res.ok) throw new Error("goals fetch failed");
-      const j = await res.json();
-      if (j?.goals) {
-        setUserGoalsState(j.goals);
-        return j.goals;
-      }
-      return null;
-    } catch (err) {
-      console.warn("loadUserGoals failed", err);
-      return null;
-    }
-  }, [API, token, user]);
+
 
   // ---------- LOGOUT ----------
   const logout = useCallback(() => {
