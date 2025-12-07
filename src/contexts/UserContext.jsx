@@ -101,6 +101,33 @@ const normalizeGoals = (raw) => {
   return out;
 };
 
+/**
+ * Lightweight JWT payload decode (no verification).
+ * Extracts payload from a JWT (base64url decode) and returns parsed object or null.
+ * Used only to obtain uid for client-side hydration when token exists.
+ */
+const decodeJwt = (token) => {
+  try {
+    if (!token || typeof token !== "string") return null;
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    // atob expects padded base64 length; add padding if necessary
+    const padded = base64 + "==".slice((base64.length + 3) % 4);
+    const jsonPayload = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    // silent fail
+    return null;
+  }
+};
+
 // ---------- Provider ----------
 export const UserProvider = ({ children }) => {
   // Core
@@ -845,8 +872,18 @@ export const UserProvider = ({ children }) => {
             setUser(cachedUser);
             await loadUserProfile(cachedUser.uid);
           } else {
-            // no cached user: wait for explicit loginWithGoogle or use a /auth/me route if backend exposes it
-            // Optional improvement: implement /auth/me on backend to return user from token
+            // if no cached user, attempt to extract uid from JWT and load profile
+            const payload = decodeJwt(token);
+            const uidFromToken = payload?.uid || payload?.sub || null;
+            if (uidFromToken) {
+              try {
+                await loadUserProfile(uidFromToken);
+              } catch (err) {
+                // ignore individual profile load error
+              }
+            } else {
+              // no uid available from token: wait for explicit loginWithGoogle or implement /auth/me on backend
+            }
           }
         } catch (err) {
           console.warn("hydration loadUserProfile failed", err);
