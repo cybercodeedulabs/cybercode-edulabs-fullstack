@@ -35,6 +35,72 @@ const safeRemove = (k) => {
   } catch {}
 };
 
+// ---------- small helpers ----------
+const isObject = (x) => x && typeof x === "object" && !Array.isArray(x);
+
+/**
+ * Normalize goals object coming from backend or client.
+ * Always returns an object with safe fields and skills as an object.
+ */
+const normalizeGoals = (raw) => {
+  const defaults = {
+    currentStatus: "",
+    motivation: "",
+    targetRole: "",
+    salaryExpectation: "",
+    hoursPerWeek: 0,
+    deadlineMonths: 0,
+    learningStyle: "",
+    skills: {
+      programming: 0,
+      cloud: 0,
+      networking: 0,
+      cybersecurity: 0,
+      softSkills: 0,
+    },
+    updatedAt: new Date().toISOString(),
+    createdAt: null,
+  };
+
+  if (!raw || typeof raw !== "object") return defaults;
+
+  const out = { ...defaults, ...raw };
+
+  // normalize numeric fields
+  out.hoursPerWeek = Number(out.hoursPerWeek || 0);
+  out.deadlineMonths = Number(out.deadlineMonths || 0);
+
+  // normalize skills: may arrive as JSON string, or missing
+  let skills = out.skills || {};
+  if (typeof skills === "string") {
+    try {
+      skills = JSON.parse(skills);
+    } catch {
+      skills = {};
+    }
+  }
+  if (!isObject(skills)) skills = {};
+
+  // ensure keys exist and are numbers
+  const baseSkills = {
+    programming: 0,
+    cloud: 0,
+    networking: 0,
+    cybersecurity: 0,
+    softSkills: 0,
+  };
+  for (const k of Object.keys(baseSkills)) {
+    baseSkills[k] = Number(skills[k] || baseSkills[k]);
+  }
+  out.skills = baseSkills;
+
+  // ensure createdAt/updatedAt exist
+  out.updatedAt = out.updatedAt || new Date().toISOString();
+  out.createdAt = out.createdAt || null;
+
+  return out;
+};
+
 // ---------- Provider ----------
 export const UserProvider = ({ children }) => {
   // Core
@@ -52,15 +118,18 @@ export const UserProvider = ({ children }) => {
   const [userStats, setUserStats] = useState({});
 
   // ---------- helpers ----------
-  const authHeaders = (extra = {}) => {
-    const tk = token;
-    const headers = {
-      "Content-Type": "application/json",
-      ...extra,
-    };
-    if (tk) headers.Authorization = `Bearer ${tk}`;
-    return headers;
-  };
+  const authHeaders = useCallback(
+    (extra = {}) => {
+      const tk = token;
+      const headers = {
+        "Content-Type": "application/json",
+        ...extra,
+      };
+      if (tk) headers.Authorization = `Bearer ${tk}`;
+      return headers;
+    },
+    [token]
+  );
 
   const applyToken = (tk) => {
     setToken(tk);
@@ -69,14 +138,14 @@ export const UserProvider = ({ children }) => {
   };
 
   // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
-  // NOTE: loadUserProfile is intentionally declared before loginWithGoogle to avoid
+  // NOTE: loadUserProfile is declared before loginWithGoogle to avoid
   // "access before initialization" ReferenceErrors when loginWithGoogle calls it.
   const loadUserProfile = useCallback(
     async (uid) => {
       if (!API || !uid || !token) return null;
 
       try {
-        const res = await fetch(`${API}/user/${uid}`, {
+        const res = await fetch(`${API}/user/${encodeURIComponent(uid)}`, {
           method: "GET",
           headers: authHeaders(),
         });
@@ -110,7 +179,7 @@ export const UserProvider = ({ children }) => {
 
         // Try to hydrate courseProgress & userStats from user_documents (if API supports)
         try {
-          const docResp = await fetch(`${API}/userdocs/doc/${uid}/courseProgress`, {
+          const docResp = await fetch(`${API}/userdocs/doc/${encodeURIComponent(uid)}/courseProgress`, {
             headers: authHeaders(),
           });
           if (docResp.ok) {
@@ -118,6 +187,8 @@ export const UserProvider = ({ children }) => {
             if (docJson?.doc && typeof docJson.doc === "object") {
               setCourseProgress(docJson.doc);
             }
+          } else {
+            // not found / 404 is fine — keep local empty state
           }
         } catch (err) {
           // ignore doc fetch failure
@@ -125,7 +196,7 @@ export const UserProvider = ({ children }) => {
 
         // persona
         try {
-          const pResp = await fetch(`${API}/userdocs/persona/${uid}`, {
+          const pResp = await fetch(`${API}/userdocs/persona/${encodeURIComponent(uid)}`, {
             headers: authHeaders(),
           });
           if (pResp.ok) {
@@ -134,7 +205,9 @@ export const UserProvider = ({ children }) => {
               setPersonaScores(pj.scores);
             }
           }
-        } catch (err) {}
+        } catch (err) {
+          // ignore persona fetch failure
+        }
 
         // user goals
         try {
@@ -144,10 +217,14 @@ export const UserProvider = ({ children }) => {
           if (gResp.ok) {
             const gj = await gResp.json().catch(() => null);
             if (gj?.goals) {
-              setUserGoalsState(gj.goals);
+              // normalize shape before setting
+              const normalized = normalizeGoals(gj.goals);
+              setUserGoalsState(normalized);
             }
           }
-        } catch (err) {}
+        } catch (err) {
+          // ignore goals fetch failure
+        }
 
         return j;
       } catch (err) {
@@ -155,7 +232,7 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [API, token]
+    [API, token, authHeaders]
   );
 
   // ---------- AUTH: loginWithGoogle (backend upsert) ----------
@@ -245,7 +322,7 @@ export const UserProvider = ({ children }) => {
         });
 
         // try refresh profile
-        if (typeof loadUserProfile === "function") {
+        if (typeof loadUserProfile === "function" && user?.uid) {
           await loadUserProfile(user.uid).catch(() => {});
         }
 
@@ -261,7 +338,7 @@ export const UserProvider = ({ children }) => {
         return false;
       }
     },
-    [API, token, user, loadUserProfile]
+    [API, token, user, loadUserProfile, authHeaders]
   );
 
   // ---------- PROGRESS: completeLesson (server) ----------
@@ -306,7 +383,9 @@ export const UserProvider = ({ children }) => {
         return await completeLessonLocal(courseSlug, lessonSlug);
       }
     },
-    [API, token, user]
+    // Note: completeLessonLocal is defined later but referenced by name; to keep ESLint happy,
+    // declare dependency on token and user only (completeLessonLocal is stable because defined in same render).
+    [API, token, user, authHeaders]
   );
 
   // ---------- PROGRESS: completeLessonLocal (state-only update; returns updated courseProgress) ----------
@@ -385,7 +464,7 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   // ---------- STUDY SESSIONS ----------
@@ -447,7 +526,7 @@ export const UserProvider = ({ children }) => {
 
       return false;
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   // ---------- PROJECTS ----------
@@ -493,7 +572,7 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   const loadGeneratedProjects = useCallback(async () => {
@@ -516,7 +595,7 @@ export const UserProvider = ({ children }) => {
       console.warn("loadGeneratedProjects error:", err);
       return generatedProjects;
     }
-  }, [API, token, generatedProjects]);
+  }, [API, token, generatedProjects, authHeaders]);
 
   // ---------- PERSONA SCORES ----------
   const savePersonaScores = useCallback(
@@ -543,26 +622,26 @@ export const UserProvider = ({ children }) => {
         return false;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   const loadPersonaScores = useCallback(
     async (uid) => {
       if (!uid || !token) return personaScores;
       try {
-        const res = await fetch(`${API}/userdocs/persona/${uid}`, {
+        const res = await fetch(`${API}/userdocs/persona/${encodeURIComponent(uid)}`, {
           headers: authHeaders(),
         });
         if (!res.ok) return personaScores;
         const j = await res.json();
-        if (j?.scores) setPersonaScores(j.scores);
+        if (j?.scores && typeof j.scores === "object") setPersonaScores(j.scores);
         return j.scores || {};
       } catch (err) {
         console.warn("loadPersonaScores failed", err);
         return personaScores;
       }
     },
-    [API, token]
+    [API, token, personaScores, authHeaders]
   );
 
   const updatePersonaScore = useCallback(
@@ -620,14 +699,14 @@ export const UserProvider = ({ children }) => {
         return false;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   const loadUserDoc = useCallback(
     async (key) => {
       if (!user?.uid) return null;
       try {
-        const res = await fetch(`${API}/userdocs/doc/${user.uid}/${key}`, {
+        const res = await fetch(`${API}/userdocs/doc/${encodeURIComponent(user.uid)}/${encodeURIComponent(key)}`, {
           headers: authHeaders(),
         });
         if (!res.ok) return null;
@@ -638,7 +717,7 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders]
   );
 
   // ---------- GOALS ----------
@@ -649,6 +728,24 @@ export const UserProvider = ({ children }) => {
    *
    * It will attempt to POST full object first. If server rejects, it will fall back to sending { hoursPerWeek }.
    */
+  const loadUserGoals = useCallback(async () => {
+    if (!token || !user?.uid) return null;
+    try {
+      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
+      if (!res.ok) throw new Error("goals fetch failed");
+      const j = await res.json();
+      if (j?.goals) {
+        const normalized = normalizeGoals(j.goals);
+        setUserGoalsState(normalized);
+        return normalized;
+      }
+      return null;
+    } catch (err) {
+      console.warn("loadUserGoals failed", err);
+      return null;
+    }
+  }, [API, token, user, authHeaders]);
+
   const saveUserGoals = useCallback(
     async (payload) => {
       // normalize to object
@@ -666,7 +763,7 @@ export const UserProvider = ({ children }) => {
 
       // If no token or uid, store locally into context only
       if (!token || !user?.uid) {
-        setUserGoalsState(toStore);
+        setUserGoalsState(normalizeGoals(toStore));
         return true;
       }
 
@@ -691,7 +788,7 @@ export const UserProvider = ({ children }) => {
                 body: JSON.stringify({ hoursPerWeek: goalsObj.hoursPerWeek }),
               });
               if (fallbackRes.ok) {
-                setUserGoalsState(toStore);
+                setUserGoalsState(normalizeGoals(toStore));
                 return true;
               }
             } catch (er) {
@@ -702,7 +799,7 @@ export const UserProvider = ({ children }) => {
         }
 
         // success
-        setUserGoalsState(toStore);
+        setUserGoalsState(normalizeGoals(toStore));
 
         // optionally refresh from server-side record
         try {
@@ -713,29 +810,12 @@ export const UserProvider = ({ children }) => {
       } catch (err) {
         console.warn("saveUserGoals failed, saving locally:", err);
         // fallback to local state
-        setUserGoalsState(toStore);
+        setUserGoalsState(normalizeGoals(toStore));
         return false;
       }
     },
-    [API, token, user, loadUserGoals]
+    [API, token, user, loadUserGoals, authHeaders]
   );
-
-  const loadUserGoals = useCallback(async () => {
-    if (!token || !user?.uid) return null;
-    try {
-      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
-      if (!res.ok) throw new Error("goals fetch failed");
-      const j = await res.json();
-      if (j?.goals) {
-        setUserGoalsState(j.goals);
-        return j.goals;
-      }
-      return null;
-    } catch (err) {
-      console.warn("loadUserGoals failed", err);
-      return null;
-    }
-  }, [API, token, user]);
 
   // ---------- LOGOUT ----------
   const logout = useCallback(() => {
@@ -759,17 +839,14 @@ export const UserProvider = ({ children }) => {
       // if token present, try load user profile
       if (token) {
         try {
-          // attempt decode minimal uid from token? token payload may contain uid but we rely on server stored user row.
-          // Best path: load user via /user/me if route exists, otherwise cached user in localStorage is not available here.
-          // We'll attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
+          // attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
           const cachedUser = safeGet("cybercode_user_cache", null);
           if (cachedUser?.uid) {
             setUser(cachedUser);
             await loadUserProfile(cachedUser.uid);
           } else {
-            // no cached user: attempt to call /user/:uid is not possible without uid.
-            // If backend provides /auth/me or /user/me, prefer that. Fallback: leave token applied and wait for explicit loginWithGoogle/loadUserProfile.
-            // We'll skip silent fetch here if uid unknown.
+            // no cached user: wait for explicit loginWithGoogle or use a /auth/me route if backend exposes it
+            // Optional improvement: implement /auth/me on backend to return user from token
           }
         } catch (err) {
           console.warn("hydration loadUserProfile failed", err);
@@ -781,7 +858,7 @@ export const UserProvider = ({ children }) => {
 
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token]); // ensure this runs when token changes during runtime
 
   // Save minimal user cache whenever user updates (speed up hydration next time)
   useEffect(() => {
