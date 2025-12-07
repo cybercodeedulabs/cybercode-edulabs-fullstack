@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
 
   // App state derived from server
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [courseProgress, setCourseProgress] = useState({});
+  const [courseProgress, setCourseProgress] = useState({}); // { courseSlug: { completedLessons:[], currentLessonIndex, ... } }
   const [generatedProjects, setGeneratedProjects] = useState([]);
   const [personaScores, setPersonaScores] = useState({});
   const [userGoals, setUserGoalsState] = useState(null);
@@ -68,16 +68,29 @@ export const UserProvider = ({ children }) => {
     else safeRemove(TOKEN_KEY);
   };
 
-  // ---------- AUTH: loginWithGoogle ----------
+  // ---------- AUTH: loginWithGoogle (backend upsert) ----------
+  // payload: { uid, name, email, photo }
   const loginWithGoogle = useCallback(
     async ({ uid, name, email, photo }) => {
       if (!API) throw new Error("VITE_API_URL not set");
+
+      // sanitize UID to avoid accidental path characters (slashes, spaces)
+      const sanitizeUid = (raw) => {
+        if (!raw) return raw;
+        try {
+          return String(raw).replace(/[^a-zA-Z0-9-_]/g, "");
+        } catch {
+          return raw;
+        }
+      };
+
+      const safeUid = sanitizeUid(uid);
 
       try {
         const res = await fetch(`${API}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid, name, email, photo }),
+          body: JSON.stringify({ uid: safeUid, name, email, photo }),
         });
 
         if (!res.ok) {
@@ -88,13 +101,16 @@ export const UserProvider = ({ children }) => {
         const data = await res.json();
         if (!data?.token || !data?.user) throw new Error("Invalid login response");
 
-        setUser(data.user);
+        // ensure user.uid is sanitized in client state as well
+        const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
+
+        setUser(u);
         applyToken(data.token);
 
-        // hydrate additional user data
-        await loadUserProfile(data.user.uid);
+        // hydrate other user data
+        await loadUserProfile(u.uid);
 
-        return data.user;
+        return u;
       } catch (err) {
         console.error("loginWithGoogle error:", err);
         throw err;
@@ -103,7 +119,7 @@ export const UserProvider = ({ children }) => {
     [API]
   );
 
-  // ---------- LOAD USER PROFILE ----------
+  // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
   const loadUserProfile = useCallback(
     async (uid) => {
       if (!API || !uid || !token) return null;
@@ -115,26 +131,33 @@ export const UserProvider = ({ children }) => {
         });
 
         if (!res.ok) {
-          console.warn("loadUserProfile: server returned", res.status);
+          console.warn("loadUserProfile: server returned not ok", res.status);
           return null;
         }
 
         const j = await res.json();
-        if (j?.user) setUser(j.user);
+        if (j?.user) {
+          setUser(j.user);
+        }
 
         if (Array.isArray(j?.enrolledCourses)) {
           setEnrolledCourses(j.enrolledCourses);
-        } else setEnrolledCourses([]);
+        } else {
+          setEnrolledCourses([]);
+        }
 
         if (Array.isArray(j?.projects)) {
+          // normalize raw_json -> rawJson
           const mapped = j.projects.map((p) => ({
             ...p,
             rawJson: p.raw_json ?? p.rawJson ?? null,
           }));
           setGeneratedProjects(mapped);
-        } else setGeneratedProjects([]);
+        } else {
+          setGeneratedProjects([]);
+        }
 
-        // courseProgress doc
+        // Try to hydrate courseProgress & userStats from user_documents (if API supports)
         try {
           const docResp = await fetch(`${API}/userdocs/doc/${uid}/courseProgress`, {
             headers: authHeaders(),
@@ -145,7 +168,9 @@ export const UserProvider = ({ children }) => {
               setCourseProgress(docJson.doc);
             }
           }
-        } catch {}
+        } catch (err) {
+          // ignore doc fetch failure
+        }
 
         // persona
         try {
@@ -154,9 +179,11 @@ export const UserProvider = ({ children }) => {
           });
           if (pResp.ok) {
             const pj = await pResp.json().catch(() => null);
-            if (pj?.scores) setPersonaScores(pj.scores);
+            if (pj?.scores && typeof pj.scores === "object") {
+              setPersonaScores(pj.scores);
+            }
           }
-        } catch {}
+        } catch (err) {}
 
         // user goals
         try {
@@ -165,9 +192,11 @@ export const UserProvider = ({ children }) => {
           });
           if (gResp.ok) {
             const gj = await gResp.json().catch(() => null);
-            if (gj?.goals) setUserGoalsState(gj.goals);
+            if (gj?.goals) {
+              setUserGoalsState(gj.goals);
+            }
           }
-        } catch {}
+        } catch (err) {}
 
         return j;
       } catch (err) {
@@ -181,17 +210,14 @@ export const UserProvider = ({ children }) => {
   // ---------- ENROLL ----------
   const enrollInCourse = useCallback(
     async (courseSlug) => {
+      // optimistic local update even if server call fails
       if (!courseSlug) return false;
-
-      // local optimistic
-      const applyLocal = () =>
+      if (!token || !user?.uid) {
+        // cannot call server; do local optimistic
         setEnrolledCourses((prev) => {
           if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
           return [...(Array.isArray(prev) ? prev : []), courseSlug];
         });
-
-      if (!token || !user?.uid) {
-        applyLocal();
         return true;
       }
 
@@ -202,29 +228,41 @@ export const UserProvider = ({ children }) => {
           body: JSON.stringify({ courseSlug }),
         });
 
-        if (!res.ok) throw new Error("Enroll failed");
+        if (!res.ok) {
+          throw new Error("Enroll failed");
+        }
 
-        applyLocal();
+        // reflect on UI
+        setEnrolledCourses((prev) => {
+          if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
+          return [...(Array.isArray(prev) ? prev : []), courseSlug];
+        });
 
-        // 🔥 NEW: Auto refresh backend data
-        if (loadUserProfile && user?.uid) {
-          await loadUserProfile(user.uid);
+        // try refresh profile
+        if (typeof loadUserProfile === "function") {
+          await loadUserProfile(user.uid).catch(() => {});
         }
 
         return true;
       } catch (err) {
         console.error("enrollInCourse error:", err);
-        applyLocal();
+        // fallback to local update
+        setEnrolledCourses((prev) =>
+          Array.isArray(prev) && prev.includes(courseSlug)
+            ? prev
+            : [...(Array.isArray(prev) ? prev : []), courseSlug]
+        );
         return false;
       }
     },
     [API, token, user, loadUserProfile]
   );
 
-  // ---------- PROGRESS: completeLesson ----------
+  // ---------- PROGRESS: completeLesson (server) ----------
   const completeLesson = useCallback(
     async (courseSlug, lessonSlug) => {
       if (!token || !user?.uid) {
+        // fallback to local
         return await completeLessonLocal(courseSlug, lessonSlug);
       }
 
@@ -235,11 +273,14 @@ export const UserProvider = ({ children }) => {
           body: JSON.stringify({ courseSlug, lessonSlug }),
         });
 
-        if (!res.ok) throw new Error("complete-lesson failed");
+        if (!res.ok) {
+          throw new Error("complete-lesson failed");
+        }
 
+        // update local state optimistically
         await completeLessonLocal(courseSlug, lessonSlug);
 
-        // optional: activity
+        // optionally: record activity
         try {
           await fetch(`${API}/userdocs/activity`, {
             method: "POST",
@@ -255,20 +296,22 @@ export const UserProvider = ({ children }) => {
         return true;
       } catch (err) {
         console.error("completeLesson error:", err);
+        // fallback
         return await completeLessonLocal(courseSlug, lessonSlug);
       }
     },
     [API, token, user]
   );
 
-  // ---------- PROGRESS: completeLessonLocal ----------
+  // ---------- PROGRESS: completeLessonLocal (state-only update; returns updated courseProgress) ----------
+  // Keeps same behavior as your local implementation for compatibility.
   const completeLessonLocal = useCallback(
     async (courseSlug, lessonSlug) => {
       try {
         let updatedCourseProgress = null;
 
         setCourseProgress((prev) => {
-          const base = prev || {};
+          const base = prev && typeof prev === "object" ? prev : {};
           const course = base[courseSlug] || {
             completedLessons: [],
             currentLessonIndex: 0,
@@ -277,7 +320,12 @@ export const UserProvider = ({ children }) => {
           };
 
           const updated = Array.from(
-            new Set([...(course.completedLessons || []), lessonSlug])
+            new Set([
+              ...(Array.isArray(course.completedLessons)
+                ? course.completedLessons
+                : []),
+              lessonSlug,
+            ])
           );
 
           const nextCourse = {
@@ -285,7 +333,10 @@ export const UserProvider = ({ children }) => {
             completedLessons: updated,
             currentLessonIndex: updated.length,
             sessions: Array.isArray(course.sessions) ? course.sessions : [],
-            timeSpentMinutes: course.timeSpentMinutes || 0,
+            timeSpentMinutes:
+              typeof course.timeSpentMinutes === "number"
+                ? course.timeSpentMinutes
+                : 0,
             updatedAt: new Date().toISOString(),
           };
 
@@ -297,10 +348,7 @@ export const UserProvider = ({ children }) => {
           return updatedCourseProgress;
         });
 
-        // 🔥 NEW: store local cache
-        safeSet("cc_course_progress_cache", updatedCourseProgress);
-
-        // persist to server doc
+        // persist to server user_documents if available
         if (token && user?.uid) {
           try {
             await fetch(`${API}/userdocs/doc`, {
@@ -315,8 +363,15 @@ export const UserProvider = ({ children }) => {
                 },
               }),
             });
-          } catch {}
+          } catch {
+            // ignore
+          }
         }
+
+        // store local cache
+        try {
+          safeSet("cc_course_progress_cache", updatedCourseProgress);
+        } catch {}
 
         return updatedCourseProgress;
       } catch (err) {
@@ -333,33 +388,38 @@ export const UserProvider = ({ children }) => {
       if (!courseSlug || !lessonSlug || !Number.isFinite(Number(minutes)))
         return false;
 
-      // local update stats
+      // update local stats
       setUserStats((prev) => {
-        const base = prev || {};
+        const base = prev && typeof prev === "object" ? prev : {};
         const total = (base.totalMinutes || 0) + Number(minutes);
         const daily = { ...(base.daily || {}) };
         const today = new Date().toISOString().split("T")[0];
-
         daily[today] = (daily[today] || 0) + Number(minutes);
 
-        return {
+        const next = {
           ...base,
           totalMinutes: total,
           daily,
           lastStudyDate: today,
         };
+
+        return next;
       });
 
+      // send to server if possible
       if (token && user?.uid) {
         try {
           const res = await fetch(`${API}/progress/study-session`, {
             method: "POST",
             headers: authHeaders(),
-            body: JSON.stringify({ courseSlug, lessonSlug, minutes }),
+            body: JSON.stringify({ courseSlug, lessonSlug, minutes: Number(minutes) }),
           });
 
-          if (!res.ok) throw new Error("study-session failed");
+          if (!res.ok) {
+            throw new Error("study-session failed");
+          }
 
+          // optionally log activity
           try {
             await fetch(`${API}/userdocs/activity`, {
               method: "POST",
@@ -374,7 +434,7 @@ export const UserProvider = ({ children }) => {
 
           return true;
         } catch (err) {
-          console.warn("recordStudySession server failed", err);
+          console.warn("recordStudySession server failed, local only", err);
           return false;
         }
       }
@@ -388,6 +448,7 @@ export const UserProvider = ({ children }) => {
   const saveGeneratedProject = useCallback(
     async ({ title, description, rawJson }) => {
       if (!token || !user?.uid) {
+        // local fallback: create id and store in in-memory state
         const withId = {
           id: `local-${Date.now()}-${Math.random()}`,
           title,
@@ -396,7 +457,7 @@ export const UserProvider = ({ children }) => {
           timestamp: Date.now(),
           created_at: new Date().toISOString(),
         };
-        setGeneratedProjects((prev) => [withId, ...(prev || [])]);
+        setGeneratedProjects((prev) => [withId, ...(Array.isArray(prev) ? prev : [])]);
         return withId.id;
       }
 
@@ -410,7 +471,7 @@ export const UserProvider = ({ children }) => {
         if (!res.ok) throw new Error("Project save failed");
 
         const j = await res.json();
-
+        // add to UI list
         const newProject = {
           id: j.id,
           title,
@@ -419,8 +480,7 @@ export const UserProvider = ({ children }) => {
           timestamp: Date.now(),
           created_at: new Date().toISOString(),
         };
-
-        setGeneratedProjects((prev) => [newProject, ...(prev || [])]);
+        setGeneratedProjects((prev) => [newProject, ...(Array.isArray(prev) ? prev : [])]);
         return j.id;
       } catch (err) {
         console.error("saveGeneratedProject error:", err);
@@ -431,15 +491,15 @@ export const UserProvider = ({ children }) => {
   );
 
   const loadGeneratedProjects = useCallback(async () => {
-    if (!token) return generatedProjects;
+    if (!token) {
+      return generatedProjects;
+    }
 
     try {
       const res = await fetch(`${API}/projects/me`, {
         headers: authHeaders(),
       });
-
       if (!res.ok) throw new Error("Failed to load projects");
-
       const j = await res.json();
       if (j?.projects) {
         setGeneratedProjects(j.projects);
@@ -452,11 +512,12 @@ export const UserProvider = ({ children }) => {
     }
   }, [API, token, generatedProjects]);
 
-  // ---------- PERSONA ----------
+  // ---------- PERSONA SCORES ----------
   const savePersonaScores = useCallback(
     async (scoresObj = {}) => {
       if (!user?.uid) {
-        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        // update local in-memory only
+        setPersonaScores((prev) => ({ ...(prev || {}), ...(scoresObj || {}) }));
         return true;
       }
 
@@ -466,14 +527,13 @@ export const UserProvider = ({ children }) => {
           headers: authHeaders(),
           body: JSON.stringify({ uid: user.uid, scores: scoresObj }),
         });
-
         if (!res.ok) throw new Error("persona save failed");
-
-        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        setPersonaScores((prev) => ({ ...(prev || {}), ...(scoresObj || {}) }));
         return true;
       } catch (err) {
-        console.warn("savePersonaScores failed", err);
-        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        console.warn("savePersonaScores failed:", err);
+        // fallback to local in-memory update
+        setPersonaScores((prev) => ({ ...(prev || {}), ...(scoresObj || {}) }));
         return false;
       }
     },
@@ -491,31 +551,40 @@ export const UserProvider = ({ children }) => {
         const j = await res.json();
         if (j?.scores) setPersonaScores(j.scores);
         return j.scores || {};
-      } catch {
+      } catch (err) {
+        console.warn("loadPersonaScores failed", err);
         return personaScores;
       }
     },
-    [API, token, personaScores]
+    [API, token]
   );
 
   const updatePersonaScore = useCallback(
     (objOrKey, deltaOrVal = 0) => {
+      // supports either updatePersonaScore("cloud", 3) or updatePersonaScore({cloud:3,devops:2})
       let next = {};
       if (typeof objOrKey === "string") {
         next = { [objOrKey]: Number(deltaOrVal || 0) };
       } else if (objOrKey && typeof objOrKey === "object") {
         next = { ...objOrKey };
-      } else return;
+      } else {
+        return;
+      }
 
+      // merge locally
       setPersonaScores((prev) => {
         const merged = { ...(prev || {}) };
         for (const [k, v] of Object.entries(next)) {
           merged[k] = (merged[k] || 0) + Number(v || 0);
         }
-        safeSet("cc_persona_cache", merged);
+        // persist small cache in localStorage for speed
+        try {
+          safeSet("cc_persona_cache", merged);
+        } catch {}
         return merged;
       });
 
+      // persist to server (async)
       savePersonaScores(next).catch(() => {});
     },
     [savePersonaScores]
@@ -523,17 +592,12 @@ export const UserProvider = ({ children }) => {
 
   const getTopPersona = useCallback(() => {
     const entries = Object.entries(personaScores || {});
-    if (entries.length === 0)
-      return { persona: "beginner", score: 0, all: [["beginner", 0]] };
+    if (entries.length === 0) return { persona: "beginner", score: 0, all: [["beginner", 0]] };
     const sorted = entries.sort((a, b) => b[1] - a[1]);
-    return {
-      persona: sorted[0][0],
-      score: Number(sorted[0][1]),
-      all: sorted,
-    };
+    return { persona: sorted[0][0], score: Number(sorted[0][1]), all: sorted };
   }, [personaScores]);
 
-  // ---------- USER DOCUMENTS ----------
+  // ---------- USER DOCUMENTS (generic) ----------
   const saveUserDoc = useCallback(
     async (key, doc) => {
       if (!user?.uid) return false;
@@ -563,7 +627,8 @@ export const UserProvider = ({ children }) => {
         if (!res.ok) return null;
         const j = await res.json();
         return j.doc || null;
-      } catch {
+      } catch (err) {
+        console.warn("loadUserDoc failed", err);
         return null;
       }
     },
@@ -571,27 +636,82 @@ export const UserProvider = ({ children }) => {
   );
 
   // ---------- GOALS ----------
+  /**
+   * saveUserGoals supports:
+   *  - saveUserGoals(hoursNumber)   // legacy behavior
+   *  - saveUserGoals({ ...fullGoals }) // new behavior used by GoalSetupWizard
+   *
+   * It will attempt to POST full object first. If server rejects, it will fall back to sending { hoursPerWeek }.
+   */
   const saveUserGoals = useCallback(
-    async (hoursPerWeek) => {
-      if (!token || !user?.uid) return false;
+    async (payload) => {
+      // normalize to object
+      let goalsObj;
+      if (typeof payload === "number") {
+        goalsObj = { hoursPerWeek: Number(payload) || 0 };
+      } else if (payload && typeof payload === "object") {
+        goalsObj = { ...payload };
+      } else {
+        return false;
+      }
+
+      // Add updatedAt locally
+      const toStore = { ...goalsObj, updatedAt: new Date().toISOString() };
+
+      // If no token or uid, store locally into context only
+      if (!token || !user?.uid) {
+        setUserGoalsState(toStore);
+        return true;
+      }
+
+      // Try to POST full goals object to backend (preferred)
       try {
         const res = await fetch(`${API}/goals/save`, {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({ hoursPerWeek }),
+          body: JSON.stringify(toStore),
         });
-        if (!res.ok) throw new Error("goals save failed");
-        setUserGoalsState({
-          hoursPerWeek,
-          updatedAt: new Date().toISOString(),
-        });
+
+        if (!res.ok) {
+          // If server rejects full object, try legacy format fallback
+          const text = await res.text().catch(() => "");
+          console.warn("goals save server responded not ok, attempting fallback:", res.status, text);
+          // attempt fallback if hoursPerWeek available
+          if (typeof goalsObj.hoursPerWeek === "number") {
+            try {
+              const fallbackRes = await fetch(`${API}/goals/save`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: JSON.stringify({ hoursPerWeek: goalsObj.hoursPerWeek }),
+              });
+              if (fallbackRes.ok) {
+                setUserGoalsState(toStore);
+                return true;
+              }
+            } catch (er) {
+              // ignore fallback error
+            }
+          }
+          throw new Error("goals save failed (server)");
+        }
+
+        // success
+        setUserGoalsState(toStore);
+
+        // optionally refresh from server-side record
+        try {
+          await loadUserGoals();
+        } catch {}
+
         return true;
       } catch (err) {
-        console.warn("saveUserGoals failed", err);
+        console.warn("saveUserGoals failed, saving locally:", err);
+        // fallback to local state
+        setUserGoalsState(toStore);
         return false;
       }
     },
-    [API, token, user]
+    [API, token, user, authHeaders, loadUserGoals]
   );
 
   const loadUserGoals = useCallback(async () => {
@@ -621,23 +741,32 @@ export const UserProvider = ({ children }) => {
     setPersonaScores({});
     setUserGoalsState(null);
     setUserStats({});
+    // redirect to home
     try {
       window.location.href = "/";
     } catch {}
   }, []);
 
-  // ---------- HYDRATION ----------
+  // ---------- Hydration ----------
   useEffect(() => {
     const init = async () => {
+      // if token present, try load user profile
       if (token) {
         try {
+          // attempt decode minimal uid from token? token payload may contain uid but we rely on server stored user row.
+          // Best path: load user via /user/me if route exists, otherwise cached user in localStorage is not available here.
+          // We'll attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
           const cachedUser = safeGet("cybercode_user_cache", null);
           if (cachedUser?.uid) {
             setUser(cachedUser);
             await loadUserProfile(cachedUser.uid);
+          } else {
+            // no cached user: attempt to call /user/:uid is not possible without uid.
+            // If backend provides /auth/me or /user/me, prefer that. Fallback: leave token applied and wait for explicit loginWithGoogle/loadUserProfile.
+            // We'll skip silent fetch here if uid unknown.
           }
         } catch (err) {
-          console.warn("Hydration failed:", err);
+          console.warn("hydration loadUserProfile failed", err);
         }
       }
       setLoading(false);
@@ -645,28 +774,36 @@ export const UserProvider = ({ children }) => {
     };
 
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Save minimal user cache whenever user updates (speed up hydration next time)
   useEffect(() => {
     try {
-      if (user && user.uid) safeSet("cybercode_user_cache", user);
-      else safeRemove("cybercode_user_cache");
+      if (user && user.uid) {
+        safeSet("cybercode_user_cache", user);
+      } else {
+        safeRemove("cybercode_user_cache");
+      }
     } catch {}
   }, [user]);
 
-  // ---------- EXPOSED CONTEXT ----------
+  // ---------- Exposed context ----------
   return (
     <UserContext.Provider
       value={{
+        // state
         user,
         token,
         hydrated,
         loading,
 
+        // user setters
         setUser,
         loginWithGoogle,
         logout,
 
+        // courses & progress
         enrolledCourses,
         enrollInCourse,
 
@@ -675,23 +812,28 @@ export const UserProvider = ({ children }) => {
         completeLesson,
         completeLessonLocal,
 
+        // study sessions
         recordStudySession,
 
+        // persona
         personaScores,
         updatePersonaScore,
         getTopPersona,
         loadPersonaScores,
 
+        // projects
         generatedProjects,
         saveGeneratedProject,
         loadGeneratedProjects,
 
+        // goals & docs
         userGoals,
         saveUserGoals,
         loadUserGoals,
         saveUserDoc,
         loadUserDoc,
 
+        // misc
         userStats,
         setUserStats,
       }}
