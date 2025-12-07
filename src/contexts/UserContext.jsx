@@ -68,58 +68,9 @@ export const UserProvider = ({ children }) => {
     else safeRemove(TOKEN_KEY);
   };
 
-  // ---------- AUTH: loginWithGoogle (backend upsert) ----------
-  // payload: { uid, name, email, photo }
-  const loginWithGoogle = useCallback(
-    async ({ uid, name, email, photo }) => {
-      if (!API) throw new Error("VITE_API_URL not set");
-
-      // sanitize UID to avoid accidental path characters (slashes, spaces)
-      const sanitizeUid = (raw) => {
-        if (!raw) return raw;
-        try {
-          return String(raw).replace(/[^a-zA-Z0-9-_]/g, "");
-        } catch {
-          return raw;
-        }
-      };
-
-      const safeUid = sanitizeUid(uid);
-
-      try {
-        const res = await fetch(`${API}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: safeUid, name, email, photo }),
-        });
-
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(`Backend login failed: ${res.status} ${text}`);
-        }
-
-        const data = await res.json();
-        if (!data?.token || !data?.user) throw new Error("Invalid login response");
-
-        // ensure user.uid is sanitized in client state as well
-        const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
-
-        setUser(u);
-        applyToken(data.token);
-
-        // hydrate other user data
-        await loadUserProfile(u.uid);
-
-        return u;
-      } catch (err) {
-        console.error("loginWithGoogle error:", err);
-        throw err;
-      }
-    },
-    [API]
-  );
-
   // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
+  // NOTE: loadUserProfile is intentionally declared before loginWithGoogle to avoid
+  // "access before initialization" ReferenceErrors when loginWithGoogle calls it.
   const loadUserProfile = useCallback(
     async (uid) => {
       if (!API || !uid || !token) return null;
@@ -205,6 +156,61 @@ export const UserProvider = ({ children }) => {
       }
     },
     [API, token]
+  );
+
+  // ---------- AUTH: loginWithGoogle (backend upsert) ----------
+  // payload: { uid, name, email, photo }
+  const loginWithGoogle = useCallback(
+    async ({ uid, name, email, photo }) => {
+      if (!API) throw new Error("VITE_API_URL not set");
+
+      // sanitize UID to avoid accidental path characters (slashes, spaces)
+      const sanitizeUid = (raw) => {
+        if (!raw) return raw;
+        try {
+          return String(raw).replace(/[^a-zA-Z0-9-_]/g, "");
+        } catch {
+          return raw;
+        }
+      };
+
+      const safeUid = sanitizeUid(uid);
+
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: safeUid, name, email, photo }),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Backend login failed: ${res.status} ${text}`);
+        }
+
+        const data = await res.json();
+        if (!data?.token || !data?.user) throw new Error("Invalid login response");
+
+        // ensure user.uid is sanitized in client state as well
+        const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
+
+        setUser(u);
+        applyToken(data.token);
+
+        // hydrate other user data (call the function that is already initialized)
+        try {
+          await loadUserProfile(u.uid);
+        } catch (err) {
+          // ignore profile load errors here — login already succeeded
+        }
+
+        return u;
+      } catch (err) {
+        console.error("loginWithGoogle error:", err);
+        throw err;
+      }
+    },
+    [API, loadUserProfile]
   );
 
   // ---------- ENROLL ----------
@@ -636,23 +642,6 @@ export const UserProvider = ({ children }) => {
   );
 
   // ---------- GOALS ----------
-
-    const loadUserGoals = useCallback(async () => {
-    if (!token || !user?.uid) return null;
-    try {
-      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
-      if (!res.ok) throw new Error("goals fetch failed");
-      const j = await res.json();
-      if (j?.goals) {
-        setUserGoalsState(j.goals);
-        return j.goals;
-      }
-      return null;
-    } catch (err) {
-      console.warn("loadUserGoals failed", err);
-      return null;
-    }
-  }, [API, token, user]);
   /**
    * saveUserGoals supports:
    *  - saveUserGoals(hoursNumber)   // legacy behavior
@@ -728,10 +717,25 @@ export const UserProvider = ({ children }) => {
         return false;
       }
     },
-    [API, token, user, authHeaders, loadUserGoals]
+    [API, token, user, loadUserGoals]
   );
 
-
+  const loadUserGoals = useCallback(async () => {
+    if (!token || !user?.uid) return null;
+    try {
+      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
+      if (!res.ok) throw new Error("goals fetch failed");
+      const j = await res.json();
+      if (j?.goals) {
+        setUserGoalsState(j.goals);
+        return j.goals;
+      }
+      return null;
+    } catch (err) {
+      console.warn("loadUserGoals failed", err);
+      return null;
+    }
+  }, [API, token, user]);
 
   // ---------- LOGOUT ----------
   const logout = useCallback(() => {

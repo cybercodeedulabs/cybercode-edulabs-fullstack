@@ -22,7 +22,9 @@ export default function GoalRoadmap({ goals }) {
   const roadmap = useMemo(() => {
     const { skills = {}, hoursPerWeek = 6, deadlineMonths = 6, targetRole } = goals;
 
-    const skillValues = Object.values(skills).map(Number);
+    // Defensive: ensure skills is an object before using Object.values
+    const safeSkills = skills && typeof skills === "object" ? skills : {};
+    const skillValues = Object.values(safeSkills).map(Number);
     const sum = skillValues.reduce((a, b) => a + (b || 0), 0);
     const avgSkill = Math.round(sum / Math.max(skillValues.length, 1));
     const months = Number(deadlineMonths || 6);
