@@ -146,8 +146,8 @@ export const UserProvider = ({ children }) => {
 
   // ---------- helpers ----------
   const authHeaders = useCallback(
-    (extra = {}) => {
-      const tk = token;
+    (extra = {}, tokenOverride = null) => {
+      const tk = tokenOverride || token;
       const headers = {
         "Content-Type": "application/json",
         ...extra,
@@ -165,16 +165,16 @@ export const UserProvider = ({ children }) => {
   };
 
   // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
-  // NOTE: loadUserProfile is declared before loginWithGoogle to avoid
-  // "access before initialization" ReferenceErrors when loginWithGoogle calls it.
+  // NOTE: loadUserProfile accepts optional token argument to avoid race condition
+  // when token is set immediately before calling this function (login flow).
   const loadUserProfile = useCallback(
-    async (uid) => {
-      if (!API || !uid || !token) return null;
+    async (uid, tokenOverride = null) => {
+      if (!API || !uid || (!(token || tokenOverride))) return null;
 
       try {
         const res = await fetch(`${API}/user/${encodeURIComponent(uid)}`, {
           method: "GET",
-          headers: authHeaders(),
+          headers: authHeaders({}, tokenOverride),
         });
 
         if (!res.ok) {
@@ -207,7 +207,7 @@ export const UserProvider = ({ children }) => {
         // Try to hydrate courseProgress & userStats from user_documents (if API supports)
         try {
           const docResp = await fetch(`${API}/userdocs/doc/${encodeURIComponent(uid)}/courseProgress`, {
-            headers: authHeaders(),
+            headers: authHeaders({}, tokenOverride),
           });
           if (docResp.ok) {
             const docJson = await docResp.json().catch(() => null);
@@ -224,7 +224,7 @@ export const UserProvider = ({ children }) => {
         // persona
         try {
           const pResp = await fetch(`${API}/userdocs/persona/${encodeURIComponent(uid)}`, {
-            headers: authHeaders(),
+            headers: authHeaders({}, tokenOverride),
           });
           if (pResp.ok) {
             const pj = await pResp.json().catch(() => null);
@@ -239,7 +239,7 @@ export const UserProvider = ({ children }) => {
         // user goals
         try {
           const gResp = await fetch(`${API}/goals/me`, {
-            headers: authHeaders(),
+            headers: authHeaders({}, tokenOverride),
           });
           if (gResp.ok) {
             const gj = await gResp.json().catch(() => null);
@@ -298,12 +298,13 @@ export const UserProvider = ({ children }) => {
         // ensure user.uid is sanitized in client state as well
         const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
 
+        // Set user and token locally
         setUser(u);
         applyToken(data.token);
 
-        // hydrate other user data (call the function that is already initialized)
+        // Immediately load profile using token from server (avoid token state race)
         try {
-          await loadUserProfile(u.uid);
+          await loadUserProfile(u.uid, data.token);
         } catch (err) {
           // ignore profile load errors here — login already succeeded
         }
@@ -619,7 +620,7 @@ export const UserProvider = ({ children }) => {
       }
       return [];
     } catch (err) {
-      console.warn("loadGeneratedProjects error:", err);
+      console.warn("loadGeneratedProjects error", err);
       return generatedProjects;
     }
   }, [API, token, generatedProjects, authHeaders]);
@@ -643,7 +644,7 @@ export const UserProvider = ({ children }) => {
         setPersonaScores((prev) => ({ ...(prev || {}), ...(scoresObj || {}) }));
         return true;
       } catch (err) {
-        console.warn("savePersonaScores failed:", err);
+        console.warn("savePersonaScores failed", err);
         // fallback to local in-memory update
         setPersonaScores((prev) => ({ ...(prev || {}), ...(scoresObj || {}) }));
         return false;
@@ -870,14 +871,14 @@ export const UserProvider = ({ children }) => {
           const cachedUser = safeGet("cybercode_user_cache", null);
           if (cachedUser?.uid) {
             setUser(cachedUser);
-            await loadUserProfile(cachedUser.uid);
+            await loadUserProfile(cachedUser.uid, token);
           } else {
             // if no cached user, attempt to extract uid from JWT and load profile
             const payload = decodeJwt(token);
             const uidFromToken = payload?.uid || payload?.sub || null;
             if (uidFromToken) {
               try {
-                await loadUserProfile(uidFromToken);
+                await loadUserProfile(uidFromToken, token);
               } catch (err) {
                 // ignore individual profile load error
               }
