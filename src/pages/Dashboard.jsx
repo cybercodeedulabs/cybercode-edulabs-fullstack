@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import {
   Suspense,
   lazy,
@@ -246,33 +245,29 @@ function AIMentorPanel({ userGoals, persona, onSuggest }) {
       MAIN DASHBOARD PAGE
 -------------------------------*/
 export default function Dashboard() {
-const ctx = useUser();
-if (!ctx) return null;    // ← prevents React 301 crash
+  const ctx = useUser();
+  if (!ctx) return null; // ← prevents React 301 crash
 
-const {
-  user,
-  personaScores = {},
-  getTopPersona,
-  courseProgress = {},
-  enrolledCourses = [],
-  generatedProjects = [],
-  userGoals,
-  userStats = {},
-} = ctx;
-
+  const {
+    user,
+    personaScores = {},
+    getTopPersona,
+    courseProgress = {},
+    enrolledCourses = [],
+    generatedProjects = [],
+    userGoals,
+    userStats = {},
+  } = ctx;
 
   // ⭐ NEW — Local modal state
-  const [showProjectGenerator, setShowProjectGenerator] =
-    useState(false);
+  const [showProjectGenerator, setShowProjectGenerator] = useState(false);
 
   const topPersona =
     typeof getTopPersona === "function"
       ? getTopPersona()
       : topPersonaFromScores(personaScores || {});
 
-  const normalized = normalizePersonaScores(
-    personaScores || {}
-  );
+  const normalized = normalizePersonaScores(personaScores || {});
 
   const humanName =
     user?.name ||
@@ -376,7 +371,6 @@ const {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT SIDE */}
         <div className="lg:col-span-2 space-y-6">
-
           {/* Roadmap */}
           <div id="roadmap">
             <CollapsibleCard
@@ -412,8 +406,7 @@ const {
                 {enrolledCourses.length ? (
                   <ul className="space-y-3">
                     {enrolledCourses.map((slug) => {
-                      const lessons =
-                        lessonsData[slug] || [];
+                      const lessons = lessonsData[slug] || [];
                       const prog = progress[slug] || {
                         completedLessons: [],
                       };

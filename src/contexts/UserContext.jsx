@@ -1,391 +1,670 @@
 // src/contexts/UserContext.jsx
+// Backend-first UserContext (PostgreSQL + Render)
+// Full server sync for user, personas, progress, projects, goals, sessions.
+
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
+  useCallback,
 } from "react";
 
-/* ------------------------------------
-   CONSTANTS
--------------------------------------*/
 const UserContext = createContext();
 
-const PERSONA_STORAGE_KEY = "cybercode_user_personas_v1";
-const GENERATED_PROJECTS_KEY = "cybercode_generated_projects_v1";
-const USER_GOALS_KEY = "cybercode_user_goals";
-const USER_KEY = "cybercodeUser";
+const API = import.meta.env.VITE_API_URL || "";
+const TOKEN_KEY = "cybercode_token";
 
-/* ------------------------------------
-   LOCALSTORAGE SAFETY LAYER
--------------------------------------*/
-const canUseLocalStorage = (() => {
-  let cached = null;
-  return () => {
-    if (cached !== null) return cached;
-    try {
-      if (typeof window === "undefined" || !window.localStorage) {
-        cached = false;
-        return cached;
-      }
-      const test = "__cc_test__";
-      window.localStorage.setItem(test, "1");
-      window.localStorage.removeItem(test);
-      cached = true;
-      return cached;
-    } catch {
-      cached = false;
-      return cached;
-    }
-  };
-})();
-
-const safeParse = (raw, fallback = null) => {
+// ---------- safe localStorage helpers (small wrappers) ----------
+const safeGet = (k, fallback = null) => {
   try {
-    if (!raw && raw !== "") return fallback;
-    return JSON.parse(raw);
+    const s = window?.localStorage?.getItem(k);
+    return s ? JSON.parse(s) : fallback;
   } catch {
     return fallback;
   }
 };
-
-const safeGetItem = (key, fallback = null) => {
-  if (!canUseLocalStorage()) return fallback;
+const safeSet = (k, v) => {
   try {
-    return safeParse(window.localStorage.getItem(key), fallback);
-  } catch {
-    return fallback;
-  }
+    window?.localStorage?.setItem(k, JSON.stringify(v));
+  } catch {}
+};
+const safeRemove = (k) => {
+  try {
+    window?.localStorage?.removeItem(k);
+  } catch {}
 };
 
-const safeSetItem = (key, value) => {
-  if (!canUseLocalStorage()) return false;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/* ------------------------------------
-   PROVIDER
--------------------------------------*/
+// ---------- Provider ----------
 export const UserProvider = ({ children }) => {
-  /* ------------------------------------
-        USER (LOCAL ONLY)
-  -------------------------------------*/
-  const [user, _setUser] = useState(() => safeGetItem(USER_KEY, null));
-  const [loading, setLoading] = useState(true);
+  // Core
+  const [user, setUser] = useState(null); // { uid, name, email, photo, ... }
+  const [token, setToken] = useState(() => safeGet(TOKEN_KEY, null));
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const setUser = (v) => {
-    const next = typeof v === "function" ? v(user) : v;
-    _setUser(next);
-    try {
-      safeSetItem(USER_KEY, next);
-    } catch {}
+  // App state derived from server
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [courseProgress, setCourseProgress] = useState({});
+  const [generatedProjects, setGeneratedProjects] = useState([]);
+  const [personaScores, setPersonaScores] = useState({});
+  const [userGoals, setUserGoalsState] = useState(null);
+  const [userStats, setUserStats] = useState({});
+
+  // ---------- helpers ----------
+  const authHeaders = (extra = {}) => {
+    const tk = token;
+    const headers = {
+      "Content-Type": "application/json",
+      ...extra,
+    };
+    if (tk) headers.Authorization = `Bearer ${tk}`;
+    return headers;
   };
 
-  /* ------------------------------------
-        GENERATED PROJECTS
-  -------------------------------------*/
-  const [generatedProjects, setGeneratedProjects] = useState(() =>
-    Array.isArray(safeGetItem(GENERATED_PROJECTS_KEY, []))
-      ? safeGetItem(GENERATED_PROJECTS_KEY, [])
-      : []
+  const applyToken = (tk) => {
+    setToken(tk);
+    if (tk) safeSet(TOKEN_KEY, tk);
+    else safeRemove(TOKEN_KEY);
+  };
+
+  // ---------- AUTH: loginWithGoogle ----------
+  const loginWithGoogle = useCallback(
+    async ({ uid, name, email, photo }) => {
+      if (!API) throw new Error("VITE_API_URL not set");
+
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid, name, email, photo }),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Backend login failed: ${res.status} ${text}`);
+        }
+
+        const data = await res.json();
+        if (!data?.token || !data?.user) throw new Error("Invalid login response");
+
+        setUser(data.user);
+        applyToken(data.token);
+
+        // hydrate additional user data
+        await loadUserProfile(data.user.uid);
+
+        return data.user;
+      } catch (err) {
+        console.error("loginWithGoogle error:", err);
+        throw err;
+      }
+    },
+    [API]
   );
 
-  const saveGeneratedProjectLocal = async (project) => {
-    const withId = {
-      ...project,
-      id: project.id || `${Date.now()}-${Math.random()}`,
-      timestamp: project.timestamp || Date.now(),
-    };
+  // ---------- LOAD USER PROFILE ----------
+  const loadUserProfile = useCallback(
+    async (uid) => {
+      if (!API || !uid || !token) return null;
 
-    setGeneratedProjects((prev) => {
-      const arr = Array.isArray(prev) ? prev : [];
-      const next = [...arr, withId];
-      safeSetItem(GENERATED_PROJECTS_KEY, next);
-      return next;
-    });
+      try {
+        const res = await fetch(`${API}/user/${uid}`, {
+          method: "GET",
+          headers: authHeaders(),
+        });
 
-    // Mirror to per-user doc if user present
-    try {
-      if (user?.uid && canUseLocalStorage()) {
-        const docKey = `cc_userdoc_${user.uid}`;
-        const existing = safeGetItem(docKey, {}) || {};
-        const gp = Array.isArray(existing.generatedProjects)
-          ? [...existing.generatedProjects, withId]
-          : [withId];
-        safeSetItem(docKey, { ...existing, generatedProjects: gp, updatedAt: Date.now() });
+        if (!res.ok) {
+          console.warn("loadUserProfile: server returned", res.status);
+          return null;
+        }
+
+        const j = await res.json();
+        if (j?.user) setUser(j.user);
+
+        if (Array.isArray(j?.enrolledCourses)) {
+          setEnrolledCourses(j.enrolledCourses);
+        } else setEnrolledCourses([]);
+
+        if (Array.isArray(j?.projects)) {
+          const mapped = j.projects.map((p) => ({
+            ...p,
+            rawJson: p.raw_json ?? p.rawJson ?? null,
+          }));
+          setGeneratedProjects(mapped);
+        } else setGeneratedProjects([]);
+
+        // courseProgress doc
+        try {
+          const docResp = await fetch(`${API}/userdocs/doc/${uid}/courseProgress`, {
+            headers: authHeaders(),
+          });
+          if (docResp.ok) {
+            const docJson = await docResp.json().catch(() => null);
+            if (docJson?.doc && typeof docJson.doc === "object") {
+              setCourseProgress(docJson.doc);
+            }
+          }
+        } catch {}
+
+        // persona
+        try {
+          const pResp = await fetch(`${API}/userdocs/persona/${uid}`, {
+            headers: authHeaders(),
+          });
+          if (pResp.ok) {
+            const pj = await pResp.json().catch(() => null);
+            if (pj?.scores) setPersonaScores(pj.scores);
+          }
+        } catch {}
+
+        // user goals
+        try {
+          const gResp = await fetch(`${API}/goals/me`, {
+            headers: authHeaders(),
+          });
+          if (gResp.ok) {
+            const gj = await gResp.json().catch(() => null);
+            if (gj?.goals) setUserGoalsState(gj.goals);
+          }
+        } catch {}
+
+        return j;
+      } catch (err) {
+        console.error("loadUserProfile error:", err);
+        return null;
       }
-    } catch {}
-
-    return withId;
-  };
-
-  const loadGeneratedProjects = async () => {
-    const arr = safeGetItem(GENERATED_PROJECTS_KEY, []);
-    const final = Array.isArray(arr) ? arr : [];
-    setGeneratedProjects(final);
-    return final;
-  };
-
-  /* ------------------------------------
-        USER GOALS
-  -------------------------------------*/
-  const [userGoals, setUserGoals] = useState(() =>
-    safeGetItem(USER_GOALS_KEY, null)
+    },
+    [API, token]
   );
 
-  const saveUserGoals = async (goals) => {
-    const payload = {
-      ...goals,
-      updatedAt: Date.now(),
-      createdAt: goals?.createdAt ?? Date.now(),
-    };
-    setUserGoals(payload);
-    safeSetItem(USER_GOALS_KEY, payload);
+  // ---------- ENROLL ----------
+  const enrollInCourse = useCallback(
+    async (courseSlug) => {
+      if (!courseSlug) return false;
 
-    // persist per-user goals if logged in
-    try {
-      if (user?.uid && canUseLocalStorage()) {
-        const docKey = `cc_userdoc_${user.uid}`;
-        const existing = safeGetItem(docKey, {}) || {};
-        safeSetItem(docKey, { ...existing, goals: payload, updatedAt: Date.now() });
+      // local optimistic
+      const applyLocal = () =>
+        setEnrolledCourses((prev) => {
+          if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
+          return [...(Array.isArray(prev) ? prev : []), courseSlug];
+        });
+
+      if (!token || !user?.uid) {
+        applyLocal();
+        return true;
       }
-    } catch {}
 
-    return payload;
-  };
+      try {
+        const res = await fetch(`${API}/user/enroll`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ courseSlug }),
+        });
 
-  /* ------------------------------------
-        PERSONA SCORES
-  -------------------------------------*/
-  const [personaScores, setPersonaScores] = useState(() => {
-    const parsed = safeGetItem(PERSONA_STORAGE_KEY, {});
-    return parsed && typeof parsed === "object" ? parsed : {};
-  });
+        if (!res.ok) throw new Error("Enroll failed");
 
-  const updatePersonaScore = (obj, delta = 0) => {
-    setPersonaScores((prev) => {
-      const next = { ...(prev || {}) };
+        applyLocal();
 
-      if (typeof obj === "string") {
-        next[obj] = (next[obj] || 0) + delta;
-      } else if (obj && typeof obj === "object") {
-        for (const [k, v] of Object.entries(obj)) {
-          next[k] = (next[k] || 0) + (v || 0);
+        // 🔥 NEW: Auto refresh backend data
+        if (loadUserProfile && user?.uid) {
+          await loadUserProfile(user.uid);
+        }
+
+        return true;
+      } catch (err) {
+        console.error("enrollInCourse error:", err);
+        applyLocal();
+        return false;
+      }
+    },
+    [API, token, user, loadUserProfile]
+  );
+
+  // ---------- PROGRESS: completeLesson ----------
+  const completeLesson = useCallback(
+    async (courseSlug, lessonSlug) => {
+      if (!token || !user?.uid) {
+        return await completeLessonLocal(courseSlug, lessonSlug);
+      }
+
+      try {
+        const res = await fetch(`${API}/progress/complete-lesson`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ courseSlug, lessonSlug }),
+        });
+
+        if (!res.ok) throw new Error("complete-lesson failed");
+
+        await completeLessonLocal(courseSlug, lessonSlug);
+
+        // optional: activity
+        try {
+          await fetch(`${API}/userdocs/activity`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              uid: user.uid,
+              eventType: "complete_lesson",
+              meta: { course: courseSlug, lesson: lessonSlug },
+            }),
+          });
+        } catch {}
+
+        return true;
+      } catch (err) {
+        console.error("completeLesson error:", err);
+        return await completeLessonLocal(courseSlug, lessonSlug);
+      }
+    },
+    [API, token, user]
+  );
+
+  // ---------- PROGRESS: completeLessonLocal ----------
+  const completeLessonLocal = useCallback(
+    async (courseSlug, lessonSlug) => {
+      try {
+        let updatedCourseProgress = null;
+
+        setCourseProgress((prev) => {
+          const base = prev || {};
+          const course = base[courseSlug] || {
+            completedLessons: [],
+            currentLessonIndex: 0,
+            sessions: [],
+            timeSpentMinutes: 0,
+          };
+
+          const updated = Array.from(
+            new Set([...(course.completedLessons || []), lessonSlug])
+          );
+
+          const nextCourse = {
+            ...course,
+            completedLessons: updated,
+            currentLessonIndex: updated.length,
+            sessions: Array.isArray(course.sessions) ? course.sessions : [],
+            timeSpentMinutes: course.timeSpentMinutes || 0,
+            updatedAt: new Date().toISOString(),
+          };
+
+          updatedCourseProgress = {
+            ...base,
+            [courseSlug]: nextCourse,
+          };
+
+          return updatedCourseProgress;
+        });
+
+        // 🔥 NEW: store local cache
+        safeSet("cc_course_progress_cache", updatedCourseProgress);
+
+        // persist to server doc
+        if (token && user?.uid) {
+          try {
+            await fetch(`${API}/userdocs/doc`, {
+              method: "POST",
+              headers: authHeaders(),
+              body: JSON.stringify({
+                uid: user.uid,
+                key: "courseProgress",
+                doc: {
+                  ...safeGet("cc_course_progress_cache", {}),
+                  ...updatedCourseProgress,
+                },
+              }),
+            });
+          } catch {}
+        }
+
+        return updatedCourseProgress;
+      } catch (err) {
+        console.warn("completeLessonLocal failed", err);
+        return null;
+      }
+    },
+    [API, token, user]
+  );
+
+  // ---------- STUDY SESSIONS ----------
+  const recordStudySession = useCallback(
+    async (courseSlug, lessonSlug, minutes) => {
+      if (!courseSlug || !lessonSlug || !Number.isFinite(Number(minutes)))
+        return false;
+
+      // local update stats
+      setUserStats((prev) => {
+        const base = prev || {};
+        const total = (base.totalMinutes || 0) + Number(minutes);
+        const daily = { ...(base.daily || {}) };
+        const today = new Date().toISOString().split("T")[0];
+
+        daily[today] = (daily[today] || 0) + Number(minutes);
+
+        return {
+          ...base,
+          totalMinutes: total,
+          daily,
+          lastStudyDate: today,
+        };
+      });
+
+      if (token && user?.uid) {
+        try {
+          const res = await fetch(`${API}/progress/study-session`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ courseSlug, lessonSlug, minutes }),
+          });
+
+          if (!res.ok) throw new Error("study-session failed");
+
+          try {
+            await fetch(`${API}/userdocs/activity`, {
+              method: "POST",
+              headers: authHeaders(),
+              body: JSON.stringify({
+                uid: user.uid,
+                eventType: "study_session",
+                meta: { course: courseSlug, lesson: lessonSlug, minutes },
+              }),
+            });
+          } catch {}
+
+          return true;
+        } catch (err) {
+          console.warn("recordStudySession server failed", err);
+          return false;
         }
       }
 
-      safeSetItem(PERSONA_STORAGE_KEY, next);
-      return next;
-    });
-  };
+      return false;
+    },
+    [API, token, user]
+  );
 
-  const getTopPersona = () => {
+  // ---------- PROJECTS ----------
+  const saveGeneratedProject = useCallback(
+    async ({ title, description, rawJson }) => {
+      if (!token || !user?.uid) {
+        const withId = {
+          id: `local-${Date.now()}-${Math.random()}`,
+          title,
+          description,
+          rawJson,
+          timestamp: Date.now(),
+          created_at: new Date().toISOString(),
+        };
+        setGeneratedProjects((prev) => [withId, ...(prev || [])]);
+        return withId.id;
+      }
+
+      try {
+        const res = await fetch(`${API}/projects/save`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ title, description, rawJson }),
+        });
+
+        if (!res.ok) throw new Error("Project save failed");
+
+        const j = await res.json();
+
+        const newProject = {
+          id: j.id,
+          title,
+          description,
+          rawJson,
+          timestamp: Date.now(),
+          created_at: new Date().toISOString(),
+        };
+
+        setGeneratedProjects((prev) => [newProject, ...(prev || [])]);
+        return j.id;
+      } catch (err) {
+        console.error("saveGeneratedProject error:", err);
+        return null;
+      }
+    },
+    [API, token, user]
+  );
+
+  const loadGeneratedProjects = useCallback(async () => {
+    if (!token) return generatedProjects;
+
+    try {
+      const res = await fetch(`${API}/projects/me`, {
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) throw new Error("Failed to load projects");
+
+      const j = await res.json();
+      if (j?.projects) {
+        setGeneratedProjects(j.projects);
+        return j.projects;
+      }
+      return [];
+    } catch (err) {
+      console.warn("loadGeneratedProjects error:", err);
+      return generatedProjects;
+    }
+  }, [API, token, generatedProjects]);
+
+  // ---------- PERSONA ----------
+  const savePersonaScores = useCallback(
+    async (scoresObj = {}) => {
+      if (!user?.uid) {
+        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        return true;
+      }
+
+      try {
+        const res = await fetch(`${API}/userdocs/persona`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ uid: user.uid, scores: scoresObj }),
+        });
+
+        if (!res.ok) throw new Error("persona save failed");
+
+        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        return true;
+      } catch (err) {
+        console.warn("savePersonaScores failed", err);
+        setPersonaScores((prev) => ({ ...(prev || {}), ...scoresObj }));
+        return false;
+      }
+    },
+    [API, token, user]
+  );
+
+  const loadPersonaScores = useCallback(
+    async (uid) => {
+      if (!uid || !token) return personaScores;
+      try {
+        const res = await fetch(`${API}/userdocs/persona/${uid}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return personaScores;
+        const j = await res.json();
+        if (j?.scores) setPersonaScores(j.scores);
+        return j.scores || {};
+      } catch {
+        return personaScores;
+      }
+    },
+    [API, token, personaScores]
+  );
+
+  const updatePersonaScore = useCallback(
+    (objOrKey, deltaOrVal = 0) => {
+      let next = {};
+      if (typeof objOrKey === "string") {
+        next = { [objOrKey]: Number(deltaOrVal || 0) };
+      } else if (objOrKey && typeof objOrKey === "object") {
+        next = { ...objOrKey };
+      } else return;
+
+      setPersonaScores((prev) => {
+        const merged = { ...(prev || {}) };
+        for (const [k, v] of Object.entries(next)) {
+          merged[k] = (merged[k] || 0) + Number(v || 0);
+        }
+        safeSet("cc_persona_cache", merged);
+        return merged;
+      });
+
+      savePersonaScores(next).catch(() => {});
+    },
+    [savePersonaScores]
+  );
+
+  const getTopPersona = useCallback(() => {
     const entries = Object.entries(personaScores || {});
     if (entries.length === 0)
       return { persona: "beginner", score: 0, all: [["beginner", 0]] };
-
-    const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+    const sorted = entries.sort((a, b) => b[1] - a[1]);
     return {
       persona: sorted[0][0],
       score: Number(sorted[0][1]),
       all: sorted,
     };
-  };
+  }, [personaScores]);
 
-  /* ------------------------------------
-        COURSE & PROGRESS (LOCAL MODE)
-  -------------------------------------*/
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [courseProgress, setCourseProgress] = useState({});
-  const [userStats, setUserStats] = useState({});
-
-  // helper: persist per-user cc_userdoc_<uid>
-  const persistUserDoc = (patch = {}) => {
-    try {
-      if (!canUseLocalStorage()) return;
-      if (!user?.uid) return;
-      const docKey = `cc_userdoc_${user.uid}`;
-      const existing = safeGetItem(docKey, {}) || {};
-      const merged = { ...existing, ...patch, updatedAt: Date.now() };
-      safeSetItem(docKey, merged);
-    } catch (err) {
-      // ignore
-    }
-  };
-
-  const enrollInCourse = async (courseSlug) => {
-    if (!user) return;
-    setEnrolledCourses((prev) => {
-      const arr = Array.isArray(prev) ? prev : [];
-      const next = arr.includes(courseSlug) ? arr : [...arr, courseSlug];
-      // persist to per-user doc
+  // ---------- USER DOCUMENTS ----------
+  const saveUserDoc = useCallback(
+    async (key, doc) => {
+      if (!user?.uid) return false;
       try {
-        persistUserDoc({ enrolledCourses: next });
-      } catch {}
-      return next;
-    });
-  };
+        const res = await fetch(`${API}/userdocs/doc`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ uid: user.uid, key, doc }),
+        });
+        if (!res.ok) throw new Error("userdoc save failed");
+        return true;
+      } catch (err) {
+        console.warn("saveUserDoc failed", err);
+        return false;
+      }
+    },
+    [API, token, user]
+  );
 
-  /**
-   * completeLessonLocal
-   * - Local-only, defensive, updates courseProgress state and per-user doc when possible.
-   * - Returns the updated courseProgress object for the course.
-   */
-  const completeLessonLocal = async (courseSlug, lessonSlug) => {
-    try {
-      // update in-state
-      let updatedCourseProgress = null;
-      setCourseProgress((prev) => {
-        const base = prev && typeof prev === "object" ? prev : {};
-        const course = base[courseSlug] || {
-          completedLessons: [],
-          currentLessonIndex: 0,
-          sessions: [],
-          timeSpentMinutes: 0,
-        };
+  const loadUserDoc = useCallback(
+    async (key) => {
+      if (!user?.uid) return null;
+      try {
+        const res = await fetch(`${API}/userdocs/doc/${user.uid}/${key}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return null;
+        const j = await res.json();
+        return j.doc || null;
+      } catch {
+        return null;
+      }
+    },
+    [API, token, user]
+  );
 
-        const updated = Array.from(
-          new Set([...(Array.isArray(course.completedLessons) ? course.completedLessons : []), lessonSlug])
-        );
-
-        const nextCourse = {
-          ...course,
-          completedLessons: updated,
-          currentLessonIndex: updated.length,
-          sessions: Array.isArray(course.sessions) ? course.sessions : [],
-          timeSpentMinutes: typeof course.timeSpentMinutes === "number" ? course.timeSpentMinutes : 0,
+  // ---------- GOALS ----------
+  const saveUserGoals = useCallback(
+    async (hoursPerWeek) => {
+      if (!token || !user?.uid) return false;
+      try {
+        const res = await fetch(`${API}/goals/save`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ hoursPerWeek }),
+        });
+        if (!res.ok) throw new Error("goals save failed");
+        setUserGoalsState({
+          hoursPerWeek,
           updatedAt: new Date().toISOString(),
-        };
+        });
+        return true;
+      } catch (err) {
+        console.warn("saveUserGoals failed", err);
+        return false;
+      }
+    },
+    [API, token, user]
+  );
 
-        updatedCourseProgress = {
-          ...base,
-          [courseSlug]: nextCourse,
-        };
-
-        // return new state
-        return updatedCourseProgress;
-      });
-
-      // persist to per-user doc if available
-      try {
-        persistUserDoc({ courseProgress: updatedCourseProgress[courseSlug] ? { ...updatedCourseProgress } : {} });
-      } catch {}
-
-      return updatedCourseProgress;
+  const loadUserGoals = useCallback(async () => {
+    if (!token || !user?.uid) return null;
+    try {
+      const res = await fetch(`${API}/goals/me`, { headers: authHeaders() });
+      if (!res.ok) throw new Error("goals fetch failed");
+      const j = await res.json();
+      if (j?.goals) {
+        setUserGoalsState(j.goals);
+        return j.goals;
+      }
+      return null;
     } catch (err) {
-      console.warn("completeLessonLocal failed", err);
+      console.warn("loadUserGoals failed", err);
       return null;
     }
-  };
+  }, [API, token, user]);
 
-  // keep alias for backward compatibility
-  const completeLessonFS = async (courseSlug, lessonSlug) => {
-    return completeLessonLocal(courseSlug, lessonSlug);
-  };
-
-  const isLessonCompleted = (courseSlug, lessonSlug) =>
-    Boolean(
-      Array.isArray(courseProgress?.[courseSlug]?.completedLessons) &&
-        courseProgress[courseSlug].completedLessons.includes(lessonSlug)
-    );
-
-  const getCourseCompletion = (courseSlug, totalLessons) => {
-    const completed = Array.isArray(
-      courseProgress?.[courseSlug]?.completedLessons
-    )
-      ? courseProgress[courseSlug].completedLessons
-      : [];
-
-    return totalLessons
-      ? Math.round((completed.length / totalLessons) * 100)
-      : 0;
-  };
-
-  /* ------------------------------------
-        HYDRATION + INITIAL LOAD
-  -------------------------------------*/
-  useEffect(() => {
-    loadGeneratedProjects();
-
-    // load per-user doc if present and populate courseProgress/enrolledCourses/userStats
-    try {
-      if (canUseLocalStorage() && user?.uid) {
-        const docKey = `cc_userdoc_${user.uid}`;
-        const doc = safeGetItem(docKey, null) || {};
-
-        // enrolled courses
-        if (Array.isArray(doc.enrolledCourses)) setEnrolledCourses(doc.enrolledCourses);
-
-        // course progress normalization
-        if (doc.courseProgress && typeof doc.courseProgress === "object") {
-          setCourseProgress(doc.courseProgress);
-        }
-
-        // userStats
-        if (doc.userStats && typeof doc.userStats === "object") {
-          setUserStats(doc.userStats);
-        }
-      }
-    } catch (err) {
-      // ignore
-    }
-
-    setLoading(false);
-    setHydrated(true);
-  }, []); // run once on mount
-
-  /* ------------------------------------
-        LOGOUT (FULL CLEAN)
-  -------------------------------------*/
-  const logout = async () => {
-    _setUser(null);
+  // ---------- LOGOUT ----------
+  const logout = useCallback(() => {
+    applyToken(null);
+    setUser(null);
     setEnrolledCourses([]);
     setCourseProgress({});
     setGeneratedProjects([]);
-    setUserGoals(null);
-    setUserStats({});
     setPersonaScores({});
-
-    if (canUseLocalStorage()) {
-      try {
-        window.localStorage.removeItem(USER_KEY);
-        window.localStorage.removeItem(GENERATED_PROJECTS_KEY);
-        window.localStorage.removeItem(PERSONA_STORAGE_KEY);
-        window.localStorage.removeItem(USER_GOALS_KEY);
-
-        // Delete old user docs
-        Object.keys(window.localStorage)
-          .filter((k) => k.startsWith("cc_userdoc_"))
-          .forEach((k) => window.localStorage.removeItem(k));
-
-        // Delete AI roadmap drafts
-        Object.keys(window.localStorage)
-          .filter((k) => k.startsWith("cybercode_ai_roadmap"))
-          .forEach((k) => window.localStorage.removeItem(k));
-      } catch {}
-    }
-
+    setUserGoalsState(null);
+    setUserStats({});
     try {
       window.location.href = "/";
     } catch {}
-  };
+  }, []);
 
-  /* ------------------------------------
-        EXPORTED CONTEXT VALUE
-  -------------------------------------*/
+  // ---------- HYDRATION ----------
+  useEffect(() => {
+    const init = async () => {
+      if (token) {
+        try {
+          const cachedUser = safeGet("cybercode_user_cache", null);
+          if (cachedUser?.uid) {
+            setUser(cachedUser);
+            await loadUserProfile(cachedUser.uid);
+          }
+        } catch (err) {
+          console.warn("Hydration failed:", err);
+        }
+      }
+      setLoading(false);
+      setHydrated(true);
+    };
+
+    init();
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (user && user.uid) safeSet("cybercode_user_cache", user);
+      else safeRemove("cybercode_user_cache");
+    } catch {}
+  }, [user]);
+
+  // ---------- EXPOSED CONTEXT ----------
   return (
     <UserContext.Provider
       value={{
         user,
-        setUser,
-        loading,
+        token,
         hydrated,
+        loading,
+
+        setUser,
+        loginWithGoogle,
         logout,
 
         enrolledCourses,
@@ -393,26 +672,25 @@ export const UserProvider = ({ children }) => {
 
         courseProgress,
         setCourseProgress,
+        completeLesson,
+        completeLessonLocal,
+
+        recordStudySession,
 
         personaScores,
         updatePersonaScore,
         getTopPersona,
+        loadPersonaScores,
+
+        generatedProjects,
+        saveGeneratedProject,
+        loadGeneratedProjects,
 
         userGoals,
         saveUserGoals,
-        setUserGoals,
-
-        generatedProjects,
-        saveGeneratedProject: saveGeneratedProjectLocal,
-        loadGeneratedProjects,
-
-        // local-only API
-        completeLessonLocal,
-        // backward compatible alias
-        completeLessonFS,
-
-        isLessonCompleted,
-        getCourseCompletion,
+        loadUserGoals,
+        saveUserDoc,
+        loadUserDoc,
 
         userStats,
         setUserStats,
@@ -421,15 +699,12 @@ export const UserProvider = ({ children }) => {
       {hydrated ? (
         children
       ) : (
-        <div className="w-full min-h-screen flex items-center justify-center text-gray-500">
-          Loading...
+        <div className="w-full min-h-screen flex items-center justify-center text-gray-400">
+          Loading…
         </div>
       )}
     </UserContext.Provider>
   );
 };
 
-/* ------------------------------------
-        HOOK
--------------------------------------*/
 export const useUser = () => useContext(UserContext);

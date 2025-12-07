@@ -8,15 +8,13 @@ import React, {
 import { useParams, Link, useNavigate } from "react-router-dom";
 import lessonsData from "../data/lessonsData";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Icon } from "@iconify/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
+import API_URL from "../config/api";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
 import { quickLessonPersonaDelta } from "../utils/personaEngine";
 import courseData from "../data/courseData";
@@ -34,7 +32,7 @@ export default function LessonDetail() {
   const sectionRefs = useRef([]);
   const [toast, setToast] = useState(null);
 
-  // prevent redirect race while completing a lesson
+  // prevent redirect while lesson completion is updating state
   const [suppressRedirect, setSuppressRedirect] = useState(false);
 
   const showToast = (msg) => {
@@ -42,15 +40,15 @@ export default function LessonDetail() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  // NOTE: get everything from UserContext (useUser)
   const {
     user,
+    token,
     enrolledCourses = [],
     courseProgress = {},
     updatePersonaScore,
     completeLessonLocal,
+    recordStudySession,
     setCourseProgress,
-    recordStudySession, // ⏱ used for time tracking
   } = useUser();
 
   useEffect(() => {
@@ -62,24 +60,49 @@ export default function LessonDetail() {
   const lesson = lessonIndex >= 0 ? lessons[lessonIndex] : null;
   const course = courseData.find((c) => c.slug === courseSlug);
 
-  // Reset code outputs when lesson changes
   useEffect(() => {
     setOutputs({});
     setCodeInputs({});
     setRunning({});
   }, [lessonSlug]);
 
-  // determine progress number (defaults to 0)
+  // hydrate lessons progress from backend (if token exists)
+  useEffect(() => {
+    async function hydrateFromServer() {
+      if (!user?.uid || !token || !setCourseProgress) return;
+
+      try {
+        const resp = await fetch(`${API_URL}/user/${user.uid}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!resp.ok) return;
+
+        const j = await resp.json().catch(() => null);
+        if (!j) return;
+
+        if (j.courseProgress) {
+          setCourseProgress(j.courseProgress);
+        }
+      } catch (err) {
+        console.warn("LessonDetail hydration failed", err);
+      }
+    }
+
+    hydrateFromServer();
+    // eslint-disable-next-line
+  }, [user?.uid, token]);
+
+  // derive local progress
   const progress =
-    courseProgress &&
-    courseProgress[courseSlug] &&
-    typeof courseProgress[courseSlug].currentLessonIndex === "number"
-      ? courseProgress[courseSlug].currentLessonIndex
-      : 0;
+    courseProgress?.[courseSlug]?.currentLessonIndex ?? 0;
 
   const isNextLesson = lessonIndex === progress;
 
-  // Block locked lessons — guarded by suppressRedirect to avoid race during completion
   useEffect(() => {
     if (lessonIndex === -1) return;
     if (lessonIndex > progress && !suppressRedirect) {
@@ -87,41 +110,31 @@ export default function LessonDetail() {
     }
   }, [lessonIndex, progress, courseSlug, navigate, suppressRedirect]);
 
-  // Persona updates when viewing lesson (gentle half-delta)
+  // persona small delta on entering lesson
   useEffect(() => {
-    if (!user || !lesson || typeof updatePersonaScore !== "function") return;
+    if (!user || !lesson || !updatePersonaScore) return;
     try {
       const deltas = quickLessonPersonaDelta(lesson);
-      if (Object.keys(deltas).length) {
-        const halfDeltas = Object.fromEntries(
-          Object.entries(deltas).map(([k, v]) => [
-            k,
-            Math.max(1, Math.round(v / 2)),
-          ])
-        );
-        updatePersonaScore(halfDeltas);
-      }
-    } catch (err) {
-      // swallow persona errors so UI stays responsive
-      console.warn("Persona update skipped:", err);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lessonSlug, user, lesson]);
+      const half = Object.fromEntries(
+        Object.entries(deltas).map(([k, v]) => [k, Math.max(1, Math.round(v / 2))])
+      );
+      updatePersonaScore(half);
+    } catch {}
+    // eslint-disable-next-line
+  }, [lessonSlug, user]);
 
-  // ⏱ STUDY-TIME TRACKING (per lesson)
+  // session tracking
   useEffect(() => {
-    if (!user || typeof recordStudySession !== "function") return;
+    if (!user || !recordStudySession) return;
     const start = Date.now();
 
     return () => {
-      const diffMs = Date.now() - start;
-      const minutes = Math.round(diffMs / 60000); // round to nearest minute
-      if (minutes > 0) {
+      const diff = Date.now() - start;
+      const mins = Math.round(diff / 60000);
+      if (mins > 0) {
         try {
-          recordStudySession(courseSlug, lessonSlug, minutes);
-        } catch (err) {
-          console.warn("Failed to record study session:", err);
-        }
+          recordStudySession(courseSlug, lessonSlug, mins);
+        } catch {}
       }
     };
   }, [user, courseSlug, lessonSlug, recordStudySession]);
@@ -143,69 +156,78 @@ export default function LessonDetail() {
     );
   }
 
-  // ------------------------------------------------------
-  // LOCAL-ONLY LESSON COMPLETION
-  // ------------------------------------------------------
+  // *********************************************
+  //          🔥 SERVER–AWARE LESSON COMPLETE
+  // *********************************************
   const handleComplete = async () => {
-    if (!user) {
-      showToast("Please login to mark lesson complete.");
-      return;
-    }
-    if (!enrolledCourses || !enrolledCourses.includes(courseSlug)) {
-      showToast("Please enroll to complete lessons.");
-      return;
-    }
-    if (!isNextLesson) {
-      showToast("Complete previous lessons first!");
-      return;
-    }
+    if (!user) return showToast("Please login to mark lesson complete.");
+    if (!enrolledCourses.includes(courseSlug))
+      return showToast("Please enroll to complete lessons.");
+    if (!isNextLesson)
+      return showToast("Complete previous lessons first!");
 
-    try {
-      // prevent the blocking effect from immediately redirecting while update propagates
-      setSuppressRedirect(true);
+    setSuppressRedirect(true);
 
-      if (typeof completeLessonLocal === "function") {
-        // completeLessonLocal updates context state and per-user doc
-        await completeLessonLocal(courseSlug, lessonSlug);
-      } else {
-        console.warn("completeLessonLocal not available on context.");
-      }
+    const authToken =
+      token ||
+      (typeof window !== "undefined" &&
+        window.localStorage.getItem("cybercode_token"));
 
-      // award persona points for completing this lesson (full deltas)
+    // If token exists → try hitting backend first
+    if (authToken) {
       try {
-        const deltas = quickLessonPersonaDelta(lesson);
-        if (
-          Object.keys(deltas).length &&
-          typeof updatePersonaScore === "function"
-        ) {
-          updatePersonaScore(deltas);
+        const resp = await fetch(`${API_URL}/progress/complete-lesson`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ courseSlug, lessonSlug }),
+        });
+
+        if (resp.ok) {
+          // always update local context to reflect UI state
+          await completeLessonLocal(courseSlug, lessonSlug);
+          showToast("Lesson completed 🎉");
+
+          // navigate next
+          const next = lessonIndex + 1;
+          setTimeout(() => {
+            if (next < lessons.length) {
+              navigate(`/courses/${courseSlug}/lessons/${lessons[next].slug}`);
+            } else {
+              navigate(`/courses/${courseSlug}`);
+            }
+          }, 900);
+
+          return;
         }
       } catch (err) {
-        console.warn("Persona awarding skipped:", err);
+        console.warn("Server complete-lesson failed, fallback", err);
       }
+    }
 
-      showToast("Lesson completed successfully 🎉");
+    // fallback: local completion (no break in prototype)
+    try {
+      await completeLessonLocal(courseSlug, lessonSlug);
+      showToast("Lesson completed (local mode) 🎉");
 
-      // Move to next lesson automatically (if exists)
-      const nextIndex = lessonIndex + 1;
-      if (nextIndex < lessons.length) {
-        setTimeout(() => {
-          navigate(
-            `/courses/${courseSlug}/lessons/${lessons[nextIndex].slug}`
-          );
-        }, 900);
-      } else {
-        // If last lesson, navigate back to course page after a brief pick
-        setTimeout(() => navigate(`/courses/${courseSlug}`), 900);
-      }
+      const next = lessonIndex + 1;
+      setTimeout(() => {
+        if (next < lessons.length) {
+          navigate(`/courses/${courseSlug}/lessons/${lessons[next].slug}`);
+        } else {
+          navigate(`/courses/${courseSlug}`);
+        }
+      }, 900);
     } catch (err) {
       console.error(err);
       showToast("Failed to mark complete. Try again.");
     } finally {
-      // brief cooldown so the blocking effect won't redirect while the next route loads
       setTimeout(() => setSuppressRedirect(false), 1200);
     }
   };
+
 
   // ------------------------------------------------------
   // CODE RUNNER LOGIC (UNCHANGED)

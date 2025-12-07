@@ -1,56 +1,96 @@
 // src/pages/Enroll.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 
-/**
- * Route expected: /enroll/:courseSlug
- *
- * Behaviour summary (Soft Premium):
- * - If user not logged in -> prompt to login/register
- * - If user logged in & NOT enrolled -> show clear explanation:
- *    - FREE access: basic lessons available immediately (optimistic enroll)
- *    - PREMIUM (paid) unlocks deep-dive labs, mentor access, certificate
- * - If user already enrolled (free) -> show message + "Upgrade to Premium" CTA
- * - If user already enrolled & premium -> show "Go to Course" (full access)
- */
-
 export default function Enroll() {
   const { courseSlug } = useParams();
-  const { user, enrolledCourses = [], enrollInCourse } = useUser();
+  const {
+    user,
+    token,
+    enrolledCourses = [],
+    loadUserProfile,   // ✅ use correct backend refresh method
+  } = useUser();
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(false);
+
   // derived flags
-  const isEnrolled = useMemo(() => Array.isArray(enrolledCourses) && enrolledCourses.includes(courseSlug), [enrolledCourses, courseSlug]);
+  const isEnrolled = useMemo(
+    () =>
+      Array.isArray(enrolledCourses) &&
+      enrolledCourses.includes(courseSlug),
+    [enrolledCourses, courseSlug]
+  );
+
   const isPremium = Boolean(user?.isPremium);
 
-  // Friendly copy strings (soft upsell style)
-  const freeText = "Enroll for free to access the core lessons. Continue your learning journey immediately.";
-  const premiumText = "Upgrade to Premium to unlock hands-on labs, mentor sessions, advanced projects, and an accredited certificate.";
+  const freeText =
+    "Enroll for free to access the core lessons. Continue your learning journey immediately.";
+  const premiumText =
+    "Upgrade to Premium to unlock hands-on labs, mentor sessions, advanced projects, and an accredited certificate.";
 
+  // ---------------------------------------------
+  // FREE ENROLL → BACKEND POST CALL (fetch)
+  // ---------------------------------------------
   const handleFreeEnroll = async () => {
     if (!user) {
-      // keep user experience friendly: send them to register / login with redirect back
-      sessionStorage.setItem("redirectAfterLogin", `/enroll/${courseSlug}`);
+      sessionStorage.setItem(
+        "redirectAfterLogin",
+        `/enroll/${courseSlug}`
+      );
+      navigate("/register");
+      return;
+    }
+
+    if (!token) {
+      alert("Session expired. Please login again.");
       navigate("/register");
       return;
     }
 
     try {
-      // optimistic: provider will update local state and persist to Firestore
-      await enrollInCourse(courseSlug);
-      // gentle confirmation
-      alert(`You're enrolled (Free) — basic lessons unlocked for "${courseSlug}".`);
+      setLoading(true);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/user/enroll`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ courseSlug }),
+        }
+      );
+
+      if (res.status === 401) {
+        alert("Session expired. Please login again.");
+        navigate("/register");
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Backend enroll failed");
+      }
+
+      // Refresh user data from backend (re-fetch enrolledCourses)
+      await loadUserProfile(user.uid);
+
+      alert(
+        `You're enrolled (Free) — basic lessons unlocked for "${courseSlug}".`
+      );
       navigate(`/courses/${courseSlug}`);
     } catch (err) {
       console.error("Enrollment failed:", err);
       alert("Enrollment failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleUpgrade = () => {
-    // navigate to payment with friendly query params
     const q = new URLSearchParams({
       upgrade: "course",
       course: courseSlug,
@@ -75,17 +115,21 @@ export default function Enroll() {
           🎓 Enroll: {courseSlug}
         </h1>
 
-        {/* Info */}
         <p className="text-gray-700 dark:text-gray-300 mb-6">
-          Choose how you want to join this course. We offer a friendly free track to get started and a Premium track for deeper hands-on learning.
+          Choose how you want to join this course. We offer a friendly free
+          track to get started and a Premium track for deeper hands-on
+          learning.
         </p>
 
-        {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Free Track */}
+          {/* FREE TRACK */}
           <div className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300">Free Access</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 my-3">{freeText}</p>
+            <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300">
+              Free Access
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 my-3">
+              {freeText}
+            </p>
 
             {user ? (
               isEnrolled ? (
@@ -114,17 +158,19 @@ export default function Enroll() {
               ) : (
                 <button
                   onClick={handleFreeEnroll}
-                  className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
                 >
-                  Enroll for Free
+                  {loading ? "Enrolling…" : "Enroll for Free"}
                 </button>
               )}
 
               <button
-                onClick={() => {
-                  // gentle nudging to premium details (non-aggressive)
-                  document.getElementById("premium-info")?.scrollIntoView({ behavior: "smooth" });
-                }}
+                onClick={() =>
+                  document
+                    .getElementById("premium-info")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
                 className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm"
               >
                 Learn More
@@ -132,12 +178,19 @@ export default function Enroll() {
             </div>
           </div>
 
-          {/* Premium Track */}
-          <div id="premium-info" className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          {/* PREMIUM TRACK */}
+          <div
+            id="premium-info"
+            className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+          >
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-yellow-700 dark:text-yellow-300">Premium (Recommended)</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 my-3">{premiumText}</p>
+                <h3 className="text-lg font-semibold text-yellow-700 dark:text-yellow-300">
+                  Premium (Recommended)
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 my-3">
+                  {premiumText}
+                </p>
 
                 <ul className="text-sm text-gray-700 dark:text-gray-300 mb-4 space-y-1">
                   <li>• Live mentor sessions & reviews</li>
@@ -149,7 +202,9 @@ export default function Enroll() {
 
               <div className="text-right">
                 <div className="text-xs text-gray-500 mb-2">Starting from</div>
-                <div className="text-2xl font-extrabold text-indigo-700 dark:text-indigo-300">₹499</div>
+                <div className="text-2xl font-extrabold text-indigo-700 dark:text-indigo-300">
+                  ₹499
+                </div>
                 <div className="text-xs text-gray-500">one-time</div>
               </div>
             </div>
@@ -181,7 +236,6 @@ export default function Enroll() {
           </div>
         </div>
 
-        {/* Back */}
         <div className="mt-8 text-center">
           <button
             onClick={() => navigate(-1)}
