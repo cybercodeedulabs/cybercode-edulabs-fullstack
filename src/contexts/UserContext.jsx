@@ -194,11 +194,33 @@ export const UserProvider = ({ children }) => {
         }
 
         if (Array.isArray(j?.projects)) {
-          // normalize raw_json -> rawJson
-          const mapped = j.projects.map((p) => ({
-            ...p,
-            rawJson: p.raw_json ?? p.rawJson ?? null,
-          }));
+          // normalize raw_json -> rawJson and ensure fields exist
+          const mapped = j.projects.map((p) => {
+            const rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+            const tech_stack =
+              p.tech_stack ??
+              p.techStack ??
+              (rawJson && (rawJson.tech_stack || rawJson.techStack || rawJson.tech)) ??
+              [];
+            const tasks =
+              p.tasks ??
+              p.steps ??
+              (rawJson && (rawJson.tasks || rawJson.steps || rawJson.tasks_list)) ??
+              [];
+            const difficulty = p.difficulty ?? (rawJson && (rawJson.difficulty || rawJson.level)) ?? "Intermediate";
+            const created_at = p.created_at ?? p.createdAt ?? p.created ?? null;
+            const timestamp = Number(p.timestamp) || (created_at ? new Date(created_at).getTime() : null);
+
+            return {
+              ...p,
+              rawJson,
+              tech_stack,
+              tasks,
+              difficulty,
+              timestamp,
+              created_at,
+            };
+          });
           setGeneratedProjects(mapped);
         } else {
           setGeneratedProjects([]);
@@ -561,15 +583,32 @@ export const UserProvider = ({ children }) => {
   const saveGeneratedProject = useCallback(
     async ({ title, description, rawJson }) => {
       // Build a safe project object to return & add to UI. We will return the full project object.
-      const makeLocalProject = (id) => ({
-        id,
-        title: title || "Untitled Project",
-        description: description || "No description provided.",
-        rawJson: rawJson ?? null,
-        // keep same naming as backend: timestamp is epoch ms; created_at ISO string for UI
-        timestamp: Date.now(),
-        created_at: new Date().toISOString(),
-      });
+      const makeLocalProject = (id) => {
+        // additional normalization for local fallback
+        const normalizedRaw = rawJson ?? null;
+        const tech_stack =
+          (normalizedRaw && (normalizedRaw.tech_stack || normalizedRaw.techStack || normalizedRaw.tech)) ||
+          [];
+        const tasks =
+          (normalizedRaw && (normalizedRaw.tasks || normalizedRaw.steps || normalizedRaw.tasks_list)) ||
+          [];
+        const difficulty =
+          (normalizedRaw && (normalizedRaw.difficulty || normalizedRaw.level)) ||
+          "Intermediate";
+
+        return {
+          id,
+          title: title || "Untitled Project",
+          description: description || "No description provided.",
+          rawJson: normalizedRaw,
+          tech_stack,
+          tasks,
+          difficulty,
+          // keep same naming as backend: timestamp is epoch ms; created_at ISO string for UI
+          timestamp: Date.now(),
+          created_at: new Date().toISOString(),
+        };
+      };
 
       if (!token || !user?.uid) {
         // local fallback: create id and store in in-memory state
@@ -580,24 +619,53 @@ export const UserProvider = ({ children }) => {
       }
 
       try {
+        // Prepare normalized payload (send richer data to backend so DB stores full structure)
+        const normalizedRaw = rawJson ?? null;
+        const payloadTech =
+          (normalizedRaw && (normalizedRaw.tech_stack || normalizedRaw.techStack || normalizedRaw.tech)) || [];
+        const payloadTasks =
+          (normalizedRaw && (normalizedRaw.tasks || normalizedRaw.steps || normalizedRaw.tasks_list)) || [];
+        const payloadDifficulty =
+          (normalizedRaw && (normalizedRaw.difficulty || normalizedRaw.level)) || "Intermediate";
+        const payloadTimestamp = Date.now();
+
+        const payload = {
+          title: title || "Untitled Project",
+          description: description || "No description provided.",
+          rawJson: normalizedRaw,
+          tech_stack: payloadTech,
+          tasks: payloadTasks,
+          difficulty: payloadDifficulty,
+          timestamp: payloadTimestamp,
+        };
+
         const res = await fetch(`${API}/projects/save`, {
           method: "POST",
           headers: authHeaders(),
-          body: JSON.stringify({ title, description, rawJson }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) throw new Error("Project save failed");
 
         const j = await res.json();
-        // create project object to add to UI list
+
+        // Build project object to add to UI list, prefer server values when returned
+        const serverId = j?.id || j?.project?.id || (j && typeof j === "object" && j.id) || null;
+        const serverCreated = j?.created_at || j?.createdAt || j?.project?.created_at || null;
+        const serverTimestamp = j?.timestamp || (j?.project && j.project.timestamp) || payloadTimestamp;
+
         const newProject = {
-          id: j.id,
-          title: title || "Untitled Project",
-          description: description || "No description provided.",
-          rawJson: rawJson ?? null,
-          timestamp: Date.now(),
-          created_at: new Date().toISOString(),
+          id: serverId || String(payloadTimestamp) + "-" + Math.random(),
+          title: j?.title || payload.title,
+          description: j?.description || payload.description,
+          rawJson: j?.raw_json ?? j?.rawJson ?? payload.rawJson ?? null,
+          tech_stack: j?.tech_stack ?? j?.techStack ?? payload.tech_stack ?? [],
+          tasks: j?.tasks ?? j?.steps ?? payload.tasks ?? [],
+          difficulty: j?.difficulty ?? payload.difficulty ?? "Intermediate",
+          timestamp: Number(serverTimestamp) || payloadTimestamp,
+          created_at: serverCreated || new Date().toISOString(),
         };
+
         setGeneratedProjects((prev) => [newProject, ...(Array.isArray(prev) ? prev : [])]);
         // return full project object for immediate UI consumption
         return newProject;
@@ -669,11 +737,33 @@ export const UserProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to load projects");
       const j = await res.json();
       if (j?.projects) {
-        // normalize raw_json -> rawJson
-        const mapped = j.projects.map((p) => ({
-          ...p,
-          rawJson: p.raw_json ?? p.rawJson ?? null,
-        }));
+        // normalize raw_json -> rawJson and ensure fields exist and proper types
+        const mapped = j.projects.map((p) => {
+          const rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+          const tech_stack =
+            p.tech_stack ??
+            p.techStack ??
+            (rawJson && (rawJson.tech_stack || rawJson.techStack || rawJson.tech)) ??
+            [];
+          const tasks =
+            p.tasks ??
+            p.steps ??
+            (rawJson && (rawJson.tasks || rawJson.steps || rawJson.tasks_list)) ??
+            [];
+          const difficulty = p.difficulty ?? (rawJson && (rawJson.difficulty || rawJson.level)) ?? "Intermediate";
+          const created_at = p.created_at ?? p.createdAt ?? p.created ?? null;
+          const timestamp = Number(p.timestamp) || (created_at ? new Date(created_at).getTime() : null);
+
+          return {
+            ...p,
+            rawJson,
+            tech_stack,
+            tasks,
+            difficulty,
+            timestamp,
+            created_at,
+          };
+        });
         setGeneratedProjects(mapped);
         return mapped;
       }
