@@ -196,7 +196,16 @@ export const UserProvider = ({ children }) => {
         if (Array.isArray(j?.projects)) {
           // normalize raw_json -> rawJson and ensure fields exist
           const mapped = j.projects.map((p) => {
-            const rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+            // --- FIX: Parse raw_json if backend returned a string ---
+            let rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+            if (typeof rawJson === "string") {
+              try {
+                rawJson = JSON.parse(rawJson);
+              } catch {
+                rawJson = null;
+              }
+            }
+
             const tech_stack =
               p.tech_stack ??
               p.techStack ??
@@ -739,7 +748,16 @@ export const UserProvider = ({ children }) => {
       if (j?.projects) {
         // normalize raw_json -> rawJson and ensure fields exist and proper types
         const mapped = j.projects.map((p) => {
-          const rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+          // --- FIX: Parse raw_json if backend returned a string ---
+          let rawJson = p.raw_json ?? p.rawJson ?? p.raw ?? null;
+          if (typeof rawJson === "string") {
+            try {
+              rawJson = JSON.parse(rawJson);
+            } catch {
+              rawJson = null;
+            }
+          }
+
           const tech_stack =
             p.tech_stack ??
             p.techStack ??
