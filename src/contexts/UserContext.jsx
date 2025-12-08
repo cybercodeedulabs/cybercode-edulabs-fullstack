@@ -205,6 +205,21 @@ export const UserProvider = ({ children }) => {
                 rawJson = null;
               }
             }
+            // --- EXTRA NORMALIZATION FOR JSONB (object) ---
+            if (rawJson && typeof rawJson === "object" && !Array.isArray(rawJson)) {
+              for (const key of Object.keys(rawJson)) {
+                const val = rawJson[key];
+                // If backend stored nested fields as stringified JSON, parse them
+                if (typeof val === "string") {
+                  try {
+                    rawJson[key] = JSON.parse(val);
+                  } catch {
+                    // leave as string
+                  }
+                }
+              }
+            }
+
 
             const tech_stack =
               p.tech_stack ??
@@ -757,6 +772,21 @@ export const UserProvider = ({ children }) => {
               rawJson = null;
             }
           }
+          // --- EXTRA NORMALIZATION FOR JSONB (object) ---
+          if (rawJson && typeof rawJson === "object" && !Array.isArray(rawJson)) {
+            for (const key of Object.keys(rawJson)) {
+              const val = rawJson[key];
+              // If backend stored nested fields as stringified JSON, parse them
+              if (typeof val === "string") {
+                try {
+                  rawJson[key] = JSON.parse(val);
+                } catch {
+                  // leave as string
+                }
+              }
+            }
+          }
+
 
           const tech_stack =
             p.tech_stack ??
