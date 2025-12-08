@@ -186,68 +186,74 @@ export default function UnifiedAIRoadmap({ goals }) {
   // ------------------------------------------------------------
   // Modal UI (Glassmorphic)
   // ------------------------------------------------------------
-  const ExplanationModal = () => {
-    if (!modalOpen) return null;
+// ------------------------------------------------------------
+// Modal UI (Upgraded Premium Glassmorphic Modal)
+// ------------------------------------------------------------
+const ExplanationModal = () => {
+  if (!modalOpen) return null;
 
-    return createPortal(
-      <AnimatePresence>
+  // Remove duplicate title inside explanation (AI often repeats it)
+  const cleanedHtml =
+    monthExplanations[modalMonthNumber]
+      ?.replace(new RegExp(modalMonthTitle, "gi"), "")
+      .trim() || "";
+
+  return createPortal(
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-[2000]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <motion.div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-[2000]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          className="
+            bg-white/70 dark:bg-gray-900/60
+            rounded-2xl p-8 w-[90%] max-w-lg shadow-2xl
+            border border-white/40 dark:border-gray-700/50
+            backdrop-blur-2xl
+          "
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{ duration: 0.22 }}
         >
-          <motion.div
-            className="
-              bg-white/20 dark:bg-gray-800/30 
-              rounded-2xl p-6 w-[90%] max-w-xl shadow-xl
-              border border-white/30 dark:border-gray-700/40
-              backdrop-blur-xl
-            "
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-          >
-            {/* Title */}
-            <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-300 mb-3">
-              {modalMonthTitle}
-            </h3>
+          {/* Modal Title */}
+          <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-300 mb-4">
+            {modalMonthTitle}
+          </h3>
 
-            {/* Loading Spinner */}
-            {explainLoading === modalMonthNumber && (
-              <div className="text-center py-6 text-indigo-500 animate-pulse">
-                Fetching explanation…
-              </div>
-            )}
-
-            {/* Explanation Content */}
-            {!explainLoading && monthExplanations[modalMonthNumber] && (
-              <div
-                className="prose dark:prose-invert max-w-none leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: monthExplanations[modalMonthNumber],
-                }}
-              />
-            )}
-
-            {/* Close Button */}
-            <div className="mt-6 text-right">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="
-                  px-4 py-2 rounded-lg bg-indigo-600 text-white 
-                  hover:bg-indigo-700 transition
-                "
-              >
-                Close
-              </button>
+          {/* Loading */}
+          {explainLoading === modalMonthNumber ? (
+            <div className="text-center py-6 text-indigo-500 font-medium animate-pulse">
+              Fetching explanation…
             </div>
-          </motion.div>
+          ) : (
+            <div
+              className="prose dark:prose-invert max-w-none leading-relaxed text-gray-800 dark:text-gray-200"
+              dangerouslySetInnerHTML={{ __html: cleanedHtml }}
+            />
+          )}
+
+          {/* Footer Buttons */}
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={() => setModalOpen(false)}
+              className="
+                px-5 py-2 rounded-lg bg-indigo-600 text-white
+                hover:bg-indigo-700 transition shadow-md
+              "
+            >
+              Close
+            </button>
+          </div>
         </motion.div>
-      </AnimatePresence>,
-      document.body
-    );
-  };
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  );
+};
+
 
   // ------------------------------------------------------------
   // Main UI
