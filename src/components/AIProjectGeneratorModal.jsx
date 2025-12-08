@@ -1,5 +1,5 @@
 // src/components/AIProjectGeneratorModal.jsx
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useUser } from "../contexts/UserContext";
@@ -22,32 +22,51 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(null); // full project object returned by saveGeneratedProject
+  const [generated, setGenerated] = useState(null); 
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // NEW — input ref for auto-focus & Enter key
+  const inputRef = useRef(null);
+
+  // Auto-focus + Escape key handler
+  useEffect(() => {
+    if (isOpen && inputRef.current) inputRef.current.focus();
+
+    const handleKey = (e) => {
+      if (!isOpen) return;
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (!loading) generateProject();
+      }
+
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isOpen, loading, topic]);
 
   if (!isOpen) return null;
 
   // ---------- Helpers: sanitize and parse AI output ----------
 
-  // Remove code fences and surrounding markdown
   const stripCodeFences = (text) => {
     if (!text || typeof text !== "string") return text;
-    // remove triple backtick blocks wrappers (but keep inner)
     const fenceRe = /```(?:json|js|javascript|json5)?\s*([\s\S]*?)```/i;
     const m = text.match(fenceRe);
     if (m && m[1]) return m[1].trim();
-    // remove single-line fences or ``` on their own lines
     return text.replace(/```/g, "").trim();
   };
 
-  // Try to find the first JSON object substring in a mixed string
   const extractFirstJsonSubstring = (s) => {
     if (!s || typeof s !== "string") return null;
     const start = s.indexOf("{");
     if (start === -1) return null;
 
-    // Attempt to find matching closing brace by tracking braces
     let depth = 0;
     for (let i = start; i < s.length; i++) {
       const ch = s[i];
@@ -62,41 +81,31 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
     return null;
   };
 
-  // Try multiple parsing strategies to obtain a JS object from AI text
   const safeParseJsonFromText = (text) => {
     if (!text || typeof text !== "string") return null;
 
-    // 1) strip fences
     let cleaned = stripCodeFences(text);
 
-    // common issue: AI returns markdown lists or extra commentary. attempt direct parse first
     try {
       return JSON.parse(cleaned);
-    } catch (e) {
-      // continue
-    }
+    } catch (e) {}
 
-    // 2) attempt to extract first {...} substring and parse
     const jsonSub = extractFirstJsonSubstring(cleaned);
     if (jsonSub) {
       try {
         return JSON.parse(jsonSub);
       } catch (e) {
-        // try to sanitize small issues like trailing commas
         const fixed = jsonSub.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
         try {
           return JSON.parse(fixed);
-        } catch (e2) {
-          // continue
-        }
+        } catch (e2) {}
       }
     }
 
-    // 3) fallback: attempt to find property-like lines and build object heuristically
-    // This is a minimal heuristic: lines like `title: Value` -> { title: "Value" }
     const obj = {};
     const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
     let foundAny = false;
+
     for (const line of lines) {
       const kv = line.split(":").map((x) => x.trim());
       if (kv.length >= 2) {
@@ -108,26 +117,34 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
         }
       }
     }
+
     if (foundAny) return obj;
 
-    // 4) give up
     return null;
   };
 
-  // Normalize structure to UI-friendly shape
   const normalizeProject = (raw, fallbackTopic) => {
     if (!raw || typeof raw !== "object") raw = {};
 
-    // Prefer arrays for tech_stack/tasks
     const techStackCandidates =
-      raw.tech_stack || raw.techStack || raw["tech-stack"] || raw.tech || raw.stack || [];
-    const tasksCandidates = raw.tasks || raw.tasks_list || raw.steps || raw.milestones || raw.tasks_list || [];
+      raw.tech_stack ||
+      raw.techStack ||
+      raw["tech-stack"] ||
+      raw.tech ||
+      raw.stack ||
+      [];
+    const tasksCandidates =
+      raw.tasks ||
+      raw.tasks_list ||
+      raw.steps ||
+      raw.milestones ||
+      raw.tasks_list ||
+      [];
 
     const toArray = (v) => {
       if (!v) return [];
       if (Array.isArray(v)) return v;
       if (typeof v === "string") {
-        // split by line breaks or commas
         const sep = v.includes("\n") ? "\n" : ",";
         return v.split(sep).map((s) => s.trim()).filter(Boolean);
       }
@@ -160,16 +177,17 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
       description,
       techStack: toArray(techStackCandidates),
       difficulty,
-      steps: toArray(tasksCandidates).slice(0, 10), // keep reasonable limit
+      steps: toArray(tasksCandidates).slice(0, 10),
       timestamp: Date.now(),
       rawJson: raw,
     };
   };
 
-  // ---------- Main generation flow ----------
+  // ---------- Main generation ----------
   const generateProject = async () => {
     setError(null);
     setGenerated(null);
+
     if (!topic || !topic.trim()) {
       setError("Please enter a topic or project idea.");
       return;
@@ -200,57 +218,57 @@ Topic: ${topic}`,
       }
 
       const data = await res.json().catch(() => null);
-      const text = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+      const text =
+        data?.choices?.[0]?.message?.content ||
+        data?.choices?.[0]?.text ||
+        "";
 
-      if (!text) {
-        throw new Error("AI returned empty response.");
-      }
+      if (!text) throw new Error("AI returned empty response.");
 
-      // Parse AI output robustly
-      const parsed = safeParseJsonFromText(String(text));
-
-      if (!parsed) {
-        // as a last resort, attempt to parse the entire returned raw (if raw exists)
-        const fallbackRaw = data?.raw?.choices?.[0]?.message?.content || data?.raw?.choices?.[0]?.text;
-        const parsedFallback = fallbackRaw ? safeParseJsonFromText(String(fallbackRaw)) : null;
-        if (parsedFallback) {
-          parsed = parsedFallback;
-        }
-      }
+      let parsed = safeParseJsonFromText(String(text));
 
       if (!parsed) {
-        // final fallback: build a minimal object from the prompt/topic
+        const fallbackRaw =
+          data?.raw?.choices?.[0]?.message?.content ||
+          data?.raw?.choices?.[0]?.text;
+        const parsedFallback = fallbackRaw
+          ? safeParseJsonFromText(String(fallbackRaw))
+          : null;
+        if (parsedFallback) parsed = parsedFallback;
+      }
+
+      if (!parsed) {
         const fallbackObj = {
           title: `Project: ${topic}`,
-          description: `AI returned an unparsable response. Please try again with a simpler topic or check logs.`,
+          description:
+            "AI returned an unparsable response. Please try again with a simpler topic.",
           tech_stack: [],
           difficulty: "Intermediate",
           tasks: [],
         };
-        // still save this as raw so you have a record
+
         const finalNormalized = normalizeProject(fallbackObj, topic);
+
         const saved = await saveGeneratedProject({
           title: finalNormalized.title,
           description: finalNormalized.description,
           rawJson: fallbackObj,
         });
+
         setGenerated(saved);
-        setError("AI returned unexpected output; saved a fallback project. Try regenerating with a simpler prompt.");
+        setError("AI returned unexpected output; fallback project saved.");
         setLoading(false);
         return;
       }
 
-      // At this point we have a parsed JSON object
       const finalNormalized = normalizeProject(parsed, topic);
 
-      // Save both normalized and raw parsed JSON to server (rawJson = parsed)
       const saved = await saveGeneratedProject({
         title: finalNormalized.title,
         description: finalNormalized.description,
         rawJson: parsed,
       });
 
-      // saveGeneratedProject now returns the full object (per UserContext update)
       if (!saved) {
         throw new Error("Failed to save generated project.");
       }
@@ -264,18 +282,18 @@ Topic: ${topic}`,
     }
   };
 
-  // ---------- Delete saved project (server-backed only) ----------
+  // ---------- Delete saved ----------
   const handleDeleteSaved = async () => {
     if (!generated || !generated.id) return;
+
     const isLocal = String(generated.id).startsWith("local-");
     if (isLocal) {
-      // Per Option A, block deletion for local-only projects
-      alert("This project is local-only and cannot be deleted. Login to manage projects.");
+      alert("Local-only projects cannot be deleted.");
       return;
     }
 
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this project? This action cannot be undone."
+      "Are you sure you want to delete this project?"
     );
     if (!confirmDelete) return;
 
@@ -283,10 +301,9 @@ Topic: ${topic}`,
     try {
       const res = await deleteProject(generated.id);
       setDeleting(false);
+
       if (res?.success) {
         setGenerated(null);
-        // Optionally close modal after deletion
-        // onClose();
       } else {
         alert(res?.message || "Failed to delete project.");
       }
@@ -314,15 +331,24 @@ Topic: ${topic}`,
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <Icon icon="mdi:lightbulb-on-outline" width={22} className="text-indigo-500" />
-          <h2 className="text-xl font-bold text-indigo-600">AI Project Generator</h2>
+          <Icon
+            icon="mdi:lightbulb-on-outline"
+            width={22}
+            className="text-indigo-500"
+          />
+          <h2 className="text-xl font-bold text-indigo-600">
+            AI Project Generator
+          </h2>
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">
-          Describe the project idea and Cybercode AI will generate a professional project structure.
+          Describe the project idea and Cybercode AI will generate a
+          professional project structure.
         </p>
 
+        {/* INPUT WITH ENTER SUPPORT */}
         <input
+          ref={inputRef}
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           placeholder="e.g., Cloud automation using Terraform"
@@ -335,7 +361,13 @@ Topic: ${topic}`,
             disabled={loading}
             className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow text-sm font-semibold flex items-center justify-center gap-2"
           >
-            {loading && <Icon icon="mdi:loading" width={18} className="animate-spin" />}
+            {loading && (
+              <Icon
+                icon="mdi:loading"
+                width={18}
+                className="animate-spin"
+              />
+            )}
             {loading ? "Generating..." : "Generate Project"}
           </button>
 
@@ -375,12 +407,13 @@ Topic: ${topic}`,
                 Done
               </button>
 
-              {/* Show delete only for server-backed projects (UserContext blocks local deletions) */}
               <button
                 onClick={handleDeleteSaved}
                 disabled={deleting}
                 className={`px-4 py-2 text-sm rounded-lg border ${
-                  deleting ? "border-gray-400 text-gray-400" : "border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  deleting
+                    ? "border-gray-400 text-gray-400"
+                    : "border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 }`}
               >
                 {deleting ? "Deleting..." : "Delete Project"}
