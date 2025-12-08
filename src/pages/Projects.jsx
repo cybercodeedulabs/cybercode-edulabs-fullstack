@@ -95,6 +95,83 @@ export default function Projects() {
         </div>
       </div>
 
+      {/* AI PROJECT GENERATOR INFO PANEL (NEW — OPTION B) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="
+          mb-20 p-6 rounded-2xl shadow border
+          bg-gradient-to-r from-indigo-50 to-purple-50
+          dark:from-gray-800 dark:to-gray-900 
+        "
+      >
+        <h3 className="text-2xl font-bold text-indigo-600 dark:text-indigo-300 mb-3">
+          ✨ Introducing S2 Smart Project Blueprints
+        </h3>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+          Cybercode AI now generates <strong>full engineering blueprints</strong> —
+          not just titles and tasks. Students get industry-ready end-to-end project
+          specifications that they can build, deploy, and showcase.
+        </p>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              📘 Architecture Blueprint
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              System design, workflow diagrams, and module breakdown.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              🧩 Detailed Components
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Each module explained with responsibilities and interactions.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              📝 Step-by-Step Implementation
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Beginner-friendly execution plan with technical depth.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              🚀 Deployment Guide
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Cloud, Docker, CI/CD, and scalable deployment options.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              🔐 Security & Testing
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Includes test cases, security checks, and validations.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-gray-800/40 border dark:border-gray-700">
+            <h4 className="font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+              🎯 Milestones & Timeline
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Structured roadmap for students to complete the project.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
       {/* OFFICIAL PROJECT GRID */}
       <h2 className="text-2xl font-bold text-indigo-500 dark:text-indigo-400 mb-6">
         ⭐ Cybercode Official Projects
@@ -112,7 +189,6 @@ export default function Projects() {
               border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md 
               hover:shadow-xl hover:-translate-y-2 transition duration-300"
           >
-            {/* Image */}
             <div className="overflow-hidden rounded-t-2xl">
               <img
                 src={project.image}
@@ -122,7 +198,6 @@ export default function Projects() {
               />
             </div>
 
-            {/* Card Content */}
             <div className="p-6 space-y-3 flex flex-col justify-between">
               <div>
                 <span className="inline-block text-xs px-2 py-1 rounded bg-indigo-100 

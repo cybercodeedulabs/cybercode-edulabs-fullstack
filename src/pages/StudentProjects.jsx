@@ -42,8 +42,8 @@ export default function StudentProjects() {
       tech_stack: Array.isArray(p.tech_stack)
         ? p.tech_stack
         : Array.isArray(p.techStack)
-        ? p.techStack
-        : [],
+          ? p.techStack
+          : [],
       difficulty: p.difficulty || "Beginner",
       timestamp: p.timestamp || (p.created_at ? new Date(p.created_at).getTime() : null),
       created_at: p.created_at || null,
@@ -169,6 +169,13 @@ export default function StudentProjects() {
   return (
     <section className="max-w-6xl mx-auto px-6 py-16 text-gray-800 dark:text-gray-200">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <Link
+          to="/dashboard"
+          className="p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow"
+          title="Back to Dashboard"
+        >
+          ←
+        </Link>
         <div>
           <h1 className="text-3xl font-bold text-indigo-600">Student Project Showcase</h1>
           <p className="text-sm text-gray-600 mt-1">AI-generated & student projects — showcase your work.</p>
@@ -261,13 +268,12 @@ export default function StudentProjects() {
 
                     <div className="text-xs">
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold ${
-                          p.difficulty === "Advanced"
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold ${p.difficulty === "Advanced"
                             ? "bg-red-50 text-red-700"
                             : p.difficulty === "Intermediate"
-                            ? "bg-yellow-50 text-yellow-700"
-                            : "bg-emerald-50 text-emerald-700"
-                        }`}
+                              ? "bg-yellow-50 text-yellow-700"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
                       >
                         {p.difficulty}
                       </span>
@@ -298,11 +304,10 @@ export default function StudentProjects() {
                     <button
                       onClick={() => openDeleteConfirm(p)}
                       disabled={deletingId === p.id}
-                      className={`text-xs px-3 py-1 rounded-lg border ${
-                        deletingId === p.id
+                      className={`text-xs px-3 py-1 rounded-lg border ${deletingId === p.id
                           ? "border-gray-400 text-gray-400"
                           : "border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      }`}
+                        }`}
                     >
                       {deletingId === p.id ? "Deleting..." : "Delete"}
                     </button>

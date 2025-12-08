@@ -1,4 +1,3 @@
-// src/pages/StudentProjectDetail.jsx
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
@@ -134,6 +133,28 @@ export default function StudentProjectDetail() {
     );
 
   // -----------------------------------------------------
+  // Helpers to render S2 blueprint if available
+  // -----------------------------------------------------
+  const isS2Blueprint = (raw) => {
+    if (!raw || typeof raw !== "object") return false;
+    // S2 expects fields like step_by_step_guide or tasks or system_design or tech_stack
+    return (
+      raw.step_by_step_guide ||
+      raw.step_by_step ||
+      raw.steps_to_build ||
+      raw.system_design ||
+      raw.tech_stack ||
+      raw.techStack ||
+      raw.tasks
+    );
+  };
+
+  const raw = project.rawJson && typeof project.rawJson === "object" ? project.rawJson : null;
+
+  // safe getters
+  const arr = (v) => (Array.isArray(v) ? v : typeof v === "string" && v.trim() ? v.split(/\r?\n|,/) .map(s=>s.trim()).filter(Boolean) : []);
+
+  // -----------------------------------------------------
   // UI
   // -----------------------------------------------------
   return (
@@ -178,64 +199,207 @@ export default function StudentProjectDetail() {
           {project.description}
         </p>
 
-        {/* Tech Stack */}
-        {techStack.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-indigo-600 mb-2">
-              Tech Stack
-            </h3>
+        {/* If S2 blueprint available: render friendly sections */}
+        {raw && isS2Blueprint(raw) ? (
+          <>
+            {/* Problem Statement */}
+            {(raw.problem_statement || raw.problemStatement) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Problem Statement</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{raw.problem_statement || raw.problemStatement}</p>
+              </div>
+            )}
 
-            <div className="flex flex-wrap gap-2">
-              {techStack.map((tech, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+            {/* Why it matters */}
+            {(raw.why_it_matters || raw.whyItMatters) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Why This Project Matters</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{raw.why_it_matters || raw.whyItMatters}</p>
+              </div>
+            )}
 
-        {/* Tasks */}
-        {tasks.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-indigo-600 mb-2">
-              Tasks
-            </h3>
+            {/* Goals */}
+            {arr(raw.goals).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Goals</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.goals).map((g, i) => <li key={i}>{g}</li>)}
+                </ul>
+              </div>
+            )}
 
-            <ul className="space-y-2">
-              {tasks.map((t, i) => (
-                <li
-                  key={i}
-                  className="text-sm flex items-start gap-2 text-gray-700 dark:text-gray-300"
-                >
-                  <span className="text-indigo-500 mt-1">•</span>
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+            {/* Prerequisites */}
+            {arr(raw.prerequisites).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Prerequisites</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.prerequisites).map((p, i) => <li key={i}>{p}</li>)}
+                </ul>
+              </div>
+            )}
 
-        {/* Raw JSON */}
-        {project.rawJson && (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-indigo-600 mb-2">
-              Raw JSON (Generated)
-            </h3>
+            {/* System Design */}
+            {raw.system_design && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">System Design</h3>
+                {raw.system_design.architecture_overview && (
+                  <div className="mb-3">
+                    <h4 className="font-medium">Architecture Overview</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{raw.system_design.architecture_overview}</p>
+                  </div>
+                )}
+                {Array.isArray(raw.system_design.components) && raw.system_design.components.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="font-medium">Components</h4>
+                    <ul className="list-disc pl-6 text-sm text-gray-700 dark:text-gray-300">
+                      {raw.system_design.components.map((c, idx) => <li key={idx}>{typeof c === "string" ? c : JSON.stringify(c)}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {raw.system_design.data_flow && (
+                  <div>
+                    <h4 className="font-medium">Data Flow</h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{raw.system_design.data_flow}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <pre
-              className="
-                bg-gray-100 dark:bg-gray-800 
-                p-4 rounded-lg text-sm overflow-x-auto border 
-                dark:border-gray-700
-              "
-            >
+            {/* Tech Stack */}
+            {arr(raw.tech_stack || raw.techStack || raw.tech).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Tech Stack</h3>
+                <div className="flex flex-wrap gap-2">
+                  {arr(raw.tech_stack || raw.techStack || raw.tech).map((t, i) => (
+                    <span key={i} className="px-3 py-1 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step-by-step Guide */}
+            {arr(raw.step_by_step_guide || raw.step_by_step || raw.steps_to_build || raw.step_by_step).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Step-by-step Guide</h3>
+                <ol className="list-decimal pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+                  {arr(raw.step_by_step_guide || raw.step_by_step || raw.steps_to_build || raw.step_by_step).map((s, i) => (
+                    <li key={i} className="text-sm">{s}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* Tasks */}
+            {arr(raw.tasks).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Tasks / Milestones</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.tasks).map((t, i) => <li key={i}>{t}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Testing Plan */}
+            {arr(raw.testing_plan || raw.testingPlan || raw.tests).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Testing Plan</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.testing_plan || raw.testingPlan || raw.tests).map((t, i) => <li key={i}>{t}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Deployment */}
+            {raw.deployment || raw.deployment_guide ? (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Deployment</h3>
+                {Array.isArray(raw.deployment?.steps) && raw.deployment.steps.length > 0 && (
+                  <div className="mb-2">
+                    <h4 className="font-medium">Steps</h4>
+                    <ol className="list-decimal pl-6 text-sm text-gray-700 dark:text-gray-300">
+                      {raw.deployment.steps.map((s, i) => <li key={i}>{s}</li>)}
+                    </ol>
+                  </div>
+                )}
+                {Array.isArray(raw.deployment?.commands) && raw.deployment.commands.length > 0 && (
+                  <div>
+                    <h4 className="font-medium">Commands</h4>
+                    <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm overflow-x-auto border dark:border-gray-700">
+{raw.deployment.commands.join("\n")}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* Security & Optimizations */}
+            {arr(raw.security_best_practices).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Security Best Practices</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.security_best_practices).map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {arr(raw.optimizations).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Optimizations</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.optimizations).map((o, i) => <li key={i}>{o}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Bonus Enhancements */}
+            {arr(raw.bonus_features || raw.bonus_enhancements).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Bonus Features</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.bonus_features || raw.bonus_enhancements).map((b, i) => <li key={i}>{b}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Sample Code */}
+            {raw.sample_code && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Sample Code</h3>
+                <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm overflow-x-auto border dark:border-gray-700">
+{raw.sample_code}
+                </pre>
+              </div>
+            )}
+
+            {/* Interview Questions */}
+            {arr(raw.interview_questions).length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-indigo-600 mb-2">Interview / Review Questions</h3>
+                <ul className="list-disc pl-6 space-y-1 text-gray-700 dark:text-gray-300">
+                  {arr(raw.interview_questions).map((q, i) => <li key={i}>{q}</li>)}
+                </ul>
+              </div>
+            )}
+          </>
+        ) : (
+          // Fallback: show raw JSON for unexpected shapes for debugging, but keep UX friendly label
+          project.rawJson ? (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-indigo-600 mb-2">
+                Generated Data (raw)
+              </h3>
+
+              <pre
+                className="
+                  bg-gray-100 dark:bg-gray-800 
+                  p-4 rounded-lg text-sm overflow-x-auto border 
+                  dark:border-gray-700
+                "
+              >
 {JSON.stringify(project.rawJson, null, 2)}
-            </pre>
-          </div>
+              </pre>
+            </div>
+          ) : null
         )}
 
         {/* Metadata */}

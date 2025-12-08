@@ -1,4 +1,3 @@
-// src/components/AIProjectGeneratorModal.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
@@ -8,6 +7,7 @@ import { useUser } from "../contexts/UserContext";
  * AIProjectGeneratorModal
  *
  * - Sends a request to the Netlify ask-ai function (mode: "project")
+ * - Requests a COMPLETE blueprint (S2 schema)
  * - Parses, normalizes, and saves the AI output to backend via saveGeneratedProject
  * - Displays a minimal success card (title + description + Done)
  * - Allows deletion of server-backed projects (deleteProject)
@@ -22,14 +22,14 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generated, setGenerated] = useState(null); 
+  const [generated, setGenerated] = useState(null);
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   // NEW — input ref for auto-focus & Enter key
   const inputRef = useRef(null);
 
-  // Auto-focus + Escape key handler
+  // Auto-focus + Enter/Escape key handler
   useEffect(() => {
     if (isOpen && inputRef.current) inputRef.current.focus();
 
@@ -37,6 +37,7 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
       if (!isOpen) return;
 
       if (e.key === "Enter") {
+        // If focus is on a multi-line field in future, adjust accordingly. For now input is single-line.
         e.preventDefault();
         if (!loading) generateProject();
       }
@@ -88,7 +89,9 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
 
     try {
       return JSON.parse(cleaned);
-    } catch (e) {}
+    } catch (e) {
+      // ignore
+    }
 
     const jsonSub = extractFirstJsonSubstring(cleaned);
     if (jsonSub) {
@@ -98,14 +101,16 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
         const fixed = jsonSub.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
         try {
           return JSON.parse(fixed);
-        } catch (e2) {}
+        } catch (e2) {
+          // ignore
+        }
       }
     }
 
+    // heuristic parse (key: value lines)
     const obj = {};
     const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
     let foundAny = false;
-
     for (const line of lines) {
       const kv = line.split(":").map((x) => x.trim());
       if (kv.length >= 2) {
@@ -117,30 +122,29 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
         }
       }
     }
-
     if (foundAny) return obj;
 
     return null;
   };
 
+  // Normalize S2 schema to UI-friendly shape (keeps rawJson)
   const normalizeProject = (raw, fallbackTopic) => {
     if (!raw || typeof raw !== "object") raw = {};
 
-    const techStackCandidates =
-      raw.tech_stack ||
-      raw.techStack ||
-      raw["tech-stack"] ||
-      raw.tech ||
-      raw.stack ||
-      [];
-    const tasksCandidates =
-      raw.tasks ||
-      raw.tasks_list ||
-      raw.steps ||
-      raw.milestones ||
-      raw.tasks_list ||
-      [];
+    // friendly getters with fallbacks
+    const title =
+      raw.title ||
+      raw.project_title ||
+      raw.name ||
+      (fallbackTopic ? `Project: ${fallbackTopic}` : "Untitled Project");
 
+    const description =
+      raw.description ||
+      raw.summary ||
+      (typeof raw.problem_statement === "string" ? raw.problem_statement : "") ||
+      "No description provided.";
+
+    // collect arrays / strings into arrays
     const toArray = (v) => {
       if (!v) return [];
       if (Array.isArray(v)) return v;
@@ -151,18 +155,23 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
       return [];
     };
 
-    const title =
-      raw.title ||
-      raw.project_title ||
-      raw.name ||
-      (fallbackTopic ? `Project: ${fallbackTopic}` : "Untitled Project");
-
-    const description =
-      raw.description ||
-      raw.summary ||
-      raw["Project Summary"] ||
-      raw.details ||
-      "No description provided.";
+    const techStack =
+      raw.tech_stack ||
+      raw.techStack ||
+      raw["tech-stack"] ||
+      raw.tech ||
+      raw.stack ||
+      [];
+    const steps =
+      raw.step_by_step_guide ||
+      raw.steps_to_build ||
+      raw.step_by_step ||
+      raw.step_by_step ||
+      raw.step_guide ||
+      raw.steps ||
+      [];
+    const tasks =
+      raw.tasks || raw.tasks_list || raw.milestones || raw.steps || [];
 
     const difficulty =
       raw.difficulty ||
@@ -171,13 +180,32 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
       (raw.difficulty_level ? String(raw.difficulty_level) : undefined) ||
       "Intermediate";
 
+    // system_design may be object — keep as-is for rawJson but derive summary
+    const architecture =
+      (typeof raw.system_design === "string" && raw.system_design) ||
+      (raw.system_design && raw.system_design.architecture_overview) ||
+      raw.architecture ||
+      "";
+
+    // final normalized shape (UI-friendly)
     return {
       id: raw.id || `local-${Date.now()}-${Math.random()}`,
       title,
       description,
-      techStack: toArray(techStackCandidates),
+      problem_statement: raw.problem_statement || "",
+      why_it_matters: raw.why_it_matters || raw["why_it_matters"] || "",
+      goals: toArray(raw.goals),
+      prerequisites: toArray(raw.prerequisites),
+      system_design: raw.system_design || (architecture ? { architecture_overview: architecture } : null),
+      techStack: toArray(techStack),
+      tasks: toArray(tasks),
+      steps: toArray(steps).slice(0, 50),
+      deployment_guide: raw.deployment || raw.deployment_guide || raw.deploymentSteps || [],
+      bonus_enhancements: toArray(raw.bonus_features || raw.bonus_enhancements || raw.bonus),
+      interview_questions: toArray(raw.interview_questions || raw.interviewQuestions || raw.interview_questions_list),
+      sample_code: raw.sample_code || raw.sampleCode || "",
+      testing_plan: toArray(raw.testing_plan || raw.testingPlan || raw.tests),
       difficulty,
-      steps: toArray(tasksCandidates).slice(0, 10),
       timestamp: Date.now(),
       rawJson: raw,
     };
@@ -196,18 +224,48 @@ export default function AIProjectGeneratorModal({ isOpen, onClose }) {
     setLoading(true);
 
     try {
+      // Strong instruction: return strict JSON ONLY, using S2 schema
+      const s2Prompt = `
+Return ONLY a VALID JSON object (no markdown, no explanations).
+Use this exact S2 schema. All fields optional but include sensible defaults where possible.
+
+{
+  "title": "",
+  "description": "",
+  "problem_statement": "",
+  "why_it_matters": "",
+  "goals": [],
+  "prerequisites": [],
+  "system_design": {
+    "architecture_overview": "",
+    "components": [],
+    "data_flow": ""
+  },
+  "tech_stack": [],
+  "tasks": [],
+  "step_by_step_guide": [],
+  "sample_code": "",
+  "testing_plan": [],
+  "deployment": {
+    "steps": [],
+    "commands": []
+  },
+  "security_best_practices": [],
+  "optimizations": [],
+  "bonus_features": [],
+  "interview_questions": []
+}
+
+Now generate a COMPLETE project blueprint following the schema above for the Topic: "${topic}".
+Keep fields concise but actionable. Arrays should be arrays (not newline text). Difficulty can be omitted.
+`;
+
       const res = await fetch("/.netlify/functions/ask-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "project",
-          prompt: `Generate a real-world engineering project with:
-- title
-- description
-- tech_stack (array)
-- difficulty (Beginner, Intermediate, Advanced)
-- tasks (exactly 5 items)
-Topic: ${topic}`,
+          prompt: s2Prompt,
           user: user ? { uid: user.uid } : null,
         }),
       });
@@ -227,6 +285,7 @@ Topic: ${topic}`,
 
       let parsed = safeParseJsonFromText(String(text));
 
+      // try fallback to raw representation returned by API if available
       if (!parsed) {
         const fallbackRaw =
           data?.raw?.choices?.[0]?.message?.content ||
@@ -238,13 +297,15 @@ Topic: ${topic}`,
       }
 
       if (!parsed) {
+        // final fallback: save minimal blueprint
         const fallbackObj = {
           title: `Project: ${topic}`,
           description:
             "AI returned an unparsable response. Please try again with a simpler topic.",
+          problem_statement: "",
           tech_stack: [],
-          difficulty: "Intermediate",
           tasks: [],
+          step_by_step_guide: [],
         };
 
         const finalNormalized = normalizeProject(fallbackObj, topic);
@@ -320,7 +381,7 @@ Topic: ${topic}`,
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl max-w-lg w-full relative"
+        className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl max-w-2xl w-full relative"
       >
         {/* Close */}
         <button
@@ -337,13 +398,12 @@ Topic: ${topic}`,
             className="text-indigo-500"
           />
           <h2 className="text-xl font-bold text-indigo-600">
-            AI Project Generator
+            AI Project Generator (Detailed Blueprint)
           </h2>
         </div>
 
         <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">
-          Describe the project idea and Cybercode AI will generate a
-          professional project structure.
+          Describe the project idea. The AI will return a full technical blueprint (system design, steps, tests, deployment, and more).
         </p>
 
         {/* INPUT WITH ENTER SUPPORT */}
