@@ -48,20 +48,22 @@ export default function RoadmapPage() {
             </motion.div>
           )}
 
-          {/* SIDEBAR */}
-          <aside className="space-y-6">
-            <GoalSummaryCard goals={userGoals} />
-
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow border">
-              <h4 className="text-sm font-semibold text-indigo-600">Tips</h4>
-              <ul className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                <li>Follow the roadmap in 2–4 week sprints for best retention.</li>
-                <li>Ship one measurable project every 6–8 weeks.</li>
-                <li>Use the AI mentor to prepare interview answers.</li>
-              </ul>
-            </div>
-          </aside>
         </div>
+
+        {/* SIDEBAR */}
+        <aside className="space-y-6">
+          <GoalSummaryCard goals={userGoals} />
+
+          <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow border">
+            <h4 className="text-sm font-semibold text-indigo-600">Tips</h4>
+            <ul className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-2">
+              <li>Follow the roadmap in 2–4 week sprints for best retention.</li>
+              <li>Ship one measurable project every 6–8 weeks.</li>
+              <li>Use the AI mentor to prepare interview answers.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }
