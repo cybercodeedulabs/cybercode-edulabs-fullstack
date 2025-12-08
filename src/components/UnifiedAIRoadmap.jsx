@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { marked } from "marked";
+import { createPortal } from "react-dom";
 import { useUser } from "../contexts/UserContext";
 
 export default function UnifiedAIRoadmap({ goals }) {
@@ -10,22 +11,40 @@ export default function UnifiedAIRoadmap({ goals }) {
   const [loading, setLoading] = useState(false);
   const [rawMarkdown, setRawMarkdown] = useState("");
   const [error, setError] = useState("");
-  const [expandedMonth, setExpandedMonth] = useState(1); // Month 1 auto-open
+  const [expandedMonth, setExpandedMonth] = useState(1);
 
-  // Parsed structured roadmap sections
+  // Parsed sections
   const [summary, setSummary] = useState("");
   const [months, setMonths] = useState([]);
   const [projects, setProjects] = useState([]);
   const [actions, setActions] = useState([]);
 
+  // Timestamp
+  const [timestamp, setTimestamp] = useState("");
+
+  // NEW — month explanations
+  const [monthExplanations, setMonthExplanations] = useState({});
+  const [explainLoading, setExplainLoading] = useState(null);
+
+  // NEW — modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMonthTitle, setModalMonthTitle] = useState("");
+  const [modalMonthNumber, setModalMonthNumber] = useState(null);
+
+  // ------------------------------------------------------------
+  // Fetch Full Roadmap
+  // ------------------------------------------------------------
   const fetchRoadmap = async () => {
     if (!goals) return;
+
     setLoading(true);
     setError("");
     setSummary("");
     setMonths([]);
     setProjects([]);
     setActions([]);
+    setMonthExplanations({});
+    setModalOpen(false);
 
     try {
       const res = await fetch("/.netlify/functions/ask-ai", {
@@ -36,7 +55,7 @@ export default function UnifiedAIRoadmap({ goals }) {
           prompt: "Generate my AI roadmap",
           userGoals: goals,
           userStats,
-          user
+          user,
         }),
       });
 
@@ -45,6 +64,7 @@ export default function UnifiedAIRoadmap({ goals }) {
 
       setRawMarkdown(markdown);
       parseRoadmap(markdown);
+      setTimestamp(new Date().toLocaleString());
     } catch (e) {
       setError("Failed to generate roadmap.");
     }
@@ -56,7 +76,51 @@ export default function UnifiedAIRoadmap({ goals }) {
     fetchRoadmap();
   }, [goals]);
 
-  // ----------- PARSER: Extract AI sections into UI-friendly structure ----------
+  // ------------------------------------------------------------
+  // Fetch Explanation For a Month
+  // ------------------------------------------------------------
+  const fetchMonthExplanation = async (monthTitle, monthNumber) => {
+    if (!monthTitle || !goals) return;
+
+    setExplainLoading(monthNumber);
+    setModalMonthTitle(monthTitle);
+    setModalMonthNumber(monthNumber);
+    setModalOpen(true);
+
+    try {
+      const res = await fetch("/.netlify/functions/ask-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "roadmap_explain",
+          prompt: `Explain ${monthTitle} in simple, motivating terms.`,
+          monthTitle,
+          userGoals: goals,
+          userStats,
+          user
+        }),
+      });
+
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content || "";
+
+      setMonthExplanations((prev) => ({
+        ...prev,
+        [monthNumber]: marked.parse(content),
+      }));
+    } catch (e) {
+      setMonthExplanations((prev) => ({
+        ...prev,
+        [monthNumber]: "<p class='text-red-500'>Failed to load explanation.</p>",
+      }));
+    }
+
+    setExplainLoading(null);
+  };
+
+  // ------------------------------------------------------------
+  // Parse Markdown
+  // ------------------------------------------------------------
   const parseRoadmap = (md) => {
     if (!md) return;
 
@@ -88,35 +152,27 @@ export default function UnifiedAIRoadmap({ goals }) {
         continue;
       }
 
-      // SUMMARY
-      if (mode === "summary" && line.length > 0) {
+      if (mode === "summary" && line.length > 0)
         summaryText += line + "\n";
-      }
 
-      // MONTH PHASES
       if (mode === "months") {
         if (line.startsWith("### Month")) {
-          // New month header
           if (currentMonth) tempMonths.push(currentMonth);
 
           currentMonth = {
             title: line.replace("### ", "").trim(),
-            weeks: []
+            weeks: [],
           };
         } else if (line.startsWith("- Week") && currentMonth) {
           currentMonth.weeks.push(line.substring(2));
         }
       }
 
-      // PROJECTS
-      if (mode === "projects" && line.startsWith("- ")) {
+      if (mode === "projects" && line.startsWith("- "))
         tempProjects.push(line.substring(2));
-      }
 
-      // ACTION ITEMS
-      if (mode === "actions" && line.startsWith("- ")) {
+      if (mode === "actions" && line.startsWith("- "))
         tempActions.push(line.substring(2));
-      }
     }
 
     if (currentMonth) tempMonths.push(currentMonth);
@@ -127,24 +183,96 @@ export default function UnifiedAIRoadmap({ goals }) {
     setActions(tempActions);
   };
 
-  // ---------- UI Rendering ----------
+  // ------------------------------------------------------------
+  // Modal UI (Glassmorphic)
+  // ------------------------------------------------------------
+  const ExplanationModal = () => {
+    if (!modalOpen) return null;
+
+    return createPortal(
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-[2000]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="
+              bg-white/20 dark:bg-gray-800/30 
+              rounded-2xl p-6 w-[90%] max-w-xl shadow-xl
+              border border-white/30 dark:border-gray-700/40
+              backdrop-blur-xl
+            "
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+          >
+            {/* Title */}
+            <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-300 mb-3">
+              {modalMonthTitle}
+            </h3>
+
+            {/* Loading Spinner */}
+            {explainLoading === modalMonthNumber && (
+              <div className="text-center py-6 text-indigo-500 animate-pulse">
+                Fetching explanation…
+              </div>
+            )}
+
+            {/* Explanation Content */}
+            {!explainLoading && monthExplanations[modalMonthNumber] && (
+              <div
+                className="prose dark:prose-invert max-w-none leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: monthExplanations[modalMonthNumber],
+                }}
+              />
+            )}
+
+            {/* Close Button */}
+            <div className="mt-6 text-right">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="
+                  px-4 py-2 rounded-lg bg-indigo-600 text-white 
+                  hover:bg-indigo-700 transition
+                "
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>,
+      document.body
+    );
+  };
+
+  // ------------------------------------------------------------
+  // Main UI
+  // ------------------------------------------------------------
   return (
-    <div
-      className="
-        p-8 rounded-2xl border shadow-sm
-        bg-gradient-to-br from-white to-gray-50
-        dark:from-gray-900 dark:to-gray-800
-      "
-    >
-      {/* Header & Regenerate Button */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="
+      p-8 rounded-2xl border shadow-sm 
+      bg-gradient-to-br from-white to-gray-50 
+      dark:from-gray-900 dark:to-gray-800
+    ">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-bold text-indigo-600">
             Your AI-Generated Roadmap
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Personalized study plan built from your goals, skills & intensity.
+          <p className="text-sm text-gray-500 dark:text-gray-400 leading-tight">
+            A personalized, AI-built month–by–month learning plan.
           </p>
+
+          {timestamp && (
+            <p className="text-xs text-gray-400 mt-1">
+              Last generated: <span className="font-medium">{timestamp}</span>
+            </p>
+          )}
         </div>
 
         <motion.button
@@ -159,34 +287,43 @@ export default function UnifiedAIRoadmap({ goals }) {
         </motion.button>
       </div>
 
-      {/* Loading */}
+      {/* LOADING STATE */}
       {loading && (
-        <div className="text-center py-10 space-y-4 animate-pulse">
-          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mx-auto"></div>
-          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-2/3 mx-auto"></div>
-          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mx-auto"></div>
+        <div className="space-y-6 animate-pulse">
+          <div className="h-6 w-2/4 bg-gray-300/70 dark:bg-gray-700 rounded"></div>
+          <div className="h-4 w-3/4 bg-gray-300/70 dark:bg-gray-700 rounded"></div>
+          <div className="h-4 w-1/2 bg-gray-300/70 dark:bg-gray-700 rounded"></div>
+
+          <div className="mt-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-20 bg-gray-200/70 dark:bg-gray-800 rounded-xl"
+              ></div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Error */}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {/* ERROR */}
+      {error && <p className="text-red-500">{error}</p>}
 
       {!loading && !error && rawMarkdown && (
         <div className="space-y-10">
 
-          {/* -------- Outcome Summary -------- */}
+          {/* Outcome Summary */}
           {summary && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.35 }}
               className="
                 p-6 rounded-xl border shadow-sm
                 bg-gradient-to-br from-indigo-50 to-purple-50
                 dark:from-gray-800 dark:to-gray-900
               "
             >
-              <h3 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300 mb-3">
+              <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-2">
                 Outcome Summary
               </h3>
 
@@ -197,39 +334,57 @@ export default function UnifiedAIRoadmap({ goals }) {
             </motion.div>
           )}
 
-          {/* -------- Months Accordion -------- */}
+          {/* Months Accordion */}
           <div className="space-y-5">
             {months.map((month, index) => {
-              const monthNumber = index + 1;
-              const isOpen = expandedMonth === monthNumber;
+              const number = index + 1;
+              const isOpen = expandedMonth === number;
 
               return (
                 <motion.div
-                  key={monthNumber}
-                  initial={{ opacity: 0, y: 10 }}
+                  key={number}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="
-                    rounded-xl border shadow-sm overflow-hidden
-                    bg-white dark:bg-gray-800
-                  "
+                  className="rounded-xl border shadow-sm bg-white dark:bg-gray-800"
                 >
-                  <button
-                    onClick={() => setExpandedMonth(isOpen ? null : monthNumber)}
-                    className="w-full flex justify-between items-center p-5 text-left"
-                  >
-                    <span className="font-semibold text-lg text-indigo-600">
-                      {month.title}
-                    </span>
+                  <div className="p-5 border-b border-gray-200 dark:border-gray-700">
 
-                    <motion.span
-                      initial={{ rotate: 0 }}
-                      animate={{ rotate: isOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-gray-500 text-xl"
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-indigo-600 text-lg">
+                        {month.title}
+                      </span>
+
+                      <motion.span
+                        animate={{ rotate: isOpen ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-gray-500 text-xl cursor-pointer"
+                        onClick={() =>
+                          setExpandedMonth(isOpen ? null : number)
+                        }
+                      >
+                        ▼
+                      </motion.span>
+                    </div>
+
+                    {/* Explain Button */}
+                    <button
+                      disabled={explainLoading === number}
+                      onClick={() =>
+                        fetchMonthExplanation(month.title, number)
+                      }
+                      className="
+                        mt-2 text-sm px-3 py-1 rounded-lg border
+                        bg-white dark:bg-gray-900
+                        text-indigo-600 border-indigo-300 
+                        hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+                        transition
+                      "
                     >
-                      ▼
-                    </motion.span>
-                  </button>
+                      {explainLoading === number
+                        ? "Explaining…"
+                        : "Explain This Month"}
+                    </button>
+                  </div>
 
                   <AnimatePresence>
                     {isOpen && (
@@ -238,15 +393,19 @@ export default function UnifiedAIRoadmap({ goals }) {
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="px-6 pb-5"
                       >
-                        <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-                          {month.weeks.map((week, i) => (
-                            <li key={i} className="text-sm leading-relaxed">
-                              {week}
-                            </li>
-                          ))}
-                        </ul>
+                        <div className="px-6 py-4">
+                          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+                            {month.weeks.map((week, i) => (
+                              <li
+                                key={i}
+                                className="text-sm leading-relaxed tracking-tight"
+                              >
+                                {week}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -255,14 +414,14 @@ export default function UnifiedAIRoadmap({ goals }) {
             })}
           </div>
 
-          {/* -------- Projects Section -------- */}
+          {/* Projects */}
           {projects.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               className="
                 p-6 rounded-xl border shadow-sm
-                bg-gradient-to-br from-blue-50 to-indigo-50
+                bg-gradient-to-br from-blue-50 to-indigo-50 
                 dark:from-gray-800 dark:to-gray-900
               "
             >
@@ -278,14 +437,14 @@ export default function UnifiedAIRoadmap({ goals }) {
             </motion.div>
           )}
 
-          {/* -------- Action Items -------- */}
+          {/* Action Items */}
           {actions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               className="
                 p-6 rounded-xl border shadow-sm
-                bg-gradient-to-br from-teal-50 to-emerald-50
+                bg-gradient-to-br from-teal-50 to-emerald-50 
                 dark:from-gray-800 dark:to-gray-900
               "
             >
@@ -302,6 +461,9 @@ export default function UnifiedAIRoadmap({ goals }) {
           )}
         </div>
       )}
+
+      {/* Modal Renderer */}
+      <ExplanationModal />
     </div>
   );
 }

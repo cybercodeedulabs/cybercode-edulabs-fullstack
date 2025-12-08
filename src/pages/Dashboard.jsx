@@ -129,15 +129,24 @@ function CollapsibleCard({
   hint,
 }) {
   const [open, setOpen] = useState(defaultOpen);
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border p-4 shadow">
-      <div className="flex items-center justify-between mb-3">
+    <div
+      className="
+        bg-white dark:bg-gray-900 
+        rounded-2xl border shadow-sm 
+        p-4 transition-all
+      "
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             {title}
           </div>
+
           {hint && (
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {hint}
             </div>
           )}
@@ -145,26 +154,36 @@ function CollapsibleCard({
 
         <button
           onClick={() => setOpen((s) => !s)}
-          className="px-3 py-1 text-sm rounded border bg-white/0 dark:bg-transparent"
+          className="
+            px-3 py-1 text-xs rounded 
+            border bg-white dark:bg-gray-800 
+            hover:bg-gray-50 dark:hover:bg-gray-700 
+            transition
+          "
         >
           {open ? "Collapse" : "Open"}
         </button>
       </div>
 
+      {/* Animated Collapsible Body */}
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{
           opacity: open ? 1 : 0,
           height: open ? "auto" : 0,
         }}
-        transition={{ duration: 0.28 }}
-        style={{ overflow: "hidden" }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.3 }}
+        className="overflow-hidden"
       >
-        <div className="pt-2">{children}</div>
+        <div className="pt-3 pb-1">
+          {children}
+        </div>
       </motion.div>
     </div>
   );
 }
+
 
 function AIMentorPanel({ userGoals, persona, onSuggest }) {
   const suggestions = useMemo(() => {

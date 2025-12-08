@@ -23,7 +23,7 @@ function userKeyFromEvent(event) {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
     if (body.user?.uid) return `uid:${body.user.uid}`;
-  } catch (_) {}
+  } catch (_) { }
 
   const h = event.headers || {};
   return (
@@ -85,6 +85,7 @@ export async function handler(event) {
       mode = "chat",
       user: clientUser = null,
       projectSpec = null,
+      monthTitle
     } = body;
 
     // check API key
@@ -126,7 +127,12 @@ export async function handler(event) {
       model = projectModel;
       maxTokens = 700;
       temperature = 0.15;
+    } else if (mode === "roadmap_explain") {        // ⭐ NEW MODE — Month Explanation
+      model = roadmapModel;      // use the 70B model for consistency
+      maxTokens = 300;           // explanations are short
+      temperature = 0.2;
     }
+
 
     // SYSTEM PROMPTS
     const systemPrompt =
@@ -179,8 +185,28 @@ ${JSON.stringify(userGoals)}
 USER PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
-        : mode === "project"
-        ? `
+
+        // ⭐ ADDED FOR MONTH EXPLANATION
+        : mode === "roadmap_explain"
+          ? `
+You are Cybercode EduLabs Roadmap Explainer.
+
+Return ONLY clean markdown.
+Explain the purpose, importance, and expected outcome of this month.
+Keep it motivating, simple, and structured.
+Do NOT repeat weekly tasks.
+Do NOT exceed 120 words.
+
+MONTH TITLE:
+${monthTitle}
+
+USER GOALS:
+${JSON.stringify(userGoals)}
+USER PROFILE:
+${JSON.stringify(userStats)}
+        `.trim()
+          : mode === "project"
+            ? `
 You are Cybercode EduLabs Project Generator.
 
 Return ONLY VALID JSON.
@@ -214,7 +240,7 @@ ${JSON.stringify(projectSpec || {})}
 USER_PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
-        : `
+            : `
 You are Cybercode EduLabs AI Advisor.
 Reply in clean markdown.
 Be crisp unless deep detail is asked.
@@ -234,6 +260,7 @@ Use userGoals/persona/stats for guidance.
       userStats,
       mode,
       projectSpec,
+      monthTitle: monthTitle || ""
     };
 
     const cacheKey = hashPayload(payloadForCache);
