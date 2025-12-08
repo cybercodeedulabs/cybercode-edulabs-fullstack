@@ -1,8 +1,7 @@
 // src/pages/Projects.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import AIProjectGeneratorModal from "../components/AIProjectGeneratorModal";
 
 // ===============================
@@ -209,14 +208,7 @@ export default function Projects() {
         </p>
       </div>
 
-      {/* AI Project Generator Modal */}
-      <AIProjectGeneratorModal
-        isOpen={showGenerator}
-        onClose={() => setShowGenerator(false)}
-      />
-
-
-      {/* MODAL FIXED HERE */}
+      {/* SINGLE AI Project Generator Modal */}
       <AIProjectGeneratorModal
         isOpen={showGenerator}
         onClose={() => setShowGenerator(false)}

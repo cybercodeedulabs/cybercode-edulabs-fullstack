@@ -27,12 +27,12 @@ const safeGet = (k, fallback = null) => {
 const safeSet = (k, v) => {
   try {
     window?.localStorage?.setItem(k, JSON.stringify(v));
-  } catch {}
+  } catch { }
 };
 const safeRemove = (k) => {
   try {
     window?.localStorage?.removeItem(k);
-  } catch {}
+  } catch { }
 };
 
 // ---------- small helpers ----------
@@ -351,7 +351,7 @@ export const UserProvider = ({ children }) => {
 
         // try refresh profile
         if (typeof loadUserProfile === "function" && user?.uid) {
-          await loadUserProfile(user.uid).catch(() => {});
+          await loadUserProfile(user.uid).catch(() => { });
         }
 
         return true;
@@ -402,7 +402,7 @@ export const UserProvider = ({ children }) => {
               meta: { course: courseSlug, lesson: lessonSlug },
             }),
           });
-        } catch {}
+        } catch { }
 
         return true;
       } catch (err) {
@@ -484,7 +484,7 @@ export const UserProvider = ({ children }) => {
         // store local cache
         try {
           safeSet("cc_course_progress_cache", updatedCourseProgress);
-        } catch {}
+        } catch { }
 
         return updatedCourseProgress;
       } catch (err) {
@@ -543,7 +543,7 @@ export const UserProvider = ({ children }) => {
                 meta: { course: courseSlug, lesson: lessonSlug, minutes },
               }),
             });
-          } catch {}
+          } catch { }
 
           return true;
         } catch (err) {
@@ -560,18 +560,23 @@ export const UserProvider = ({ children }) => {
   // ---------- PROJECTS ----------
   const saveGeneratedProject = useCallback(
     async ({ title, description, rawJson }) => {
+      // Build a safe project object to return & add to UI. We will return the full project object.
+      const makeLocalProject = (id) => ({
+        id,
+        title: title || "Untitled Project",
+        description: description || "No description provided.",
+        rawJson: rawJson ?? null,
+        // keep same naming as backend: timestamp is epoch ms; created_at ISO string for UI
+        timestamp: Date.now(),
+        created_at: new Date().toISOString(),
+      });
+
       if (!token || !user?.uid) {
         // local fallback: create id and store in in-memory state
-        const withId = {
-          id: `local-${Date.now()}-${Math.random()}`,
-          title,
-          description,
-          rawJson,
-          timestamp: Date.now(),
-          created_at: new Date().toISOString(),
-        };
+        const withId = makeLocalProject(`local-${Date.now()}-${Math.random()}`);
         setGeneratedProjects((prev) => [withId, ...(Array.isArray(prev) ? prev : [])]);
-        return withId.id;
+        // return full project object (not just id) for UI convenience
+        return withId;
       }
 
       try {
@@ -584,20 +589,69 @@ export const UserProvider = ({ children }) => {
         if (!res.ok) throw new Error("Project save failed");
 
         const j = await res.json();
-        // add to UI list
+        // create project object to add to UI list
         const newProject = {
           id: j.id,
-          title,
-          description,
-          rawJson,
+          title: title || "Untitled Project",
+          description: description || "No description provided.",
+          rawJson: rawJson ?? null,
           timestamp: Date.now(),
           created_at: new Date().toISOString(),
         };
         setGeneratedProjects((prev) => [newProject, ...(Array.isArray(prev) ? prev : [])]);
-        return j.id;
+        // return full project object for immediate UI consumption
+        return newProject;
       } catch (err) {
         console.error("saveGeneratedProject error:", err);
         return null;
+      }
+    },
+    [API, token, user, authHeaders]
+  );
+
+  // New: deleteProject - backend-first deletion; local projects are NOT deletable (option A)
+  const deleteProject = useCallback(
+    async (id) => {
+      if (!id || typeof id !== "string") {
+        return { success: false, message: "Invalid project id" };
+      }
+
+      // Local-only projects use the local- prefix — per your choice, block deletion and inform user.
+      if (id.startsWith("local-")) {
+        return {
+          success: false,
+          message:
+            "This project is local-only and cannot be deleted from the server. Please login to manage projects.",
+        };
+      }
+
+      // Ensure user is authenticated
+      if (!token || !user?.uid) {
+        return {
+          success: false,
+          message: "Authentication required to delete projects. Please login.",
+        };
+      }
+
+      try {
+        const res = await fetch(`${API}/projects/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers: authHeaders(),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          console.warn("deleteProject server responded not ok", res.status, text);
+          return { success: false, message: "Failed to delete project" };
+        }
+
+        // Update local UI state
+        setGeneratedProjects((prev) => (Array.isArray(prev) ? prev.filter((p) => p.id !== id) : []));
+
+        return { success: true };
+      } catch (err) {
+        console.error("deleteProject error:", err);
+        return { success: false, message: "Failed to delete project" };
       }
     },
     [API, token, user, authHeaders]
@@ -615,8 +669,13 @@ export const UserProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to load projects");
       const j = await res.json();
       if (j?.projects) {
-        setGeneratedProjects(j.projects);
-        return j.projects;
+        // normalize raw_json -> rawJson
+        const mapped = j.projects.map((p) => ({
+          ...p,
+          rawJson: p.raw_json ?? p.rawJson ?? null,
+        }));
+        setGeneratedProjects(mapped);
+        return mapped;
       }
       return [];
     } catch (err) {
@@ -693,12 +752,12 @@ export const UserProvider = ({ children }) => {
         // persist small cache in localStorage for speed
         try {
           safeSet("cc_persona_cache", merged);
-        } catch {}
+        } catch { }
         return merged;
       });
 
       // persist to server (async)
-      savePersonaScores(next).catch(() => {});
+      savePersonaScores(next).catch(() => { });
     },
     [savePersonaScores]
   );
@@ -832,7 +891,7 @@ export const UserProvider = ({ children }) => {
         // optionally refresh from server-side record
         try {
           await loadUserGoals();
-        } catch {}
+        } catch { }
 
         return true;
       } catch (err) {
@@ -858,7 +917,7 @@ export const UserProvider = ({ children }) => {
     // redirect to home
     try {
       window.location.href = "/";
-    } catch {}
+    } catch { }
   }, []);
 
   // ---------- Hydration ----------
@@ -906,7 +965,7 @@ export const UserProvider = ({ children }) => {
       } else {
         safeRemove("cybercode_user_cache");
       }
-    } catch {}
+    } catch { }
   }, [user]);
 
   // ---------- Exposed context ----------
@@ -946,6 +1005,14 @@ export const UserProvider = ({ children }) => {
         generatedProjects,
         saveGeneratedProject,
         loadGeneratedProjects,
+        deleteProject,
+        getProjectById: (id) => {
+          if (!id) return null;
+          return (generatedProjects || []).find(
+            (p) => String(p.id) === String(id)
+          ) || null;
+        },
+
 
         // goals & docs
         userGoals,
