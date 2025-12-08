@@ -21,7 +21,7 @@ import lessonsData from "../data/lessonsData";
 
 import GoalReminderBanner from "../components/GoalReminderBanner";
 import GoalSummaryCard from "../components/GoalSummaryCard";
-import GoalRoadmap from "../components/GoalRoadmap";
+import UnifiedAIRoadmap from "../components/UnifiedAIRoadmap";
 
 import AIProjectGeneratorModal from "../components/AIProjectGeneratorModal";
 
@@ -88,7 +88,7 @@ function ProgressRibbon({ stats = {} }) {
   );
 }
 
-function QuickActions({ onAction = () => {} }) {
+function QuickActions({ onAction = () => { } }) {
   return (
     <div className="mt-4 flex gap-3 flex-wrap">
       <button
@@ -376,9 +376,10 @@ export default function Dashboard() {
             <CollapsibleCard
               title="Personalized Roadmap"
               hint="A concise month-by-month plan"
+              defaultOpen={false}
             >
               {userGoals ? (
-                <GoalRoadmap goals={userGoals} />
+                <UnifiedAIRoadmap goals={userGoals} />
               ) : (
                 <GoalReminderBanner compact />
               )}
@@ -413,10 +414,10 @@ export default function Dashboard() {
 
                       const pct = lessons.length
                         ? Math.round(
-                            (prog.completedLessons.length /
-                              lessons.length) *
-                              100
-                          )
+                          (prog.completedLessons.length /
+                            lessons.length) *
+                          100
+                        )
                         : 0;
 
                       return (
@@ -475,8 +476,8 @@ export default function Dashboard() {
                           <div className="text-xs text-gray-500">
                             {proj.timestamp
                               ? new Date(
-                                  proj.timestamp
-                                ).toLocaleDateString()
+                                proj.timestamp
+                              ).toLocaleDateString()
                               : "—"}
                           </div>
                         </div>
