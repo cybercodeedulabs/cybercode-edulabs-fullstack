@@ -139,21 +139,40 @@ Return ONLY markdown with these exact sections:
 ## Outcome Summary
 
 ## Month-by-Month Roadmap
-Month 1
-- Weekly learning bullets
-Month 2
-- Weekly bullets
-Month 3
-- Weekly bullets
+
+Generate BETWEEN 2 and 6 months depending on:
+- deadlineMonths
+- weekly hours
+- current skills
+- target role
+
+For EACH month output in this format:
+
+### Month <number> — <Short Technical Title>
+- Week 1: <task>
+- Week 2: <task>
+- Week 3: <task>
+- Week 4: <task>
+
+Titles MUST be short, professional, and skill-based.  
+Examples:  
+“Cloud & Linux Foundations”, “DevOps & IAM Essentials”,  
+“Backend API Engineering”, “Projects & Deployments”,  
+“Security & Monitoring”, etc.
 
 ## Recommended Projects
-- 3 project bullets
+- 3 bullet points
 
 ## Next 5 Action Items
-- bullets
+- 5 bullet points
 
-Do NOT use code blocks. Do NOT add any text outside sections.
-Use concise, structured formatting.
+RULES:
+- DO NOT use code blocks.
+- DO NOT add any extra sections.
+- DO NOT include explanations outside markdown.
+- Month count MUST depend on the user's goals.
+- If user has high weekly hours & long deadline → generate more months.
+- If user has low hours or short deadline → generate fewer months.
 
 USER GOALS:
 ${JSON.stringify(userGoals)}
