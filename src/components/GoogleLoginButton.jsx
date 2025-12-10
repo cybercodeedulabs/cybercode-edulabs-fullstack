@@ -9,17 +9,11 @@ export default function GoogleLoginButton() {
 
   const [loading, setLoading] = useState(false);
 
-  // Safe base64url decode (robust with padding)
+  // Safe base64url decode
   function decodeJwt(token) {
     try {
-      if (!token || typeof token !== "string") return {};
-      const parts = token.split(".");
-      if (parts.length < 2) return {};
-      let base64Url = parts[1];
-      // replace url chars and add padding if needed
-      base64Url = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const pad = base64Url.length % 4 === 0 ? "" : "=".repeat(4 - (base64Url.length % 4));
-      const base64 = base64Url + pad;
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       const jsonPayload = decodeURIComponent(
         atob(base64)
           .split("")
@@ -33,45 +27,50 @@ export default function GoogleLoginButton() {
     }
   }
 
-  /** Handle Login — Google Identity Services (redirect mode) */
+  /** Handle Login */
   const handleLogin = () => {
-    if (loading) return;
-    if (!CLIENT_ID) {
+    if (loading) return; // prevent double clicks
+    if (!window.google || !CLIENT_ID) {
       alert("Google Sign-In unavailable. Please try again.");
       return;
     }
 
-    setLoading(true);
-
     try {
-      // We rely on the GIS library being loaded (main.jsx ensures this).
-      if (!window.google || !window.google.accounts?.id) {
-        alert("Google Sign-In library not loaded.");
-        setLoading(false);
-        return;
-      }
-
-      // Save any app-specific redirect target for after login (fallback)
-      // e.g., pages set sessionStorage.setItem("redirectAfterLogin", "/some/path")
-      // If none set, AuthCallback will default to /dashboard
-      // NOTE: We keep this here for continuity — pages can set redirectBeforeLogin.
-      // No change needed here if you already set redirectAfterLogin elsewhere.
-
-      // Initialize GIS in redirect mode and use a single callback route (unified).
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
-        ux_mode: "redirect",
-        // IMPORTANT: Use the single canonical callback route in your app
-        login_uri: `${window.location.origin}/auth/google/callback`,
-        // callback isn't used in redirect mode; passes through URL instead.
+        callback: async (response) => {
+          setLoading(true);
+          try {
+            const payload = decodeJwt(response.credential);
+
+            const userData = {
+              uid: payload.sub ? `google-${payload.sub}` : `local-${Date.now()}`,
+              name: payload.name || "",
+              email: payload.email || "",
+              photo: payload.picture || "/images/default-avatar.png",
+
+              // (optional) forward original Google token to backend
+              googleToken: response.credential
+            };
+
+            // 🔥 Send to backend → store user → receive JWT
+            await loginWithGoogle(userData);
+
+            // ❌ Register.jsx handles redirect — do NOT redirect here
+
+          } catch (err) {
+            console.error("Google login failed:", err);
+            alert("Login failed. Try again.");
+          } finally {
+            setLoading(false);
+          }
+        },
       });
 
-      // Prompt (this will redirect in redirect mode)
       window.google.accounts.id.prompt();
     } catch (err) {
-      console.error("Google redirect init error:", err);
-      alert("Google login failed. Try again.");
-      setLoading(false);
+      console.error("Google Sign-In initialize error:", err);
+      alert("Google Sign-In failed. Try again.");
     }
   };
 

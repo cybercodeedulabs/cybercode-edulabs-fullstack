@@ -26,7 +26,6 @@ import LessonDetail from "./components/LessonDetail";
 import DashboardLayout from "./components/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Testimonials from "./components/Testimonials";
-import AuthCallback from "./pages/AuthCallback";
 
 // Pages
 import Courses from "./pages/Courses";
@@ -323,7 +322,6 @@ function AppInner() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/support" element={<Support />} />
               <Route path="/payment" element={<Payment />} />
-              <Route path="/auth/google/callback" element={<AuthCallback />} />
 
               <Route path="/courses/:courseSlug" element={<CourseDetail />} />
 
