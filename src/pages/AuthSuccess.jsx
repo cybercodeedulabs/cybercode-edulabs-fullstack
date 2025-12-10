@@ -1,12 +1,12 @@
-// src/pages/AuthSuccess.jsx
 import React, { useEffect } from "react";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
 export default function AuthSuccess() {
   const navigate = useNavigate();
-  const { user, hydrated } = useUser();
+  const { user, hydrated, applyToken } = useUser();
 
+  // STEP 1: Save token using applyToken()
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
@@ -16,16 +16,10 @@ export default function AuthSuccess() {
       return;
     }
 
-    // Save token (UserContext hydration will pick it up)
-    try {
-      localStorage.setItem("cybercode_token", JSON.stringify(token));
-    } catch {}
-
-    // Do NOT redirect yet.
-    // Wait for hydration + profile loading.
+    applyToken(token); // ✅ This updates state + localStorage correctly
   }, []);
 
-  // After hydration, if user is ready → go dashboard
+  // STEP 2: Redirect only AFTER hydration + user load
   useEffect(() => {
     if (!hydrated) return;
 

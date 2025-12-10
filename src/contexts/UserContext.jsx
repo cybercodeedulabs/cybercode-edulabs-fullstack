@@ -19,16 +19,25 @@ const TOKEN_KEY = "cybercode_token";
 const safeGet = (k, fallback = null) => {
   try {
     const s = window?.localStorage?.getItem(k);
+    // SPECIAL CASE: token must be returned RAW (not JSON-parsed)
+    if (k === TOKEN_KEY) return s || null;
     return s ? JSON.parse(s) : fallback;
   } catch {
     return fallback;
   }
 };
+
 const safeSet = (k, v) => {
   try {
+    // SPECIAL CASE: token stored RAW
+    if (k === TOKEN_KEY) {
+      window?.localStorage?.setItem(k, v);
+      return;
+    }
     window?.localStorage?.setItem(k, JSON.stringify(v));
-  } catch { }
+  } catch {}
 };
+
 const safeRemove = (k) => {
   try {
     window?.localStorage?.removeItem(k);
@@ -1115,6 +1124,7 @@ export const UserProvider = ({ children }) => {
         token,
         hydrated,
         loading,
+        applyToken,
 
         // user setters
         setUser,
