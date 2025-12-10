@@ -35,7 +35,7 @@ const safeSet = (k, v) => {
       return;
     }
     window?.localStorage?.setItem(k, JSON.stringify(v));
-  } catch {}
+  } catch { }
 };
 
 const safeRemove = (k) => {
@@ -141,7 +141,8 @@ const decodeJwt = (token) => {
 export const UserProvider = ({ children }) => {
   // Core
   const [user, setUser] = useState(null); // { uid, name, email, photo, ... }
-  const [token, setToken] = useState(() => safeGet(TOKEN_KEY, null));
+  // const [token, setToken] = useState(() => safeGet(TOKEN_KEY, null));
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || null);
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -169,9 +170,10 @@ export const UserProvider = ({ children }) => {
 
   const applyToken = (tk) => {
     setToken(tk);
-    if (tk) safeSet(TOKEN_KEY, tk);
-    else safeRemove(TOKEN_KEY);
+    if (tk) localStorage.setItem(TOKEN_KEY, tk);
+    else localStorage.removeItem(TOKEN_KEY);
   };
+
 
   // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
   // NOTE: loadUserProfile accepts optional token argument to avoid race condition
@@ -1080,17 +1082,31 @@ export const UserProvider = ({ children }) => {
             await loadUserProfile(cachedUser.uid, token);
           } else {
             // if no cached user, attempt to extract uid from JWT and load profile
-            const payload = decodeJwt(token);
-            const uidFromToken = payload?.uid || payload?.sub || null;
-            if (uidFromToken) {
-              try {
-                await loadUserProfile(uidFromToken, token);
-              } catch (err) {
-                // ignore individual profile load error
+            try {
+              const payload = decodeJwt(token);
+
+              if (payload && payload.uid) {
+                await loadUserProfile(payload.uid, token);
+              } else {
+                console.warn("Token decoded but UID missing — using /auth/me fallback");
+                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
+                const me = await meRes.json().catch(() => null);
+                if (me?.user?.uid) {
+                  await loadUserProfile(me.user.uid, token);
+                }
               }
-            } else {
-              // no uid available from token: wait for explicit loginWithGoogle or implement /auth/me on backend
+            } catch (err) {
+              console.warn("Token decode failed, using /auth/me fallback", err);
+
+              try {
+                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
+                const me = await meRes.json().catch(() => null);
+                if (me?.user?.uid) {
+                  await loadUserProfile(me.user.uid, token);
+                }
+              } catch { }
             }
+
           }
         } catch (err) {
           console.warn("hydration loadUserProfile failed", err);
