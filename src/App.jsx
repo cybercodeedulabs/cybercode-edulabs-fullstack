@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
+import AuthSuccess from "./pages/AuthSuccess";
 
 // Components
 import AIAssistant from "./components/AIAssistant";
@@ -312,6 +313,7 @@ function AppInner() {
               <Route path="/register" element={<Register />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/auth-success" element={<AuthSuccess />} />
               <Route path="/cloud" element={<CybercodeCloud />} />
               <Route path="/admin/waitlist" element={<AdminWaitlist />} />
               <Route path="/legal" element={<LegalIndex />} />

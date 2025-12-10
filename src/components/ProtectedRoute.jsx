@@ -4,17 +4,17 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
 /**
- * Ultra-stable ProtectedRoute
- * - Waits for full hydration + loading
- * - Allows access if user exists and has a stable identity field (email)
- * - Writes redirect path precisely (pathname + search)
- * - Never causes redirect loops
+ * Enterprise-grade ProtectedRoute
+ * - Avoids redirect loops
+ * - Supports token-first OAuth hydration
+ * - Waits for user profile fully before rejecting access
+ * - Works perfectly with /auth-success redirect flow
  */
 export default function ProtectedRoute({ children }) {
-  const { user, loading, hydrated } = useUser();
+  const { user, token, loading, hydrated } = useUser();
   const location = useLocation();
 
-  // 🟡 1. Still hydrating or loading
+  // 🟡 1. Still hydrating OR still loading the user profile
   if (loading || !hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-700 dark:text-gray-200">
@@ -26,8 +26,18 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // 🔴 2. Hydration complete → no authenticated user
-  // Our stable identity requirement: email must exist
+  // 🟡 2. Token exists but user not fully loaded yet (OAuth redirect)
+  if (token && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600 dark:text-gray-200">
+        <div className="text-center space-y-2">
+          <div className="text-xl font-semibold">Loading your profile…</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔴 3. No token and no user → not authenticated
   if (!user || !user.email) {
     sessionStorage.setItem(
       "redirectAfterLogin",
@@ -36,6 +46,6 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/register" replace />;
   }
 
-  // 🟢 3. Safe to render protected content
+  // 🟢 4. Authenticated → allow page
   return children;
 }

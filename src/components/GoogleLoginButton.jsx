@@ -1,76 +1,45 @@
 // src/components/GoogleLoginButton.jsx
 import React, { useState } from "react";
-import { useUser } from "../contexts/UserContext";
 import { motion } from "framer-motion";
 
 export default function GoogleLoginButton() {
-  const { loginWithGoogle } = useUser();
-  const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
   const [loading, setLoading] = useState(false);
 
-  // Safe base64url decode
-  function decodeJwt(token) {
-    try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      return JSON.parse(jsonPayload);
-    } catch (err) {
-      console.error("decodeJwt failed:", err);
-      return {};
-    }
-  }
+  const API = import.meta.env.VITE_API_URL; // Backend base URL
 
-  /** Handle Login */
   const handleLogin = () => {
-    if (loading) return; // prevent double clicks
-    if (!window.google || !CLIENT_ID) {
-      alert("Google Sign-In unavailable. Please try again.");
-      return;
-    }
+    if (loading) return;
+
+    setLoading(true);
 
     try {
-      window.google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: async (response) => {
-          setLoading(true);
-          try {
-            const payload = decodeJwt(response.credential);
+      if (!API) {
+        console.error("VITE_API_URL is missing. Cannot proceed with login.");
+        alert("Login unavailable. Please try again later.");
+        setLoading(false);
+        return;
+      }
 
-            const userData = {
-              uid: payload.sub ? `google-${payload.sub}` : `local-${Date.now()}`,
-              name: payload.name || "",
-              email: payload.email || "",
-              photo: payload.picture || "/images/default-avatar.png",
+      const redirectUrl = `${API}/auth/google/login`;
 
-              // (optional) forward original Google token to backend
-              googleToken: response.credential
-            };
+      // Validate redirect URL (basic but prevents silent failures)
+      try {
+        new URL(redirectUrl);
+      } catch (urlErr) {
+        console.error("Invalid OAuth redirect URL:", redirectUrl, urlErr);
+        alert("Login configuration error. Please contact support.");
+        setLoading(false);
+        return;
+      }
 
-            // 🔥 Send to backend → store user → receive JWT
-            await loginWithGoogle(userData);
+      // 🔥 High-standard implementation:
+      // Redirect user to backend, which then redirects to Google OAuth.
+      window.location.href = redirectUrl;
 
-            // ❌ Register.jsx handles redirect — do NOT redirect here
-
-          } catch (err) {
-            console.error("Google login failed:", err);
-            alert("Login failed. Try again.");
-          } finally {
-            setLoading(false);
-          }
-        },
-      });
-
-      window.google.accounts.id.prompt();
     } catch (err) {
-      console.error("Google Sign-In initialize error:", err);
-      alert("Google Sign-In failed. Try again.");
+      console.error("Google OAuth redirect failed:", err);
+      alert("Login failed. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -88,9 +57,9 @@ export default function GoogleLoginButton() {
       whileHover={{ scale: loading ? 1 : 1.05 }}
       whileTap={{ scale: loading ? 1 : 0.97 }}
     >
-      <img src="/images/google.svg" className="w-5 h-5" />
+      <img src="/images/google.svg" className="w-5 h-5" alt="Google logo" />
       <span className="text-sm md:text-base font-medium">
-        {loading ? "Signing in…" : "Sign in with Google"}
+        {loading ? "Redirecting…" : "Sign in with Google"}
       </span>
     </motion.button>
   );

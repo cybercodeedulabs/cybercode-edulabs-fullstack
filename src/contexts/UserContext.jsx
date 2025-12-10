@@ -310,59 +310,59 @@ export const UserProvider = ({ children }) => {
 
   // ---------- AUTH: loginWithGoogle (backend upsert) ----------
   // payload: { uid, name, email, photo }
-  const loginWithGoogle = useCallback(
-    async ({ uid, name, email, photo }) => {
-      if (!API) throw new Error("VITE_API_URL not set");
+  // const loginWithGoogle = useCallback(
+  //   async ({ uid, name, email, photo }) => {
+  //     if (!API) throw new Error("VITE_API_URL not set");
 
-      // sanitize UID to avoid accidental path characters (slashes, spaces)
-      const sanitizeUid = (raw) => {
-        if (!raw) return raw;
-        try {
-          return String(raw).replace(/[^a-zA-Z0-9-_]/g, "");
-        } catch {
-          return raw;
-        }
-      };
+  //     // sanitize UID to avoid accidental path characters (slashes, spaces)
+  //     const sanitizeUid = (raw) => {
+  //       if (!raw) return raw;
+  //       try {
+  //         return String(raw).replace(/[^a-zA-Z0-9-_]/g, "");
+  //       } catch {
+  //         return raw;
+  //       }
+  //     };
 
-      const safeUid = sanitizeUid(uid);
+  //     const safeUid = sanitizeUid(uid);
 
-      try {
-        const res = await fetch(`${API}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid: safeUid, name, email, photo }),
-        });
+  //     try {
+  //       const res = await fetch(`${API}/auth/login`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ uid: safeUid, name, email, photo }),
+  //       });
 
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(`Backend login failed: ${res.status} ${text}`);
-        }
+  //       if (!res.ok) {
+  //         const text = await res.text().catch(() => "");
+  //         throw new Error(`Backend login failed: ${res.status} ${text}`);
+  //       }
 
-        const data = await res.json();
-        if (!data?.token || !data?.user) throw new Error("Invalid login response");
+  //       const data = await res.json();
+  //       if (!data?.token || !data?.user) throw new Error("Invalid login response");
 
-        // ensure user.uid is sanitized in client state as well
-        const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
+  //       // ensure user.uid is sanitized in client state as well
+  //       const u = { ...data.user, uid: sanitizeUid(data.user.uid || safeUid) };
 
-        // Set user and token locally
-        setUser(u);
-        applyToken(data.token);
+  //       // Set user and token locally
+  //       setUser(u);
+  //       applyToken(data.token);
 
-        // Immediately load profile using token from server (avoid token state race)
-        try {
-          await loadUserProfile(u.uid, data.token);
-        } catch (err) {
-          // ignore profile load errors here — login already succeeded
-        }
+  //       // Immediately load profile using token from server (avoid token state race)
+  //       try {
+  //         await loadUserProfile(u.uid, data.token);
+  //       } catch (err) {
+  //         // ignore profile load errors here — login already succeeded
+  //       }
 
-        return u;
-      } catch (err) {
-        console.error("loginWithGoogle error:", err);
-        throw err;
-      }
-    },
-    [API, loadUserProfile]
-  );
+  //       return u;
+  //     } catch (err) {
+  //       console.error("loginWithGoogle error:", err);
+  //       throw err;
+  //     }
+  //   },
+  //   [API, loadUserProfile]
+  // );
 
   // ---------- ENROLL ----------
   const enrollInCourse = useCallback(
@@ -1118,7 +1118,7 @@ export const UserProvider = ({ children }) => {
 
         // user setters
         setUser,
-        loginWithGoogle,
+        // loginWithGoogle,
         logout,
 
         // courses & progress
