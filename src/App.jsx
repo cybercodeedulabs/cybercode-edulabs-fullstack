@@ -59,6 +59,7 @@ import StudentProjects from "./pages/StudentProjects";
 import StudentProjectDetail from "./pages/StudentProjectDetail";
 import PodcastEpisode from "./pages/PodcastEpisode";
 import CertificatePage from "./pages/CertificatePage";
+import CloudDashboard from "./pages/CloudDashboard";
 
 // Context
 import { useUser } from "./contexts/UserContext";
@@ -98,7 +99,7 @@ const LayoutWrapper = ({ children }) => {
    HOMEPAGE (No risky logic changed)
 --------------------------------------------------- */
 function HomePage() {
-  const ctx = useUser() || { user: null, logout: () => {} };
+  const ctx = useUser() || { user: null, logout: () => { } };
   const { user, logout } = ctx;
 
   return (
@@ -324,6 +325,14 @@ function AppInner() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/support" element={<Support />} />
               <Route path="/payment" element={<Payment />} />
+              <Route
+                path="/cloud/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <CloudDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route path="/courses/:courseSlug" element={<CourseDetail />} />
 
