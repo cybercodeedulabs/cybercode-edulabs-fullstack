@@ -10,6 +10,7 @@ import {
 import { motion } from "framer-motion";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { IAMProvider } from "./contexts/IAMContext";   // ⭐ ADDED
 import AuthSuccess from "./pages/AuthSuccess";
 
 // Components
@@ -64,9 +65,7 @@ import CloudDashboard from "./pages/CloudDashboard";
 // Context
 import { useUser } from "./contexts/UserContext";
 
-/* -------------------------------------------------
-   SAFE LINK — Prevents crashes when "to" is undefined
---------------------------------------------------- */
+/* SAFE LINK */
 function SafeLink({ to, children, ...rest }) {
   if (!to) return <span {...rest}>{children}</span>;
   return (
@@ -76,9 +75,7 @@ function SafeLink({ to, children, ...rest }) {
   );
 }
 
-/* -------------------------------------------------
-   HEADER / FOOTER LAYOUT WRAPPER
---------------------------------------------------- */
+/* HEADER / FOOTER WRAPPER */
 const LayoutWrapper = ({ children }) => {
   const location = useLocation();
 
@@ -95,16 +92,14 @@ const LayoutWrapper = ({ children }) => {
   );
 };
 
-/* -------------------------------------------------
-   HOMEPAGE (No risky logic changed)
---------------------------------------------------- */
+/* HOME PAGE */
 function HomePage() {
-  const ctx = useUser() || { user: null, logout: () => { } };
+  const ctx = useUser() || { user: null, logout: () => {} };
   const { user, logout } = ctx;
 
   return (
     <>
-      {/* HERO SECTION */}
+      {/* --- HERO SECTION --- */}
       <section className="relative bg-gray-900 text-white overflow-hidden">
         <div
           className="absolute inset-0 bg-cover opacity-30"
@@ -120,9 +115,7 @@ function HomePage() {
           >
             Learn. Build. Deploy.
             <br />
-            <span className="text-indigo-400">
-              All in One Tech Ecosystem.
-            </span>
+            <span className="text-indigo-400">All in One Tech Ecosystem.</span>
           </motion.h1>
 
           <motion.p
@@ -135,6 +128,7 @@ function HomePage() {
             Cybercode Cloud enables real innovation.
           </motion.p>
 
+          {/* CTA BUTTONS */}
           <motion.div
             className="flex flex-col sm:flex-row justify-center items-center gap-4"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -183,7 +177,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* CLOUD SECTION */}
+      {/* CLOUD */}
       <section className="py-16 bg-gray-100 dark:bg-gray-900 px-6">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           <div>
@@ -266,7 +260,7 @@ function HomePage() {
 }
 
 /* -------------------------------------------------
-   MAIN APP INNER ROUTES (Stabilized)
+   APP INNER ROUTES
 --------------------------------------------------- */
 function AppInner() {
   const location = useLocation();
@@ -308,23 +302,20 @@ function AppInner() {
               <Route path="/podcast/:id" element={<PodcastEpisode />} />
               <Route path="/community" element={<Community />} />
               <Route path="/student-projects" element={<StudentProjects />} />
-              <Route path="/student-projects/:id" element={<StudentProjectDetail />} />
+              <Route
+                path="/student-projects/:id"
+                element={<StudentProjectDetail />}
+              />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/register" element={<Register />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/auth-success" element={<AuthSuccess />} />
+
+              {/* CLOUD */}
               <Route path="/cloud" element={<CybercodeCloud />} />
-              <Route path="/admin/waitlist" element={<AdminWaitlist />} />
-              <Route path="/legal" element={<LegalIndex />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfUse />} />
-              <Route path="/refund" element={<RefundPolicy />} />
-              <Route path="/cookie" element={<CookiePolicy />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/payment" element={<Payment />} />
+
               <Route
                 path="/cloud/dashboard"
                 element={
@@ -334,9 +325,20 @@ function AppInner() {
                 }
               />
 
+              <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+              <Route path="/legal" element={<LegalIndex />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/cookie" element={<CookiePolicy />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/payment" element={<Payment />} />
+
+              {/* COURSES */}
               <Route path="/courses/:courseSlug" element={<CourseDetail />} />
 
-              {/* PROTECTED ROUTES */}
+              {/* PROTECTED LESSONS */}
               <Route
                 path="/courses/:courseSlug/lessons/:lessonSlug"
                 element={
@@ -346,6 +348,7 @@ function AppInner() {
                 }
               />
 
+              {/* CERTIFICATES */}
               <Route
                 path="/certificate/:courseSlug"
                 element={
@@ -355,6 +358,7 @@ function AppInner() {
                 }
               />
 
+              {/* LABS */}
               <Route
                 path="/labs"
                 element={
@@ -364,7 +368,7 @@ function AppInner() {
                 }
               />
 
-              {/* ENROLL (public) */}
+              {/* ENROLL */}
               <Route path="/enroll/:courseSlug" element={<Enroll />} />
 
               {/* DASHBOARD */}
@@ -380,7 +384,7 @@ function AppInner() {
                 <Route path="roadmap" element={<RoadmapPage />} />
               </Route>
 
-              {/* GOALS */}
+              {/* GOAL SETUP */}
               <Route
                 path="/set-goals"
                 element={
@@ -405,17 +409,19 @@ function AppInner() {
 }
 
 /* -------------------------------------------------
-   APP ROOT (Router + Providers)
+   APP ROOT WITH IAM PROVIDER
 --------------------------------------------------- */
 function App() {
   return (
-    <ThemeProvider>
-      <Router>
-        <ScrollToTop />
-        <VoiceWelcome />
-        <AppInner />
-      </Router>
-    </ThemeProvider>
+    <IAMProvider>               {/* ⭐ FIXED — IAM WRAPS WHOLE APP */}
+      <ThemeProvider>
+        <Router>
+          <ScrollToTop />
+          <VoiceWelcome />
+          <AppInner />
+        </Router>
+      </ThemeProvider>
+    </IAMProvider>
   );
 }
 
