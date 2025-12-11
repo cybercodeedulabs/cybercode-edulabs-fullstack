@@ -168,55 +168,12 @@ export const UserProvider = ({ children }) => {
     [token]
   );
 
-  // ---------- Automatic Invalid-Token Recovery ----------
-  const recoverInvalidToken = useCallback(() => {
-    console.warn("🔒 Invalid or expired token detected — recovering…");
-
-    try { localStorage.removeItem(TOKEN_KEY); } catch (e) { /* ignore */ }
-    try { localStorage.removeItem("cybercode_user_cache"); } catch (e) { /* ignore */ }
-
-    setToken(null);
-    setUser(null);
-
-    // Redirect to login so user can re-authenticate cleanly.
-    try {
-      // If inside SPA routing, navigate to /login by assignment (full reload)
-      // ensures any broken state is fully cleared.
-      window.location.href = "/login";
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // applyToken: validates token shape & payload (basic) before storing
-  const applyToken = useCallback((tk) => {
-    if (!tk || typeof tk !== "string") {
-      return recoverInvalidToken();
-    }
-
-    // Basic format check (must be 3 parts dots)
-    if (tk.split(".").length !== 3) {
-      console.warn("applyToken: token format invalid");
-      return recoverInvalidToken();
-    }
-
-    // attempt decode and ensure uid exists
-    try {
-      const payload = decodeJwt(tk);
-      if (!payload || !(payload.uid || payload.sub)) {
-        console.warn("applyToken: token payload missing uid/sub");
-        return recoverInvalidToken();
-      }
-    } catch (err) {
-      console.warn("applyToken: token decode failed", err);
-      return recoverInvalidToken();
-    }
-
-    try {
-      localStorage.setItem(TOKEN_KEY, tk);
-    } catch (e) { /* ignore */ }
+  const applyToken = (tk) => {
     setToken(tk);
-  }, [recoverInvalidToken]);
+    if (tk) localStorage.setItem(TOKEN_KEY, tk);
+    else localStorage.removeItem(TOKEN_KEY);
+  };
+
 
   // ---------- LOAD USER PROFILE (user row + enrolled courses + projects) ----------
   // NOTE: loadUserProfile accepts optional token argument to avoid race condition
@@ -1110,7 +1067,7 @@ export const UserProvider = ({ children }) => {
     try {
       window.location.href = "/";
     } catch { }
-  }, [applyToken]);
+  }, []);
 
   // ---------- Hydration ----------
   useEffect(() => {
@@ -1132,26 +1089,10 @@ export const UserProvider = ({ children }) => {
                 await loadUserProfile(payload.uid, token);
               } else {
                 console.warn("Token decoded but UID missing — using /auth/me fallback");
-                // use /auth/me fallback with explicit token
-                try {
-                  const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
-                  const me = await meRes.json().catch(() => null);
-                  if (me?.user?.uid) {
-                    await loadUserProfile(me.user.uid, token);
-                  } else {
-                    console.warn("auth/me did not return valid user — recovering token");
-                    recoverInvalidToken();
-                    // stop init
-                    setLoading(false);
-                    setHydrated(true);
-                    return;
-                  }
-                } catch (err) {
-                  console.warn("auth/me fallback failed", err);
-                  recoverInvalidToken();
-                  setLoading(false);
-                  setHydrated(true);
-                  return;
+                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
+                const me = await meRes.json().catch(() => null);
+                if (me?.user?.uid) {
+                  await loadUserProfile(me.user.uid, token);
                 }
               }
             } catch (err) {
@@ -1162,28 +1103,13 @@ export const UserProvider = ({ children }) => {
                 const me = await meRes.json().catch(() => null);
                 if (me?.user?.uid) {
                   await loadUserProfile(me.user.uid, token);
-                } else {
-                  recoverInvalidToken();
-                  setLoading(false);
-                  setHydrated(true);
-                  return;
                 }
-              } catch (err2) {
-                console.warn("auth/me fallback also failed", err2);
-                recoverInvalidToken();
-                setLoading(false);
-                setHydrated(true);
-                return;
-              }
+              } catch { }
             }
 
           }
         } catch (err) {
           console.warn("hydration loadUserProfile failed", err);
-          recoverInvalidToken();
-          setLoading(false);
-          setHydrated(true);
-          return;
         }
       }
       setLoading(false);
