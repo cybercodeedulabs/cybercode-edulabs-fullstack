@@ -20,6 +20,9 @@ import CloudWaitlist from "../components/CloudWaitlist";
 import C3DemoZone from "../components/simulations/c3/C3DemoZone";
 import C3AdvancedSimulator from "../components/simulations/c3/C3AdvancedSimulator";
 
+// Cloud Dashboard (console full-featured)
+import CloudDashboard from "./CloudDashboard";
+
 /* ===========================================================================
    Nebula Background (subtle for enterprise look)
    =========================================================================== */
@@ -488,9 +491,9 @@ function CloudLanding({ onLaunch, onSelectPlan }) {
   );
 }
 
-/* ===========================================================================
+/* ========================================================================
   CONSOLE
-  =========================================================================== */
+  ======================================================================== */
 function CloudConsole({ onCreate }) {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -570,9 +573,9 @@ function CloudConsole({ onCreate }) {
   );
 }
 
-/* ===========================================================================
+/* ========================================================================
    DEPLOY
-   =========================================================================== */
+   ======================================================================== */
 function CloudDeploy({ onSuccess, preselectedPlan }) {
   const [gitUrl, setGitUrl] = useState("");
   const [plan, setPlan] = useState(preselectedPlan || "student");
@@ -645,9 +648,9 @@ function CloudDeploy({ onSuccess, preselectedPlan }) {
   );
 }
 
-/* ===========================================================================
+/* ========================================================================
    USAGE
-   =========================================================================== */
+   ======================================================================== */
 function CloudUsage() {
   const [usage, setUsage] = useState(null);
 
@@ -691,9 +694,9 @@ function CloudUsage() {
   );
 }
 
-/* ===========================================================================
+/* ========================================================================
    MAIN EXPORT
-   =========================================================================== */
+   ======================================================================== */
 export default function CybercodeCloudModule() {
   const [view, setView] = useState("landing");
   const [selectedPlan, setSelectedPlan] = useState("student");
@@ -708,7 +711,7 @@ export default function CybercodeCloudModule() {
       >
         {view === "landing" && (
           <CloudLanding
-            onLaunch={() => setView("console")}
+            onLaunch={() => setView("dashboard")}
             onSelectPlan={(p) => {
               setSelectedPlan(p);
               setView("deploy");
@@ -725,6 +728,11 @@ export default function CybercodeCloudModule() {
             onSuccess={() => setView("console")}
             preselectedPlan={selectedPlan}
           />
+        )}
+
+        {view === "dashboard" && (
+          // Full-featured dashboard (replaces older console view for deeper interactions)
+          <CloudDashboard />
         )}
       </motion.div>
 
