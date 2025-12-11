@@ -1,4 +1,3 @@
-// src/pages/CloudDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -17,11 +16,13 @@ try {
 }
 
 /**
- * ⚙️ C3 Cloud Console Dashboard — enhanced with one-click instance creation
- *
- * - Uses mockAPI if available (src/api/mockCloudAPI.js)
- * - Otherwise simulates instances and persists them in localStorage
- * - Keeps existing UI + styling consistent with CybercodeCloud.jsx
+ * Premium C3 Cloud Console Dashboard (MVP-ready)
+ * - Adds a Free Instance (1 vCPU, 1GB RAM, 2GB disk) demo flow per logged-in user.
+ * - Designed so backend (OpenStack/Controller) can replace localStorage or mockAPI later.
+ * - Free instance flags persisted in localStorage keys:
+ *    c3_free_instance_created (true|false)
+ *    c3_free_instance_id (string)
+ * - Usage default assumes 1TB physical backend (storageQuota = 1024 GB) for MVP.
  */
 
 export default function CloudDashboard() {
@@ -35,14 +36,13 @@ export default function CloudDashboard() {
   const [error, setError] = useState("");
 
   // Launch form state
-  const [launching, setLaunching] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
   const [launchPlan, setLaunchPlan] = useState("student");
   const [launchImage, setLaunchImage] = useState("ubuntu-22.04");
   const [launchCount, setLaunchCount] = useState(1);
   const [launchCPU, setLaunchCPU] = useState(1);
   const [launchRAM, setLaunchRAM] = useState(1); // GB
-  const [launchDisk, setLaunchDisk] = useState(5); // GB
+  const [launchDisk, setLaunchDisk] = useState(2); // GB — DEFAULT changed to 2GB as requested
   const [provisionLogs, setProvisionLogs] = useState([]);
 
   const [inviteEmail, setInviteEmail] = useState("");
@@ -51,15 +51,18 @@ export default function CloudDashboard() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteMessage, setInviteMessage] = useState("");
 
-  // 🔐 Redirect unauthenticated IAM users
+  // Free-instance keys
+  const FREE_FLAG_KEY = "c3_free_instance_created"; // "true" or not present
+  const FREE_ID_KEY = "c3_free_instance_id";
+  const LS_KEY_INST = "c3_instances_v1";
+  const LS_KEY_USAGE = "c3_usage_v1";
+
+  // Redirect unauthenticated IAM users
   useEffect(() => {
     if (!iamUser) navigate("/cloud/login");
   }, [iamUser, navigate]);
 
   // ---------- persistence helpers (localStorage fallback) ----------
-  const LS_KEY_INST = "c3_instances_v1";
-  const LS_KEY_USAGE = "c3_usage_v1";
-
   function readLocalInstances() {
     try {
       const raw = localStorage.getItem(LS_KEY_INST);
@@ -80,9 +83,10 @@ export default function CloudDashboard() {
       const raw = localStorage.getItem(LS_KEY_USAGE);
       return raw
         ? JSON.parse(raw)
-        : { cpuUsed: 0, cpuQuota: 8, storageUsed: 0, storageQuota: 100, activeUsers: 1 };
+        : { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
+        // default quotas for MVP: cpuQuota 64, storageQuota 1024GB (1TB)
     } catch {
-      return { cpuUsed: 0, cpuQuota: 8, storageUsed: 0, storageQuota: 100, activeUsers: 1 };
+      return { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
     }
   }
   function writeLocalUsage(u) {
@@ -104,12 +108,13 @@ export default function CloudDashboard() {
     setLoadingInstances(true);
     try {
       if (mockAPI && typeof mockAPI.listInstances === "function") {
-        const data = await mockAPI.listInstances();
+        const data = await mockAPI.listInstances(iamUser?.email);
         setInstances(data.instances || []);
       } else {
         // fallback to local storage
         const local = readLocalInstances();
-        setInstances(local);
+        // Filter instances by user if our local format stores owner
+        setInstances(local.filter((i) => !i.owner || i.owner === iamUser?.email));
       }
     } catch (err) {
       console.error(err);
@@ -123,7 +128,7 @@ export default function CloudDashboard() {
     setLoadingUsage(true);
     try {
       if (mockAPI && typeof mockAPI.getUsage === "function") {
-        const u = await mockAPI.getUsage();
+        const u = await mockAPI.getUsage(iamUser?.email);
         setUsage(u || null);
       } else {
         // fallback to local storage
@@ -137,8 +142,39 @@ export default function CloudDashboard() {
     }
   }
 
+  // ---------- free instance helpers ----------
+  const hasCreatedFreeInstance = () => {
+    try {
+      return localStorage.getItem(FREE_FLAG_KEY) === "true";
+    } catch {
+      return false;
+    }
+  };
+
+  const getFreeInstanceId = () => {
+    try {
+      return localStorage.getItem(FREE_ID_KEY) || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const markFreeInstanceCreated = (id) => {
+    try {
+      localStorage.setItem(FREE_FLAG_KEY, "true");
+      if (id) localStorage.setItem(FREE_ID_KEY, id);
+    } catch { }
+  };
+
+  const clearFreeInstanceFlag = () => {
+    try {
+      localStorage.removeItem(FREE_FLAG_KEY);
+      localStorage.removeItem(FREE_ID_KEY);
+    } catch { }
+  };
+
   // ---------- instance creation (one-click) ----------
-  // config: { plan, image, count, cpu, ram, disk }
+  // config: { plan, image, count, cpu, ram, disk, owner }
   async function createInstances(config) {
     // high level wrapper: tries mockAPI.createInstances, otherwise simulates
     if (mockAPI && typeof mockAPI.createInstances === "function") {
@@ -152,7 +188,7 @@ export default function CloudDashboard() {
     const created = [];
     for (let i = 0; i < config.count; i += 1) {
       const id = `inst-${Date.now()}-${Math.floor(Math.random() * 9000 + i)}`;
-      const name = `${config.image.replace(/[^a-z0-9]/gi, "-")}-${id.slice(-4)}`;
+      const name = `${config.image.replace(/[^a-z0-9]/gi, "-")}-${id.slice(-4)}`.toLowerCase();
       const ins = {
         id,
         name,
@@ -163,6 +199,8 @@ export default function CloudDashboard() {
         disk: config.disk,
         status: "running",
         url: "#",
+        owner: config.owner || null,
+        freeTier: !!config.freeTier,
         createdAt: new Date().toISOString(),
       };
       created.push(ins);
@@ -171,7 +209,7 @@ export default function CloudDashboard() {
       existingUsage.storageUsed += config.disk;
     }
 
-    const nextInstances = existing.concat(created);
+    const nextInstances = created.concat(existing);
     writeLocalInstances(nextInstances);
 
     // clamp usage
@@ -182,7 +220,7 @@ export default function CloudDashboard() {
     return { instances: created, usage: existingUsage };
   }
 
-  // Handle UI submit for launching
+  // Handle UI submit for launching (paid/regular)
   async function handleLaunchSubmit(e) {
     e.preventDefault();
     setProvisionLogs([]);
@@ -194,32 +232,28 @@ export default function CloudDashboard() {
       count: Number(launchCount) || 1,
       cpu: Number(launchCPU) || 1,
       ram: Number(launchRAM) || 1,
-      disk: Number(launchDisk) || 5,
+      disk: Number(launchDisk) || 2,
+      owner: iamUser?.email,
+      freeTier: false,
     };
 
-    // small progress simulation (for demo)
     try {
       setProvisionLogs((l) => [...l, `Requesting ${cfg.count} instance(s)...`]);
 
-      // If using mockAPI that simulates async provisioning with logs, it may provide progress.
       if (mockAPI && typeof mockAPI.createInstances === "function") {
-        // mockAPI may itself be async and return objects
         const resp = await mockAPI.createInstances(cfg, (progress) => {
-          // if mockAPI supports progress callback, push logs
           if (progress) setProvisionLogs((s) => [...s, progress]);
         });
-        // merge newly created instances into UI
         const newInstances = resp.instances || [];
         setInstances((prev) => [...newInstances, ...prev]);
         if (resp.usage) setUsage(resp.usage);
       } else {
-        // local simulation - add a few timed log entries
         setProvisionLogs((l) => [...l, "Allocating resources on local simulator..."]);
-        await new Promise((res) => setTimeout(res, 900));
+        await new Promise((res) => setTimeout(res, 700));
         setProvisionLogs((l) => [...l, "Configuring networking and storage..."]);
-        await new Promise((res) => setTimeout(res, 900));
+        await new Promise((res) => setTimeout(res, 700));
         setProvisionLogs((l) => [...l, "Booting instances..."]);
-        await new Promise((res) => setTimeout(res, 900));
+        await new Promise((res) => setTimeout(res, 700));
 
         const resp = await createInstances(cfg);
         setInstances((prev) => [...resp.instances, ...prev]);
@@ -232,13 +266,63 @@ export default function CloudDashboard() {
       setProvisionLogs((l) => [...l, `❌ Error: ${err.message || err}`]);
     } finally {
       setProvisioning(false);
-      // keep launch form visible, but you may prefer to hide it: setLaunching(false)
+    }
+  }
+
+  // ---------- Free-instance flow (demo) ----------
+  // Creates a single free instance per user (1 vCPU, 1GB RAM, 2GB disk). Does NOT auto-start large workloads.
+  async function createFreeInstance() {
+    if (!iamUser || !iamUser.email) {
+      setError("Cannot create free instance: unauthenticated user.");
+      return;
+    }
+
+    if (hasCreatedFreeInstance()) {
+      setError("Free instance already created for this user.");
+      return;
+    }
+
+    setProvisionLogs([]);
+    setProvisioning(true);
+
+    const cfg = {
+      plan: "student",
+      image: "ubuntu-22.04",
+      count: 1,
+      cpu: 1,
+      ram: 1,
+      disk: 2, // 2GB as requested
+      owner: iamUser.email,
+      freeTier: true,
+    };
+
+    try {
+      setProvisionLogs((l) => [...l, `Requesting free demo instance for ${iamUser.email}...`]);
+      await new Promise((res) => setTimeout(res, 700));
+      setProvisionLogs((l) => [...l, "Allocating small demo volume..."]);
+      await new Promise((res) => setTimeout(res, 700));
+      setProvisionLogs((l) => [...l, "Preparing environment (lightweight)..."]);
+      await new Promise((res) => setTimeout(res, 700));
+
+      const resp = await createInstances(cfg);
+      const newInst = resp.instances?.[0];
+      if (newInst) {
+        markFreeInstanceCreated(newInst.id);
+      }
+
+      setInstances((prev) => [newInst, ...(prev || [])]);
+      setUsage(resp.usage || readLocalUsage());
+      setProvisionLogs((l) => [...l, "✅ Free demo instance ready."]);
+    } catch (err) {
+      console.error("free instance failed", err);
+      setProvisionLogs((l) => [...l, `❌ Error: ${err.message || err}`]);
+    } finally {
+      setProvisioning(false);
     }
   }
 
   // ---------- instance actions ----------
   async function handleTerminate(id) {
-    // For now, simulate termination (update localStorage or call mockAPI terminate)
     try {
       if (mockAPI && typeof mockAPI.terminateInstance === "function") {
         await mockAPI.terminateInstance(id);
@@ -246,18 +330,24 @@ export default function CloudDashboard() {
         await fetchUsage();
         return;
       }
+
       // local simulation
       const curr = readLocalInstances().filter((i) => i.id !== id);
       writeLocalInstances(curr);
-      setInstances(curr);
+      setInstances(curr.filter((i) => !i.owner || i.owner === iamUser?.email));
 
       // recalc usage (simple recalc from instances)
-      const u = { cpuUsed: 0, cpuQuota: 8, storageUsed: 0, storageQuota: 100, activeUsers: 1 };
-      const all = curr;
+      const u = { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
+      const all = curr.filter((i) => !i.owner || i.owner === iamUser?.email);
       all.forEach((it) => {
         u.cpuUsed += Number(it.cpu || 0);
         u.storageUsed += Number(it.disk || 0);
       });
+
+      // If terminated instance was free-tier, clear the flag so user can recreate
+      const freedId = getFreeInstanceId();
+      if (freedId === id) clearFreeInstanceFlag();
+
       writeLocalUsage(u);
       setUsage(u);
     } catch (err) {
@@ -295,11 +385,21 @@ export default function CloudDashboard() {
 
   // ---------- small helpers ----------
   const canLaunch = () => {
-    // Ensure resources available (simple check)
     if (!usage) return true;
     const projectedCPU = usage.cpuUsed + launchCPU * launchCount;
     const projectedStorage = usage.storageUsed + launchDisk * launchCount;
-    return projectedCPU <= (usage.cpuQuota || 9999) && projectedStorage <= (usage.storageQuota || 9999);
+    return projectedCPU <= (usage.cpuQuota || 999999) && projectedStorage <= (usage.storageQuota || 999999);
+  };
+
+  const userHasFreeInstance = () => {
+    // prefer explicit localStorage marker, else check instances list
+    try {
+      if (hasCreatedFreeInstance()) return true;
+      const id = getFreeInstanceId();
+      if (id) return instances.some((i) => i.id === id);
+      // fallback: search instances owned by user with freeTier
+      return instances.some((i) => i.freeTier && i.owner === iamUser?.email);
+    } catch { return false; }
   };
 
   // ---------- render ----------
@@ -311,17 +411,13 @@ export default function CloudDashboard() {
           <div className="flex items-center gap-3">
             <img src="/images/logo.png" alt="C3 Cloud" className="h-9 w-9 rounded" />
             <div>
-              <div className="text-sm font-semibold tracking-wide text-cyan-400">
-                C3 Cloud Console
-              </div>
+              <div className="text-sm font-semibold tracking-wide text-cyan-400">C3 Cloud Console</div>
               <div className="text-xs text-slate-400">by Cybercode EduLabs</div>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden sm:block text-slate-300">{iamUser?.email}</span>
-            <Button variant="secondary" onClick={handleSignOut}>
-              Sign out
-            </Button>
+            <Button variant="secondary" onClick={handleSignOut}>Sign out</Button>
           </div>
         </div>
       </header>
@@ -334,12 +430,8 @@ export default function CloudDashboard() {
             <CardContent>
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <h2 className="text-2xl font-semibold text-cyan-400">
-                    Welcome, {iamUser?.email?.split("@")[0] || "User"}
-                  </h2>
-                  <p className="text-sm text-slate-300 mt-1">
-                    Manage your C3 workspaces, monitor usage, and create sandboxed labs with one click.
-                  </p>
+                  <h2 className="text-2xl font-semibold text-cyan-400">Welcome, {iamUser?.email?.split("@")[0] || "User"}</h2>
+                  <p className="text-sm text-slate-300 mt-1">Manage your C3 workspaces, monitor usage, and create sandboxed labs with one click.</p>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-slate-400">Role</div>
@@ -349,6 +441,26 @@ export default function CloudDashboard() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* ===== Free Instance CTA (visible only if user hasn't created it) ===== */}
+        {!userHasFreeInstance() && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <Card className="p-6 bg-emerald-900/10 border border-emerald-700">
+              <CardContent>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-emerald-300">🎁 Free Demo Instance</h3>
+                    <p className="text-sm text-emerald-200 mt-1">Try C3 with a free demo instance (1 vCPU • 1GB RAM • 2GB Disk). Perfect for quick experiments.</p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Button onClick={createFreeInstance}>Launch Free Instance</Button>
+                    <Button variant="ghost" onClick={() => { alert('Free instance is a lightweight demo. It will create a small VM with minimal resources.'); }}>More info</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* ===== Launch Panel + Instances ===== */}
         <div className="flex flex-col lg:flex-row gap-8">
@@ -362,11 +474,7 @@ export default function CloudDashboard() {
                 <form onSubmit={handleLaunchSubmit} className="grid sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-slate-300">Package</label>
-                    <select
-                      value={launchPlan}
-                      onChange={(e) => setLaunchPlan(e.target.value)}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    >
+                    <select value={launchPlan} onChange={(e) => setLaunchPlan(e.target.value)} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm">
                       <option value="student">Student (free)</option>
                       <option value="edu">Edu+</option>
                       <option value="startup">Startup</option>
@@ -375,11 +483,7 @@ export default function CloudDashboard() {
 
                   <div>
                     <label className="text-xs text-slate-300">Image</label>
-                    <select
-                      value={launchImage}
-                      onChange={(e) => setLaunchImage(e.target.value)}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    >
+                    <select value={launchImage} onChange={(e) => setLaunchImage(e.target.value)} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm">
                       <option value="ubuntu-22.04">Ubuntu 22.04</option>
                       <option value="debian-12">Debian 12</option>
                       <option value="python-lab">Python Lab (env)</option>
@@ -390,76 +494,30 @@ export default function CloudDashboard() {
 
                   <div>
                     <label className="text-xs text-slate-300">Instances</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={launchCount}
-                      onChange={(e) => setLaunchCount(Math.max(1, Number(e.target.value)))}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    />
+                    <input type="number" min="1" max="10" value={launchCount} onChange={(e) => setLaunchCount(Math.max(1, Number(e.target.value)))} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
                   </div>
 
                   <div>
                     <label className="text-xs text-slate-300">CPU (vCPU)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="8"
-                      value={launchCPU}
-                      onChange={(e) => setLaunchCPU(Math.max(1, Number(e.target.value)))}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    />
+                    <input type="number" min="1" max="8" value={launchCPU} onChange={(e) => setLaunchCPU(Math.max(1, Number(e.target.value)))} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
                   </div>
 
                   <div>
                     <label className="text-xs text-slate-300">RAM (GB)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="32"
-                      value={launchRAM}
-                      onChange={(e) => setLaunchRAM(Math.max(1, Number(e.target.value)))}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    />
+                    <input type="number" min="1" max="32" value={launchRAM} onChange={(e) => setLaunchRAM(Math.max(1, Number(e.target.value)))} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
                   </div>
 
                   <div>
                     <label className="text-xs text-slate-300">Disk (GB)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="1024"
-                      value={launchDisk}
-                      onChange={(e) => setLaunchDisk(Math.max(1, Number(e.target.value)))}
-                      className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                    />
+                    <input type="number" min="1" max="1024" value={launchDisk} onChange={(e) => setLaunchDisk(Math.max(1, Number(e.target.value)))} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
                   </div>
 
                   <div className="sm:col-span-2 flex items-center gap-3 mt-2">
-                    <Button type="submit" disabled={provisioning || !canLaunch()}>
-                      {provisioning ? "Provisioning…" : "Create Cloud"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={() => {
-                        // reset to defaults
-                        setLaunchPlan("student");
-                        setLaunchImage("ubuntu-22.04");
-                        setLaunchCount(1);
-                        setLaunchCPU(1);
-                        setLaunchRAM(1);
-                        setLaunchDisk(5);
-                      }}
-                    >
-                      Reset
-                    </Button>
+                    <Button type="submit" disabled={provisioning || !canLaunch()}>{provisioning ? "Provisioning…" : "Create Cloud"}</Button>
+                    <Button variant="ghost" type="button" onClick={() => { setLaunchPlan("student"); setLaunchImage("ubuntu-22.04"); setLaunchCount(1); setLaunchCPU(1); setLaunchRAM(1); setLaunchDisk(2); }}>Reset</Button>
 
                     {!canLaunch() && (
-                      <div className="text-xs text-amber-300 ml-2">
-                        Exceeds quota — adjust resources or upgrade plan.
-                      </div>
+                      <div className="text-xs text-amber-300 ml-2">Exceeds quota — adjust resources or upgrade plan.</div>
                     )}
                   </div>
                 </form>
@@ -475,31 +533,25 @@ export default function CloudDashboard() {
                 <Card className="p-6 bg-white/10 text-center text-slate-300">
                   <p>No active workspaces yet.</p>
                   <div className="mt-4">
-                    <Button onClick={() => setLaunching(true)}>Create Workspace</Button>
+                    <Button onClick={() => createFreeInstance()}>Create Free Workspace</Button>
                   </div>
                 </Card>
               ) : (
                 <div className="grid gap-4">
                   {instances.map((ins) => (
-                    <Card key={ins.id} className="p-4 bg-white/10 border border-slate-800">
+                    <Card key={ins.id} className={`p-4 ${ins.freeTier ? "bg-emerald-900/5 border-emerald-700" : "bg-white/10 border-slate-800"}`}>
                       <CardContent>
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-semibold text-slate-100">{ins.name || ins.id}</div>
-                            <div className="text-xs text-slate-400">
-                              {ins.image} • {ins.plan || "Student"} • {ins.status}
-                            </div>
-                            <div className="text-xs text-slate-400 mt-2">
-                              {ins.cpu} vCPU • {ins.ram} GB RAM • {ins.disk} GB
-                            </div>
+                            <div className="font-semibold text-slate-100">{ins.name || ins.id} {ins.freeTier && <span className="ml-2 text-xs text-emerald-300">(Free demo)</span>}</div>
+                            <div className="text-xs text-slate-400">{ins.image} • {ins.plan || "Student"} • {ins.status}</div>
+                            <div className="text-xs text-slate-400 mt-2">{ins.cpu} vCPU • {ins.ram} GB RAM • {ins.disk} GB</div>
                           </div>
                           <div className="flex flex-col gap-2">
                             <Button size="sm" asChild>
                               <a href={ins.url || "#"} target="_blank" rel="noreferrer">Open</a>
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => handleTerminate(ins.id)}>
-                              Terminate
-                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleTerminate(ins.id)}>Terminate</Button>
                           </div>
                         </div>
                       </CardContent>
@@ -548,27 +600,9 @@ export default function CloudDashboard() {
                   <CardContent>
                     <h4 className="text-sm font-medium text-slate-200">Admin — Invite IAM User</h4>
                     <form onSubmit={handleInviteSubmit} className="mt-3 space-y-3">
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        required
-                        placeholder="Email"
-                        className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                      />
-                      <input
-                        type="password"
-                        value={invitePassword}
-                        onChange={(e) => setInvitePassword(e.target.value)}
-                        required
-                        placeholder="Temporary password"
-                        className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                      />
-                      <select
-                        value={inviteRole}
-                        onChange={(e) => setInviteRole(e.target.value)}
-                        className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                      >
+                      <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required placeholder="Email" className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
+                      <input type="password" value={invitePassword} onChange={(e) => setInvitePassword(e.target.value)} required placeholder="Temporary password" className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm" />
+                      <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm">
                         <option value="admin">Admin</option>
                         <option value="developer">Developer</option>
                         <option value="viewer">Viewer</option>
@@ -577,14 +611,8 @@ export default function CloudDashboard() {
                       {inviteMessage && <div className="text-xs text-slate-300">{inviteMessage}</div>}
 
                       <div className="flex gap-2 mt-2">
-                        <Button type="submit" disabled={inviteLoading}>
-                          {inviteLoading ? "Inviting…" : "Invite User"}
-                        </Button>
-                        <Button type="button" variant="ghost" onClick={() => {
-                          setInviteEmail(""); setInvitePassword(""); setInviteRole("developer"); setInviteMessage("");
-                        }}>
-                          Reset
-                        </Button>
+                        <Button type="submit" disabled={inviteLoading}>{inviteLoading ? "Inviting…" : "Invite User"}</Button>
+                        <Button type="button" variant="ghost" onClick={() => { setInviteEmail(""); setInvitePassword(""); setInviteRole("developer"); setInviteMessage(""); }}>Reset</Button>
                       </div>
                     </form>
                   </CardContent>
