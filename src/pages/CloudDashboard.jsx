@@ -1,3 +1,4 @@
+// src/pages/CloudDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -5,30 +6,18 @@ import { useIAM } from "../contexts/IAMContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// Try to import mock API (you mentioned you created it).
-// If it's not available at runtime, we'll fall back to localStorage simulation.
-let mockAPI = null;
-try {
-  // eslint-disable-next-line import/no-unresolved, global-require
-  mockAPI = require("../api/mockCloudAPI").mockAPI;
-} catch (e) {
-  mockAPI = null;
-}
-
 /**
- * Premium C3 Cloud Console Dashboard (MVP-ready)
- * - Adds a Free Instance (1 vCPU, 1GB RAM, 2GB disk) demo flow per logged-in user.
- * - Designed so backend (OpenStack/Controller) can replace localStorage or mockAPI later.
- * - Free instance flags persisted in localStorage keys:
- *    c3_free_instance_created (true|false)
- *    c3_free_instance_id (string)
- * - Usage default assumes 1TB physical backend (storageQuota = 1024 GB) for MVP.
+ * CloudDashboard (backend-backed)
+ * - Uses API endpoints under /api/cloud/*
+ * - Authorization: Bearer token from IAMContext.getToken()
+ * - Overlay simplified (Option C): shows a single "Creating instances…" message while waiting on backend
  */
 
 export default function CloudDashboard() {
-  const { iamUser, logoutIAM, registerIAMUser } = useIAM();
+  const { iamUser, logoutIAM, registerIAMUser, getToken } = useIAM();
   const navigate = useNavigate();
 
+  // UI state
   const [instances, setInstances] = useState([]);
   const [usage, setUsage] = useState(null);
   const [loadingInstances, setLoadingInstances] = useState(false);
@@ -37,88 +26,65 @@ export default function CloudDashboard() {
 
   // Launch form state
   const [provisioning, setProvisioning] = useState(false);
+  const [provisionMessage, setProvisionMessage] = useState("");
   const [launchPlan, setLaunchPlan] = useState("student");
   const [launchImage, setLaunchImage] = useState("ubuntu-22.04");
   const [launchCount, setLaunchCount] = useState(1);
   const [launchCPU, setLaunchCPU] = useState(1);
   const [launchRAM, setLaunchRAM] = useState(1); // GB
-  const [launchDisk, setLaunchDisk] = useState(2); // GB — DEFAULT changed to 2GB as requested
+  const [launchDisk, setLaunchDisk] = useState(2); // GB
   const [provisionLogs, setProvisionLogs] = useState([]);
 
+  // Invite state (admin)
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
   const [inviteRole, setInviteRole] = useState("developer");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteMessage, setInviteMessage] = useState("");
 
-  // Free-instance keys
-  const FREE_FLAG_KEY = "c3_free_instance_created"; // "true" or not present
-  const FREE_ID_KEY = "c3_free_instance_id";
-  const LS_KEY_INST = "c3_instances_v1";
-  const LS_KEY_USAGE = "c3_usage_v1";
-
-  // Redirect unauthenticated IAM users
+  // Redirect unauthenticated IAM users (client-side guard)
   useEffect(() => {
     if (!iamUser) navigate("/cloud/login");
   }, [iamUser, navigate]);
 
-  // ---------- persistence helpers (localStorage fallback) ----------
-  function readLocalInstances() {
-    try {
-      const raw = localStorage.getItem(LS_KEY_INST);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
-  function writeLocalInstances(arr) {
-    try {
-      localStorage.setItem(LS_KEY_INST, JSON.stringify(arr));
-    } catch {
-      /* ignore */
-    }
-  }
-  function readLocalUsage() {
-    try {
-      const raw = localStorage.getItem(LS_KEY_USAGE);
-      return raw
-        ? JSON.parse(raw)
-        : { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
-        // default quotas for MVP: cpuQuota 64, storageQuota 1024GB (1TB)
-    } catch {
-      return { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
-    }
-  }
-  function writeLocalUsage(u) {
-    try {
-      localStorage.setItem(LS_KEY_USAGE, JSON.stringify(u));
-    } catch {
-      /* ignore */
-    }
-  }
+  // API base from env or default to empty (IAMContext already uses same base)
+  const API_BASE = import.meta.env.VITE_API_URL || "";
+
+  // ---------- helpers for API calls ----------
+  const authHeaders = () => {
+    const token = typeof getToken === "function" ? getToken() : null;
+    return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+  };
 
   // ---------- fetch / init ----------
   useEffect(() => {
-    fetchInstances();
-    fetchUsage();
+    // only fetch if IAM user present (otherwise redirect will handle)
+    if (iamUser) {
+      fetchInstances();
+      fetchUsage();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [iamUser]);
 
   async function fetchInstances() {
     setLoadingInstances(true);
+    setError("");
     try {
-      if (mockAPI && typeof mockAPI.listInstances === "function") {
-        const data = await mockAPI.listInstances(iamUser?.email);
-        setInstances(data.instances || []);
-      } else {
-        // fallback to local storage
-        const local = readLocalInstances();
-        // Filter instances by user if our local format stores owner
-        setInstances(local.filter((i) => !i.owner || i.owner === iamUser?.email));
+      const res = await fetch(`${API_BASE}/api/cloud/instances`, {
+        method: "GET",
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || `Failed to fetch instances (${res.status})`);
       }
+
+      const js = await res.json();
+      setInstances(js.instances || []);
     } catch (err) {
-      console.error(err);
-      setError("Could not load instances.");
+      console.error("fetchInstances error:", err);
+      setError(err.message || "Could not load instances.");
     } finally {
       setLoadingInstances(false);
     }
@@ -127,232 +93,187 @@ export default function CloudDashboard() {
   async function fetchUsage() {
     setLoadingUsage(true);
     try {
-      if (mockAPI && typeof mockAPI.getUsage === "function") {
-        const u = await mockAPI.getUsage(iamUser?.email);
-        setUsage(u || null);
-      } else {
-        // fallback to local storage
-        const local = readLocalUsage();
-        setUsage(local);
+      const res = await fetch(`${API_BASE}/api/cloud/usage`, {
+        method: "GET",
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || `Failed to fetch usage (${res.status})`);
       }
+
+      const js = await res.json();
+      // backend returns fields: cpuUsed, cpuQuota, storageUsed, storageQuota, activeUsers
+      setUsage({
+        cpuUsed: js.cpuUsed ?? 0,
+        cpuQuota: js.cpuQuota ?? 64,
+        storageUsed: js.storageUsed ?? 0,
+        storageQuota: js.storageQuota ?? 1024,
+        activeUsers: js.activeUsers ?? 0,
+      });
     } catch (err) {
-      console.error(err);
+      console.error("fetchUsage error:", err);
+      // keep existing usage if present
     } finally {
       setLoadingUsage(false);
     }
   }
 
-  // ---------- free instance helpers ----------
-  const hasCreatedFreeInstance = () => {
-    try {
-      return localStorage.getItem(FREE_FLAG_KEY) === "true";
-    } catch {
-      return false;
+  // ---------- instance creation ----------
+  // payload: { image, plan, count, cpu, ram, disk }
+  async function createInstancesApi(payload) {
+    const res = await fetch(`${API_BASE}/api/cloud/instances`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const js = await res.json().catch(() => ({}));
+      throw new Error(js.error || `Create failed (${res.status})`);
     }
-  };
-
-  const getFreeInstanceId = () => {
-    try {
-      return localStorage.getItem(FREE_ID_KEY) || null;
-    } catch {
-      return null;
-    }
-  };
-
-  const markFreeInstanceCreated = (id) => {
-    try {
-      localStorage.setItem(FREE_FLAG_KEY, "true");
-      if (id) localStorage.setItem(FREE_ID_KEY, id);
-    } catch { }
-  };
-
-  const clearFreeInstanceFlag = () => {
-    try {
-      localStorage.removeItem(FREE_FLAG_KEY);
-      localStorage.removeItem(FREE_ID_KEY);
-    } catch { }
-  };
-
-  // ---------- instance creation (one-click) ----------
-  // config: { plan, image, count, cpu, ram, disk, owner }
-  async function createInstances(config) {
-    // high level wrapper: tries mockAPI.createInstances, otherwise simulates
-    if (mockAPI && typeof mockAPI.createInstances === "function") {
-      return mockAPI.createInstances(config);
-    }
-
-    // Local simulation: create objects, persist to localStorage, update usage
-    const existing = readLocalInstances();
-    const existingUsage = readLocalUsage();
-
-    const created = [];
-    for (let i = 0; i < config.count; i += 1) {
-      const id = `inst-${Date.now()}-${Math.floor(Math.random() * 9000 + i)}`;
-      const name = `${config.image.replace(/[^a-z0-9]/gi, "-")}-${id.slice(-4)}`.toLowerCase();
-      const ins = {
-        id,
-        name,
-        image: config.image,
-        plan: config.plan,
-        cpu: config.cpu,
-        ram: config.ram,
-        disk: config.disk,
-        status: "running",
-        url: "#",
-        owner: config.owner || null,
-        freeTier: !!config.freeTier,
-        createdAt: new Date().toISOString(),
-      };
-      created.push(ins);
-
-      existingUsage.cpuUsed += config.cpu;
-      existingUsage.storageUsed += config.disk;
-    }
-
-    const nextInstances = created.concat(existing);
-    writeLocalInstances(nextInstances);
-
-    // clamp usage
-    if (existingUsage.cpuUsed > existingUsage.cpuQuota) existingUsage.cpuUsed = existingUsage.cpuQuota;
-    if (existingUsage.storageUsed > existingUsage.storageQuota) existingUsage.storageUsed = existingUsage.storageQuota;
-    writeLocalUsage(existingUsage);
-
-    return { instances: created, usage: existingUsage };
+    return res.json();
   }
 
-  // Handle UI submit for launching (paid/regular)
   async function handleLaunchSubmit(e) {
     e.preventDefault();
     setProvisionLogs([]);
+    setProvisionMessage("Creating instances...");
     setProvisioning(true);
+    setError("");
 
     const cfg = {
-      plan: launchPlan,
       image: launchImage,
+      plan: launchPlan,
       count: Number(launchCount) || 1,
       cpu: Number(launchCPU) || 1,
       ram: Number(launchRAM) || 1,
       disk: Number(launchDisk) || 2,
-      owner: iamUser?.email,
-      freeTier: false,
     };
 
     try {
-      setProvisionLogs((l) => [...l, `Requesting ${cfg.count} instance(s)...`]);
+      // call backend
+      const resp = await createInstancesApi(cfg);
 
-      if (mockAPI && typeof mockAPI.createInstances === "function") {
-        const resp = await mockAPI.createInstances(cfg, (progress) => {
-          if (progress) setProvisionLogs((s) => [...s, progress]);
-        });
-        const newInstances = resp.instances || [];
-        setInstances((prev) => [...newInstances, ...prev]);
-        if (resp.usage) setUsage(resp.usage);
+      // update instances and usage from response if provided
+      if (resp.instances) {
+        // prepend newly created ones (API returns created)
+        setInstances((prev) => [...resp.instances, ...(prev || [])]);
       } else {
-        setProvisionLogs((l) => [...l, "Allocating resources on local simulator..."]);
-        await new Promise((res) => setTimeout(res, 700));
-        setProvisionLogs((l) => [...l, "Configuring networking and storage..."]);
-        await new Promise((res) => setTimeout(res, 700));
-        setProvisionLogs((l) => [...l, "Booting instances..."]);
-        await new Promise((res) => setTimeout(res, 700));
-
-        const resp = await createInstances(cfg);
-        setInstances((prev) => [...resp.instances, ...prev]);
-        setUsage(resp.usage || readLocalUsage());
+        // fallback: re-fetch
+        await fetchInstances();
       }
 
-      setProvisionLogs((l) => [...l, "✅ Provisioning complete."]);
+      if (resp.usage) {
+        setUsage({
+          cpuUsed: resp.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
+          cpuQuota: resp.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
+          storageUsed: resp.usage.storageUsed ?? usage?.storageUsed ?? 0,
+          storageQuota: resp.usage.storageQuota ?? usage?.storageQuota ?? 1024,
+          activeUsers: resp.usage.activeUsers ?? usage?.activeUsers ?? 0,
+        });
+      } else {
+        await fetchUsage();
+      }
+
+      setProvisionLogs((p) => [...p, "✅ Instances created."]);
     } catch (err) {
-      console.error("Launch failed", err);
-      setProvisionLogs((l) => [...l, `❌ Error: ${err.message || err}`]);
+      console.error("handleLaunchSubmit error:", err);
+      setProvisionLogs((p) => [...p, `❌ ${err.message || "Create failed"}`]);
+      setError(err.message || "Failed to create instances.");
     } finally {
       setProvisioning(false);
+      setProvisionMessage("");
     }
   }
 
-  // ---------- Free-instance flow (demo) ----------
-  // Creates a single free instance per user (1 vCPU, 1GB RAM, 2GB disk). Does NOT auto-start large workloads.
+  // ---------- free-instance flow ----------
   async function createFreeInstance() {
     if (!iamUser || !iamUser.email) {
       setError("Cannot create free instance: unauthenticated user.");
       return;
     }
 
-    if (hasCreatedFreeInstance()) {
-      setError("Free instance already created for this user.");
-      return;
-    }
-
     setProvisionLogs([]);
+    setProvisionMessage("Creating free instance...");
     setProvisioning(true);
-
-    const cfg = {
-      plan: "student",
-      image: "ubuntu-22.04",
-      count: 1,
-      cpu: 1,
-      ram: 1,
-      disk: 2, // 2GB as requested
-      owner: iamUser.email,
-      freeTier: true,
-    };
+    setError("");
 
     try {
-      setProvisionLogs((l) => [...l, `Requesting free demo instance for ${iamUser.email}...`]);
-      await new Promise((res) => setTimeout(res, 700));
-      setProvisionLogs((l) => [...l, "Allocating small demo volume..."]);
-      await new Promise((res) => setTimeout(res, 700));
-      setProvisionLogs((l) => [...l, "Preparing environment (lightweight)..."]);
-      await new Promise((res) => setTimeout(res, 700));
+      const res = await fetch(`${API_BASE}/api/cloud/free-instance`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
 
-      const resp = await createInstances(cfg);
-      const newInst = resp.instances?.[0];
-      if (newInst) {
-        markFreeInstanceCreated(newInst.id);
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || `Free instance failed (${res.status})`);
       }
 
-      setInstances((prev) => [newInst, ...(prev || [])]);
-      setUsage(resp.usage || readLocalUsage());
-      setProvisionLogs((l) => [...l, "✅ Free demo instance ready."]);
+      const js = await res.json();
+      // backend responds with 'instance' and 'usage' per our contract
+      if (js.instance) {
+        setInstances((prev) => [js.instance, ...(prev || [])]);
+      } else {
+        await fetchInstances();
+      }
+
+      if (js.usage) {
+        setUsage({
+          cpuUsed: js.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
+          cpuQuota: js.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
+          storageUsed: js.usage.storageUsed ?? usage?.storageUsed ?? 0,
+          storageQuota: js.usage.storageQuota ?? usage?.storageQuota ?? 1024,
+          activeUsers: js.usage.activeUsers ?? usage?.activeUsers ?? 0,
+        });
+      } else {
+        await fetchUsage();
+      }
+
+      setProvisionLogs((p) => [...p, "✅ Free instance created."]);
     } catch (err) {
-      console.error("free instance failed", err);
-      setProvisionLogs((l) => [...l, `❌ Error: ${err.message || err}`]);
+      console.error("createFreeInstance error:", err);
+      setProvisionLogs((p) => [...p, `❌ ${err.message || "Free instance failed"}`]);
+      setError(err.message || "Failed to create free instance.");
     } finally {
       setProvisioning(false);
+      setProvisionMessage("");
     }
   }
 
-  // ---------- instance actions ----------
+  // ---------- terminate instance ----------
   async function handleTerminate(id) {
+    if (!id) return;
+    setError("");
     try {
-      if (mockAPI && typeof mockAPI.terminateInstance === "function") {
-        await mockAPI.terminateInstance(id);
-        await fetchInstances();
-        await fetchUsage();
-        return;
-      }
-
-      // local simulation
-      const curr = readLocalInstances().filter((i) => i.id !== id);
-      writeLocalInstances(curr);
-      setInstances(curr.filter((i) => !i.owner || i.owner === iamUser?.email));
-
-      // recalc usage (simple recalc from instances)
-      const u = { cpuUsed: 0, cpuQuota: 64, storageUsed: 0, storageQuota: 1024, activeUsers: 1 };
-      const all = curr.filter((i) => !i.owner || i.owner === iamUser?.email);
-      all.forEach((it) => {
-        u.cpuUsed += Number(it.cpu || 0);
-        u.storageUsed += Number(it.disk || 0);
+      const res = await fetch(`${API_BASE}/api/cloud/instances/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: authHeaders(),
       });
 
-      // If terminated instance was free-tier, clear the flag so user can recreate
-      const freedId = getFreeInstanceId();
-      if (freedId === id) clearFreeInstanceFlag();
+      if (!res.ok) {
+        const js = await res.json().catch(() => ({}));
+        throw new Error(js.error || `Terminate failed (${res.status})`);
+      }
 
-      writeLocalUsage(u);
-      setUsage(u);
+      const js = await res.json();
+      // remove from UI
+      setInstances((prev) => (prev || []).filter((i) => i.id !== id));
+
+      if (js.usage) {
+        setUsage({
+          cpuUsed: js.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
+          cpuQuota: js.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
+          storageUsed: js.usage.storageUsed ?? usage?.storageUsed ?? 0,
+          storageQuota: js.usage.storageQuota ?? usage?.storageQuota ?? 1024,
+          activeUsers: js.usage.activeUsers ?? usage?.activeUsers ?? 0,
+        });
+      } else {
+        await fetchUsage();
+      }
     } catch (err) {
-      console.error(err);
-      setError("Failed to terminate instance.");
+      console.error("handleTerminate error:", err);
+      setError(err.message || "Failed to terminate instance.");
     }
   }
 
@@ -372,6 +293,7 @@ export default function CloudDashboard() {
       setInvitePassword("");
       setInviteRole("developer");
     } catch (err) {
+      console.error("handleInviteSubmit error:", err);
       setInviteMessage(`❌ ${err.message || "Failed to create user"}`);
     } finally {
       setInviteLoading(false);
@@ -392,14 +314,11 @@ export default function CloudDashboard() {
   };
 
   const userHasFreeInstance = () => {
-    // prefer explicit localStorage marker, else check instances list
     try {
-      if (hasCreatedFreeInstance()) return true;
-      const id = getFreeInstanceId();
-      if (id) return instances.some((i) => i.id === id);
-      // fallback: search instances owned by user with freeTier
-      return instances.some((i) => i.freeTier && i.owner === iamUser?.email);
-    } catch { return false; }
+      return (instances || []).some((i) => i.freeTier && i.owner === iamUser?.email);
+    } catch {
+      return false;
+    }
   };
 
   // ---------- render ----------
@@ -623,30 +542,39 @@ export default function CloudDashboard() {
         </div>
       </main>
 
-      {/* Provisioning overlay/modal (simple in-page overlay) */}
+      {/* Provisioning overlay/modal (simple, no fake steps) */}
       {provisioning && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-60 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-          <div className="relative pointer-events-auto w-full max-w-xl mx-4">
+          <div className="relative w-full max-w-xl mx-4 pointer-events-auto">
             <Card className="p-4">
               <CardContent>
                 <div>
                   <h4 className="text-lg font-semibold">Provisioning Instances</h4>
-                  <p className="text-sm text-slate-500 mt-2">Your instances are being provisioned — this may take a few seconds.</p>
+                  <p className="text-sm text-slate-500 mt-2">{provisionMessage || "Creating instances…"}</p>
+
                   <div className="mt-3 bg-slate-900 p-3 rounded text-xs text-slate-200 h-36 overflow-auto">
                     {provisionLogs.length === 0 ? (
-                      <div>Starting...</div>
+                      <div>Processing…</div>
                     ) : (
                       provisionLogs.map((l, idx) => <div key={idx} className="mb-1">{l}</div>)
                     )}
                   </div>
+
                   <div className="mt-4 flex justify-end gap-2">
-                    <Button onClick={() => { setProvisioning(false); }}>Close</Button>
+                    <Button onClick={() => { setProvisioning(false); setProvisionMessage(""); }}>Close</Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+        </div>
+      )}
+
+      {/* Global error banner (small) */}
+      {error && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-70">
+          <div className="bg-rose-700/90 text-white px-4 py-2 rounded shadow">{error}</div>
         </div>
       )}
     </div>

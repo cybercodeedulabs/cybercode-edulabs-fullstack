@@ -61,7 +61,9 @@ import StudentProjectDetail from "./pages/StudentProjectDetail";
 import PodcastEpisode from "./pages/PodcastEpisode";
 import CertificatePage from "./pages/CertificatePage";
 import CloudDashboard from "./pages/CloudDashboard";
-
+import CloudLogin from "./pages/CloudLogin";
+import CloudRegister from "./pages/CloudRegister";
+import CloudProtectedRoute from "./components/CloudProtectedRoute";
 // Context
 import { useUser } from "./contexts/UserContext";
 
@@ -94,7 +96,7 @@ const LayoutWrapper = ({ children }) => {
 
 /* HOME PAGE */
 function HomePage() {
-  const ctx = useUser() || { user: null, logout: () => {} };
+  const ctx = useUser() || { user: null, logout: () => { } };
   const { user, logout } = ctx;
 
   return (
@@ -312,6 +314,8 @@ function AppInner() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/auth-success" element={<AuthSuccess />} />
+              <Route path="/cloud/login" element={<CloudLogin />} />
+              <Route path="/cloud/register" element={<CloudRegister />} />
 
               {/* CLOUD */}
               <Route path="/cloud" element={<CybercodeCloud />} />
@@ -319,9 +323,9 @@ function AppInner() {
               <Route
                 path="/cloud/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <CloudProtectedRoute>
                     <CloudDashboard />
-                  </ProtectedRoute>
+                  </CloudProtectedRoute>
                 }
               />
 

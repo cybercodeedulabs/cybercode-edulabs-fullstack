@@ -1,212 +1,145 @@
 // src/contexts/IAMContext.jsx
-import React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
-import { db } from "../firebase";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import bcrypt from "bcryptjs";
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+/**
+ * IAMContext — Cloud IAM Authentication (Postgres + JWT)
+ * Backend routes:
+ *   POST /api/iam/register
+ *   POST /api/iam/login
+ *   GET  /api/iam/me
+ */
 
 const IAMContext = createContext();
 
-const USE_FIREBASE = import.meta.env.VITE_USE_FIRESTORE === "true";
+const API_BASE = import.meta.env.VITE_API_URL || "";
+const TOKEN_KEY = "c3_iam_token";
+const USER_KEY = "c3_iam_user";
 
 export const IAMProvider = ({ children }) => {
   const [iamUser, setIamUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Load user from localStorage
+  /** Load token + cached user on mount */
   useEffect(() => {
-    const storedUser = localStorage.getItem("iamUser");
-    if (storedUser) {
-      setIamUser(JSON.parse(storedUser));
+    const token = localStorage.getItem(TOKEN_KEY);
+    const rawUser = localStorage.getItem(USER_KEY);
+
+    if (!token || !rawUser) {
+      setIamUser(null);
+      setLoading(false);
+      setHydrated(true);
+      return;
     }
-    setLoading(false);
-  }, []);
 
-  // -------------------------------------------------------
-  // LOCAL FALLBACK STORAGE KEY
-  // -------------------------------------------------------
-  const LOCAL_IAM_KEY = "iam_users_local_v1";
-
-  const loadLocalUsers = () => {
     try {
-      return JSON.parse(localStorage.getItem(LOCAL_IAM_KEY)) || [];
+      const parsed = JSON.parse(rawUser);
+      setIamUser(parsed);
     } catch {
-      return [];
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      setIamUser(null);
+      setLoading(false);
+      setHydrated(true);
+      return;
     }
-  };
 
-  const saveLocalUsers = (users) => {
-    localStorage.setItem(LOCAL_IAM_KEY, JSON.stringify(users));
-  };
-
-  // -------------------------------------------------------
-  // REGISTER IAM USER
-  // -------------------------------------------------------
-  const registerIAMUser = async ({ email, password, role }) => {
-    try {
-      if (USE_FIREBASE) {
-        // FIREBASE MODE (original logic)
-        const q = query(collection(db, "iam_users"), where("email", "==", email));
-        const snapshot = await getDocs(q);
-
-        if (!snapshot.empty) {
-          throw new Error("User already exists with this email.");
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const userRef = await addDoc(collection(db, "iam_users"), {
-          email,
-          password: hashedPassword,
-          role: role || "developer",
-          createdAt: new Date(),
+    // Validate token with backend
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/iam/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        return { id: userRef.id, email, role };
+        if (res.ok) {
+          const js = await res.json();
+          const safeUser = {
+            ...js.user,
+            role: js.user?.role || "developer",
+          };
+
+          localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+          setIamUser(safeUser);
+        } else {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          setIamUser(null);
+        }
+      } catch (e) {
+        console.error("IAM /me error:", e);
+      } finally {
+        setLoading(false);
+        setHydrated(true);
       }
+    })();
+  }, []);
 
-      // ---------------------------------------------------
-      // LOCAL MODE (Firestore disabled)
-      // ---------------------------------------------------
-      const users = loadLocalUsers();
-      const exists = users.find((u) => u.email === email);
-      if (exists) {
-        throw new Error("User already exists with this email.");
-      }
+  /** REGISTER */
+  const registerIAMUser = async ({ email, password, role }) => {
+    const res = await fetch(`${API_BASE}/api/iam/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, role }),
+    });
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+    const js = await res.json();
+    if (!res.ok) throw new Error(js.error || "Registration failed");
 
-      const newUser = {
-        id: `${Date.now()}-${Math.random()}`,
-        email,
-        password: hashedPassword,
-        role: role || "developer",
-        createdAt: new Date().toISOString(),
-      };
+    const safeUser = {
+      ...js.user,
+      role: js.user?.role || role || "developer",
+    };
 
-      users.push(newUser);
-      saveLocalUsers(users);
+    localStorage.setItem(TOKEN_KEY, js.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+    setIamUser(safeUser);
 
-      return { id: newUser.id, email, role: newUser.role };
-    } catch (error) {
-      console.error("IAM registration error:", error);
-      throw error;
-    }
+    return safeUser;
   };
 
-  // -------------------------------------------------------
-  // LOGIN IAM USER
-  // -------------------------------------------------------
+  /** LOGIN */
   const loginIAMUser = async ({ email, password }) => {
-    try {
-      if (USE_FIREBASE) {
-        // FIREBASE MODE (original logic)
-        const q = query(collection(db, "iam_users"), where("email", "==", email));
-        const snapshot = await getDocs(q);
+    const res = await fetch(`${API_BASE}/api/iam/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-        if (snapshot.empty) {
-          throw new Error("Invalid email or password.");
-        }
+    const js = await res.json();
+    if (!res.ok) throw new Error(js.error || "Login failed");
 
-        const userData = snapshot.docs[0].data();
-        const passwordMatch = await bcrypt.compare(password, userData.password);
+    const safeUser = {
+      ...js.user,
+      role: js.user?.role || "developer",
+    };
 
-        if (!passwordMatch) {
-          throw new Error("Invalid email or password.");
-        }
+    localStorage.setItem(TOKEN_KEY, js.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+    setIamUser(safeUser);
 
-        const user = {
-          id: snapshot.docs[0].id,
-          email: userData.email,
-          role: userData.role,
-        };
-
-        setIamUser(user);
-        localStorage.setItem("iamUser", JSON.stringify(user));
-        return user;
-      }
-
-      // ---------------------------------------------------
-      // LOCAL MODE (Firestore disabled)
-      // ---------------------------------------------------
-      const users = loadLocalUsers();
-      const found = users.find((u) => u.email === email);
-
-      if (!found) {
-        throw new Error("Invalid email or password.");
-      }
-
-      const passwordMatch = await bcrypt.compare(password, found.password);
-      if (!passwordMatch) {
-        throw new Error("Invalid email or password.");
-      }
-
-      const user = {
-        id: found.id,
-        email: found.email,
-        role: found.role,
-      };
-
-      setIamUser(user);
-      localStorage.setItem("iamUser", JSON.stringify(user));
-
-      return user;
-    } catch (error) {
-      console.error("IAM login error:", error);
-      throw error;
-    }
+    return safeUser;
   };
 
-  // -------------------------------------------------------
-  // LOGOUT
-  // -------------------------------------------------------
+  /** LOGOUT */
   const logoutIAM = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setIamUser(null);
-    localStorage.removeItem("iamUser");
   };
 
-  // -------------------------------------------------------
-  // GET USER ROLE BY ID
-  // -------------------------------------------------------
-  const getUserRole = async (userId) => {
-    try {
-      if (USE_FIREBASE) {
-        // FIREBASE MODE
-        const docRef = doc(db, "iam_users", userId);
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
-          return snapshot.data().role;
-        }
-        return null;
-      }
-
-      // LOCAL MODE
-      const users = loadLocalUsers();
-      const found = users.find((u) => u.id === userId);
-      return found?.role || null;
-    } catch (error) {
-      console.error("Error fetching role:", error);
-      return null;
-    }
-  };
+  /** Get token for API calls */
+  const getToken = () => localStorage.getItem(TOKEN_KEY);
 
   return (
     <IAMContext.Provider
       value={{
         iamUser,
         loading,
-        registerIAMUser,
+        hydrated,
         loginIAMUser,
+        registerIAMUser,
         logoutIAM,
-        getUserRole,
+        getToken,
       }}
     >
       {children}
