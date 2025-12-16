@@ -210,6 +210,189 @@ export default function DigitalFort() {
           Go to Labs
         </Link>
       </section>
+
+      {/* ======================================================
+         NEW SECTION A — DIGITALFORT HIGHLIGHTS GRID
+      ====================================================== */}
+      <section className="py-24 px-6 md:px-12 bg-gradient-to-b from-slate-900 to-black">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="text-4xl font-bold text-center text-cyan-300 mb-14"
+        >
+          What Makes Digital Fort Unique
+        </motion.h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
+          
+          {[
+            {
+              title: "AI Threat Intelligence",
+              desc:
+                "Real-time threat correlation and autonomous pattern detection powered by Cybercode’s AI models.",
+            },
+            {
+              title: "Global Attack Map",
+              desc:
+                "Live visualization of cyber threats propagating across nations, industries, and IP clusters.",
+            },
+            {
+              title: "Autonomous Defense Engine",
+              desc:
+                "AI agents that automatically isolate, block, classify, and counterattack hostile digital signatures.",
+            },
+            {
+              title: "Full Cyber Range",
+              desc:
+                "Hands-on lab environment where students and teams practice real offensive & defensive strategies.",
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="p-6 bg-slate-800/40 border border-slate-700 rounded-xl shadow-xl hover:scale-105 transition transform"
+            >
+              <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                {item.title}
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">{item.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ======================================================
+         NEW SECTION B — VIDEO STYLE STORYLINE
+      ====================================================== */}
+      <section className="py-24 px-6 md:px-12 bg-black">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-4xl font-bold text-center text-cyan-300 mb-14"
+        >
+          The Digital Fort Story — A Cyber Attack in Motion
+        </motion.h2>
+
+        <div className="space-y-10 max-w-5xl mx-auto text-gray-300 text-lg leading-relaxed">
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.7 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 1 — Reconnaissance:</span>  
+            A hostile group begins scanning India's public infrastructure for vulnerabilities.
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 2 — Breach Attempt:</span>  
+            Automated bots attempt credential stuffing against a financial API gateway.
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.9 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 3 — Digital Fort Detects:</span>  
+            Threat sensors flag unusual behavior, trigger anomaly checks, and notify the AI engine.
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 4 — Isolation:</span>  
+            Suspicious IP ranges are sandboxed. Malicious payloads are captured for AI analysis.
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1.1 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 5 — Counter Projection:</span>  
+            Digital Fort recommends countermeasures and blocks the attack path across all nodes.
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1.2 }}
+          >
+            <span className="text-cyan-300 font-semibold">Scene 6 — India Secured:</span>  
+            The attack is neutralized, logged, and added to the threat intelligence dataset.
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* ======================================================
+         NEW SECTION C — USE CASES SECTION
+      ====================================================== */}
+      <section className="py-24 px-6 md:px-12 bg-gradient-to-b from-black to-slate-900">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-4xl font-bold text-center text-cyan-300 mb-14"
+        >
+          Who Is Digital Fort Built For?
+        </motion.h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
+
+          {[
+            {
+              title: "Engineering Colleges",
+              desc:
+                "Students gain hands-on cyber range access, AI-guided learning, and real attack-defense practice.",
+            },
+            {
+              title: "Enterprise SOC Teams",
+              desc:
+                "SOC analysts get threat simulations, incident playbooks, and attack prediction tools.",
+            },
+            {
+              title: "Startups & Tech Companies",
+              desc:
+                "Build, test, and validate cybersecurity products inside a safe simulated environment.",
+            },
+            {
+              title: "Government Departments",
+              desc:
+                "Secure infrastructure, evaluate risks, and build sovereign defense strategies for India.",
+            },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: true }}
+              className="p-6 bg-slate-800/40 border border-slate-700 rounded-xl shadow-xl hover:scale-105 transition transform"
+            >
+              <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                {item.title}
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed">{item.desc}</p>
+            </motion.div>
+          ))}
+
+        </div>
+      </section>
+
     </div>
   );
 }
