@@ -17,11 +17,11 @@ export default function DigitalFort() {
       <section className="relative h-screen w-full overflow-hidden">
         
         {/* Brighter Globe */}
-        <div className="absolute inset-0 opacity-80 scale-[1.35]">
+        <div className="absolute inset-0 opacity-100 scale-[1.05]">
           <GlobeSimulator />
         </div>
 
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-none"></div>
 
         <div className="absolute inset-0 flex flex-col justify-center items-center px-4">
           <motion.h1
