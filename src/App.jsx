@@ -28,6 +28,7 @@ import LessonDetail from "./components/LessonDetail";
 import DashboardLayout from "./components/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Testimonials from "./components/Testimonials";
+import CloudProtectedRoute from "./components/CloudProtectedRoute";
 
 // Pages
 import Courses from "./pages/Courses";
@@ -63,7 +64,9 @@ import CertificatePage from "./pages/CertificatePage";
 import CloudDashboard from "./pages/CloudDashboard";
 import CloudLogin from "./pages/CloudLogin";
 import CloudRegister from "./pages/CloudRegister";
-import CloudProtectedRoute from "./components/CloudProtectedRoute";
+import DigitalFort from "./pages/DigitalFort";
+
+
 // Context
 import { useUser } from "./contexts/UserContext";
 
@@ -316,6 +319,8 @@ function AppInner() {
               <Route path="/auth-success" element={<AuthSuccess />} />
               <Route path="/cloud/login" element={<CloudLogin />} />
               <Route path="/cloud/register" element={<CloudRegister />} />
+              <Route path="/digital-fort" element={<DigitalFort />} />
+
 
               {/* CLOUD */}
               <Route path="/cloud" element={<CybercodeCloud />} />

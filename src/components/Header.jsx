@@ -71,6 +71,7 @@ function Header() {
       { name: "Courses", to: "/courses" },
       { name: "Labs", to: "/labs" },
       { name: "Projects", to: "/projects" },
+      { name: "Digital Fort", to: "/digital-fort", highlight: true },
       { name: "Cloud", to: "/cloud", highlight: true },
       { name: "Demo Class", to: "/demo", demo: true },
       { name: "Contact", to: "/contact" },
