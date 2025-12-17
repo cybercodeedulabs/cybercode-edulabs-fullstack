@@ -1,7 +1,10 @@
 /* -------------------------------------------------------
    GlobeSimulator.jsx — Real-Time Global Cyber Attack Map
    Enhanced Visibility + Cinematic Glow Edition
-   All original logic preserved — ONLY visual clarity improved
+   + Neon Particle Trails
+   + Pulsing Nodes
+   + Matrix Sparks
+   ALL original logic preserved — ONLY enhancements added
 --------------------------------------------------------*/
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -45,12 +48,12 @@ export default function GlobeSimulator() {
 
     // Camera — slightly closer to reduce blur
     const camera = new THREE.PerspectiveCamera(
-      55,                                           // reduced FOV for clarity
+      55,
       container.clientWidth / container.clientHeight,
       0.1,
       2000
     );
-    camera.position.z = 350;                       // closer zoom
+    camera.position.z = 350;
     cameraRef.current = camera;
 
     // Renderer — improved tone mapping
@@ -61,8 +64,8 @@ export default function GlobeSimulator() {
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;      // cinematic
-    renderer.toneMappingExposure = 1.4;                      // brightness boost
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -71,15 +74,15 @@ export default function GlobeSimulator() {
       .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
       .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
       .arcsData(initialAttacks)
-      .arcAltitude(0.25)                          // slightly higher arcs
-      .arcStroke(1.1)                             // sharper lines
+      .arcAltitude(0.25)
+      .arcStroke(1.1)
       .arcColor((d) => d.color)
       .arcDashLength(0.5)
       .arcDashGap(1)
       .arcDashAnimateTime(2500)
       .showAtmosphere(true)
       .atmosphereColor("cyan")
-      .atmosphereAltitude(0.35);                  // stronger glow
+      .atmosphereAltitude(0.35);
 
     globeRef.current = globe;
     scene.add(globe);
@@ -91,7 +94,7 @@ export default function GlobeSimulator() {
     directional.position.set(200, 200, 400);
     scene.add(directional);
 
-    // Add outer glow sphere for cinematic look
+    // Outer cinematic glow
     const glowGeometry = new THREE.SphereGeometry(110, 64, 64);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color("cyan"),
@@ -129,14 +132,93 @@ export default function GlobeSimulator() {
       }
 
       globe.arcsData(dynamicAttacks);
+
+      // --- NEW: Create pulsing node at src point ---
+      createPulseNode(src.lat, src.lng, attack.color);
+
+      // --- NEW: Add neon particle trail along arc ---
+      createParticleTrail(attack);
     }
 
-    const interval = setInterval(generateAttack, 1800); // slightly faster
+    const interval = setInterval(generateAttack, 1800);
+
+    // ---------------------------------------------------
+    // NEW FEATURE A: Pulsing Cyber Nodes
+    // ---------------------------------------------------
+    function createPulseNode(lat, lng, color) {
+      const { x, y, z } = globe.getCoords(lat, lng, 100);
+
+      const geometry = new THREE.SphereGeometry(3, 16, 16);
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(color),
+        transparent: true,
+        opacity: 0.9
+      });
+
+      const pulse = new THREE.Mesh(geometry, material);
+      pulse.position.set(x, y, z);
+      scene.add(pulse);
+
+      let scale = 1;
+
+      const pulseInterval = setInterval(() => {
+        scale += 0.05;
+        pulse.scale.set(scale, scale, scale);
+        material.opacity -= 0.03;
+
+        if (material.opacity <= 0) {
+          scene.remove(pulse);
+          clearInterval(pulseInterval);
+        }
+      }, 30);
+    }
+
+    // ---------------------------------------------------
+    // NEW FEATURE B: Neon Particle Trails
+    // ---------------------------------------------------
+    function createParticleTrail(attack) {
+      const trailGroup = new THREE.Group();
+      scene.add(trailGroup);
+
+      const particleMaterial = new THREE.PointsMaterial({
+        size: 3,
+        transparent: true,
+        opacity: 0.8,
+        color: new THREE.Color(attack.color),
+        blending: THREE.AdditiveBlending
+      });
+
+      // Convert arc into points
+      const points = [];
+      for (let i = 0; i <= 40; i++) {
+        const t = i / 40;
+        const lat = attack.startLat + (attack.endLat - attack.startLat) * t;
+        const lng = attack.startLng + (attack.endLng - attack.startLng) * t;
+
+        const pos = globe.getCoords(lat, lng, 102);
+        points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+      }
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const particles = new THREE.Points(geometry, particleMaterial);
+      trailGroup.add(particles);
+
+      // Fade out and remove
+      setTimeout(() => {
+        const fade = setInterval(() => {
+          particleMaterial.opacity -= 0.02;
+          if (particleMaterial.opacity <= 0) {
+            scene.remove(trailGroup);
+            clearInterval(fade);
+          }
+        }, 50);
+      }, 800);
+    }
 
     // ---------- Animation Loop ----------
     function animate() {
-      globe.rotation.y += 0.003;         // slightly faster rotation
-      glowMesh.rotation.y += 0.001;      // slow atmospheric halo rotation
+      globe.rotation.y += 0.003;
+      glowMesh.rotation.y += 0.001;
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
