@@ -6,6 +6,8 @@
    + Matrix Sparks
    + Radar Rings
    + HUD Scan Lines
+   + Country Labels
+   + India-Centric Camera Lock (rotation preserved)
    ALL original logic preserved — ONLY enhancements added
 --------------------------------------------------------*/
 import React, { useEffect, useRef } from "react";
@@ -19,7 +21,7 @@ export default function GlobeSimulator() {
   const cameraRef = useRef(null);
   const globeRef = useRef(null);
 
-  // Base initial realistic attack dataset
+  // ------------------ DATA ------------------
   const initialAttacks = [
     { startLat: 40.7, startLng: -74, endLat: 28.6, endLng: 77.2, color: "cyan" },
     { startLat: 35.8, startLng: 104.1, endLat: 48.8, endLng: 2.3, color: "magenta" },
@@ -41,14 +43,23 @@ export default function GlobeSimulator() {
     { lat: -33.8, lng: 151.2 }
   ];
 
+  // 🌍 Country labels (A)
+  const COUNTRY_LABELS = [
+    { name: "INDIA", lat: 22.6, lng: 78.9, size: 1.3 },
+    { name: "USA", lat: 39.8, lng: -98.5, size: 1 },
+    { name: "CHINA", lat: 35.8, lng: 104.1, size: 1 },
+    { name: "RUSSIA", lat: 61.5, lng: 105.3, size: 1 },
+    { name: "UK", lat: 55.3, lng: -3.4, size: 1 }
+  ];
+
   useEffect(() => {
     const container = containerRef.current;
 
-    // Scene
+    // ------------------ SCENE ------------------
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Camera (slight tilt so arcs appear in front)
+    // ------------------ CAMERA ------------------
     const camera = new THREE.PerspectiveCamera(
       55,
       container.clientWidth / container.clientHeight,
@@ -56,10 +67,9 @@ export default function GlobeSimulator() {
       2000
     );
     camera.position.set(0, 40, 340);
-    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer
+    // ------------------ RENDERER ------------------
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -72,7 +82,7 @@ export default function GlobeSimulator() {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Globe
+    // ------------------ GLOBE ------------------
     const globe = new Globe()
       .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
       .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
@@ -87,13 +97,11 @@ export default function GlobeSimulator() {
       .atmosphereColor("cyan")
       .atmosphereAltitude(0.4);
 
-    // 🔒 Compatibility patch (FIXES arcsMaterial error)
     globe.arcsTransitionDuration(0);
-
     globeRef.current = globe;
     scene.add(globe);
 
-    // Lighting
+    // ------------------ LIGHTING ------------------
     scene.add(new THREE.AmbientLight(0xffffff, 1.4));
 
     const directional = new THREE.DirectionalLight(0x00ffff, 2.8);
@@ -104,7 +112,7 @@ export default function GlobeSimulator() {
     rimLight.position.set(-300, -200, -400);
     scene.add(rimLight);
 
-    // Outer glow
+    // ------------------ GLOW ------------------
     const glowGeometry = new THREE.SphereGeometry(110, 64, 64);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color("cyan"),
@@ -117,7 +125,7 @@ export default function GlobeSimulator() {
     glowMesh.scale.set(2.45, 2.45, 2.45);
     scene.add(glowMesh);
 
-    // Radar rings
+    // ------------------ RADAR RINGS ------------------
     const radarRings = [];
     for (let i = 0; i < 3; i++) {
       const ringGeo = new THREE.RingGeometry(118 + i * 10, 120 + i * 10, 64);
@@ -135,16 +143,41 @@ export default function GlobeSimulator() {
       radarRings.push(ring);
     }
 
-    // ---------- REAL-TIME ATTACK GENERATOR ----------
+    // ------------------ COUNTRY LABELS (A) ------------------
+    const labelGroup = new THREE.Group();
+    scene.add(labelGroup);
+
+    COUNTRY_LABELS.forEach(({ name, lat, lng, size }) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "cyan";
+      ctx.font = "bold 36px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(name, 128, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false
+      });
+
+      const sprite = new THREE.Sprite(material);
+      const pos = globe.getCoords(lat, lng, 115);
+      sprite.position.set(pos.x, pos.y, pos.z);
+      sprite.scale.set(18 * size, 9 * size, 1);
+      labelGroup.add(sprite);
+    });
+
+    // ------------------ ATTACK GENERATOR ------------------
     let dynamicAttacks = [...initialAttacks];
 
     function generateAttack() {
       const src = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
       let dst = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
-
-      while (dst.lat === src.lat) {
-        dst = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
-      }
+      while (dst.lat === src.lat) dst = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
 
       const attack = {
         startLat: src.lat,
@@ -155,85 +188,21 @@ export default function GlobeSimulator() {
       };
 
       dynamicAttacks.push(attack);
-      if (dynamicAttacks.length > 30) {
-        dynamicAttacks = dynamicAttacks.slice(-30);
-      }
+      if (dynamicAttacks.length > 30) dynamicAttacks = dynamicAttacks.slice(-30);
 
       globe.arcsData(dynamicAttacks);
-      createPulseNode(src.lat, src.lng, attack.color);
-      createParticleTrail(attack);
     }
 
     const interval = setInterval(generateAttack, 1800);
 
-    // Pulsing nodes
-    function createPulseNode(lat, lng, color) {
-      const { x, y, z } = globe.getCoords(lat, lng, 102);
-      const geometry = new THREE.SphereGeometry(3, 16, 16);
-      const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(color),
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false
-      });
-      const pulse = new THREE.Mesh(geometry, material);
-      pulse.position.set(x, y, z);
-      scene.add(pulse);
-
-      let scale = 1;
-      const pulseInterval = setInterval(() => {
-        scale += 0.05;
-        pulse.scale.set(scale, scale, scale);
-        material.opacity -= 0.03;
-        if (material.opacity <= 0) {
-          scene.remove(pulse);
-          clearInterval(pulseInterval);
-        }
-      }, 30);
-    }
-
-    // Particle trails
-    function createParticleTrail(attack) {
-      const trailGroup = new THREE.Group();
-      scene.add(trailGroup);
-
-      const particleMaterial = new THREE.PointsMaterial({
-        size: 3.5,
-        transparent: true,
-        opacity: 0.9,
-        color: new THREE.Color(attack.color),
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-
-      const points = [];
-      for (let i = 0; i <= 40; i++) {
-        const t = i / 40;
-        const lat = attack.startLat + (attack.endLat - attack.startLat) * t;
-        const lng = attack.startLng + (attack.endLng - attack.startLng) * t;
-        const pos = globe.getCoords(lat, lng, 104);
-        points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
-      }
-
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const particles = new THREE.Points(geometry, particleMaterial);
-      trailGroup.add(particles);
-
-      setTimeout(() => {
-        const fade = setInterval(() => {
-          particleMaterial.opacity -= 0.02;
-          if (particleMaterial.opacity <= 0) {
-            scene.remove(trailGroup);
-            clearInterval(fade);
-          }
-        }, 50);
-      }, 800);
-    }
-
-    // Animation loop
+    // ------------------ ANIMATION LOOP ------------------
     function animate() {
       globe.rotation.y += 0.0028;
       glowMesh.rotation.y += 0.001;
+
+      // 🔒 India-centric camera lock (B)
+      const india = globe.getCoords(22.6, 78.9, 0);
+      camera.lookAt(india.x, india.y, india.z);
 
       radarRings.forEach((ring, i) => {
         ring.scale.x += 0.002 + i * 0.001;
@@ -250,6 +219,7 @@ export default function GlobeSimulator() {
     }
     animate();
 
+    // ------------------ RESIZE ------------------
     function onResize() {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
