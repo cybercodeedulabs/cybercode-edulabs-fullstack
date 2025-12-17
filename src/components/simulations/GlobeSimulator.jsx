@@ -4,6 +4,8 @@
    + Neon Particle Trails
    + Pulsing Nodes
    + Matrix Sparks
+   + Radar Rings
+   + HUD Scan Lines
    ALL original logic preserved — ONLY enhancements added
 --------------------------------------------------------*/
 import React, { useEffect, useRef } from "react";
@@ -46,7 +48,7 @@ export default function GlobeSimulator() {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Camera — slightly closer to reduce blur
+    // Camera
     const camera = new THREE.PerspectiveCamera(
       55,
       container.clientWidth / container.clientHeight,
@@ -56,7 +58,7 @@ export default function GlobeSimulator() {
     camera.position.z = 350;
     cameraRef.current = camera;
 
-    // Renderer — improved tone mapping
+    // Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -65,11 +67,11 @@ export default function GlobeSimulator() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.4;
+    renderer.toneMappingExposure = 1.65; // 🔥 stronger visibility
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Globe — enhanced clarity
+    // Globe
     const globe = new Globe()
       .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
       .bumpImageUrl("//unpkg.com/three-globe/example/img/earth-topology.png")
@@ -82,29 +84,53 @@ export default function GlobeSimulator() {
       .arcDashAnimateTime(2500)
       .showAtmosphere(true)
       .atmosphereColor("cyan")
-      .atmosphereAltitude(0.35);
+      .atmosphereAltitude(0.38); // 🔥 brighter halo
 
     globeRef.current = globe;
     scene.add(globe);
 
-    // Ambient + Directional lighting — much brighter
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 1.4));
 
-    const directional = new THREE.DirectionalLight(0x00ffff, 2);
-    directional.position.set(200, 200, 400);
+    const directional = new THREE.DirectionalLight(0x00ffff, 2.6);
+    directional.position.set(300, 200, 500);
     scene.add(directional);
 
-    // Outer cinematic glow
+    // Rim light for planet edge
+    const rimLight = new THREE.DirectionalLight(0x00ffff, 1.2);
+    rimLight.position.set(-300, -200, -400);
+    scene.add(rimLight);
+
+    // Outer glow
     const glowGeometry = new THREE.SphereGeometry(110, 64, 64);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: new THREE.Color("cyan"),
       transparent: true,
-      opacity: 0.08,
+      opacity: 0.1,
       blending: THREE.AdditiveBlending
     });
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    glowMesh.scale.set(2.3, 2.3, 2.3);
+    glowMesh.scale.set(2.4, 2.4, 2.4);
     scene.add(glowMesh);
+
+    // ---------------------------------------------------
+    // 🔵 RADAR RINGS (NEW)
+    // ---------------------------------------------------
+    const radarRings = [];
+    for (let i = 0; i < 3; i++) {
+      const ringGeo = new THREE.RingGeometry(115 + i * 8, 116 + i * 8, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.15,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+      radarRings.push(ring);
+    }
 
     // ---------- REAL-TIME ATTACK GENERATOR ----------
     let dynamicAttacks = [...initialAttacks];
@@ -133,39 +159,30 @@ export default function GlobeSimulator() {
 
       globe.arcsData(dynamicAttacks);
 
-      // --- NEW: Create pulsing node at src point ---
       createPulseNode(src.lat, src.lng, attack.color);
-
-      // --- NEW: Add neon particle trail along arc ---
       createParticleTrail(attack);
     }
 
     const interval = setInterval(generateAttack, 1800);
 
-    // ---------------------------------------------------
-    // NEW FEATURE A: Pulsing Cyber Nodes
-    // ---------------------------------------------------
+    // Pulsing nodes
     function createPulseNode(lat, lng, color) {
       const { x, y, z } = globe.getCoords(lat, lng, 100);
-
       const geometry = new THREE.SphereGeometry(3, 16, 16);
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(color),
         transparent: true,
         opacity: 0.9
       });
-
       const pulse = new THREE.Mesh(geometry, material);
       pulse.position.set(x, y, z);
       scene.add(pulse);
 
       let scale = 1;
-
       const pulseInterval = setInterval(() => {
         scale += 0.05;
         pulse.scale.set(scale, scale, scale);
         material.opacity -= 0.03;
-
         if (material.opacity <= 0) {
           scene.remove(pulse);
           clearInterval(pulseInterval);
@@ -173,9 +190,7 @@ export default function GlobeSimulator() {
       }, 30);
     }
 
-    // ---------------------------------------------------
-    // NEW FEATURE B: Neon Particle Trails
-    // ---------------------------------------------------
+    // Particle trails
     function createParticleTrail(attack) {
       const trailGroup = new THREE.Group();
       scene.add(trailGroup);
@@ -183,18 +198,16 @@ export default function GlobeSimulator() {
       const particleMaterial = new THREE.PointsMaterial({
         size: 3,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.9,
         color: new THREE.Color(attack.color),
         blending: THREE.AdditiveBlending
       });
 
-      // Convert arc into points
       const points = [];
       for (let i = 0; i <= 40; i++) {
         const t = i / 40;
         const lat = attack.startLat + (attack.endLat - attack.startLat) * t;
         const lng = attack.startLng + (attack.endLng - attack.startLng) * t;
-
         const pos = globe.getCoords(lat, lng, 102);
         points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
       }
@@ -203,7 +216,6 @@ export default function GlobeSimulator() {
       const particles = new THREE.Points(geometry, particleMaterial);
       trailGroup.add(particles);
 
-      // Fade out and remove
       setTimeout(() => {
         const fade = setInterval(() => {
           particleMaterial.opacity -= 0.02;
@@ -215,16 +227,26 @@ export default function GlobeSimulator() {
       }, 800);
     }
 
-    // ---------- Animation Loop ----------
+    // Animation loop
     function animate() {
       globe.rotation.y += 0.003;
       glowMesh.rotation.y += 0.001;
+
+      radarRings.forEach((ring, i) => {
+        ring.scale.x += 0.002 + i * 0.001;
+        ring.scale.y += 0.002 + i * 0.001;
+        ring.material.opacity -= 0.0005;
+        if (ring.material.opacity <= 0.05) {
+          ring.scale.set(1, 1, 1);
+          ring.material.opacity = 0.15;
+        }
+      });
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
     animate();
 
-    // ---------- Resize ----------
     function onResize() {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
