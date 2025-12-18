@@ -66,6 +66,8 @@ import CloudLogin from "./pages/CloudLogin";
 import CloudRegister from "./pages/CloudRegister";
 import DigitalFort from "./pages/DigitalFort";
 import DigitalFortLabs from "./pages/DigitalFortLabs";
+import GlobalThreatSimulatorLab from "./pages/GlobalThreatSimulatorLab";
+
 
 
 // Context
@@ -322,6 +324,11 @@ function AppInner() {
               <Route path="/cloud/register" element={<CloudRegister />} />
               <Route path="/digital-fort" element={<DigitalFort />} />
               <Route path="/digital-fort/labs" element={<DigitalFortLabs />} />
+              <Route
+                path="/digital-fort/labs/global-threat-simulator"
+                element={<GlobalThreatSimulatorLab />}
+              />
+
 
 
               {/* CLOUD */}
