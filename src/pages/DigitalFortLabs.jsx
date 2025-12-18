@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 
 export default function DigitalFortLabs() {
     const { iamUser, loading, hydrated } = useIAM();
+    const role = iamUser?.role || "student";
+
 
     if (loading || !hydrated) {
         return (
@@ -43,9 +45,7 @@ export default function DigitalFortLabs() {
 
     return (
         <div className="min-h-screen text-white p-10 bg-black">
-            {/* --------------------------------------------------
-         HEADER
-      -------------------------------------------------- */}
+            {/* HEADER */}
             <h1 className="text-4xl font-bold text-cyan-300 mb-4">
                 DigitalFort Labs
             </h1>
@@ -57,9 +57,7 @@ export default function DigitalFortLabs() {
                 cyberattack scenarios — safely and interactively.
             </p>
 
-            {/* --------------------------------------------------
-         LABS GRID
-      -------------------------------------------------- */}
+            {/* LABS GRID */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl">
 
                 {/* Lab 1 */}
@@ -79,20 +77,22 @@ export default function DigitalFortLabs() {
                     </div>
                 </Link>
 
+                {/* Lab 2 — NOW CLICKABLE */}
+                <Link to="/digital-fort/labs/attack-replay">
+                    <div className="p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl hover:scale-[1.03] transition transform cursor-pointer">
+                        <h2 className="text-xl font-semibold text-cyan-300 mb-2">
+                            🔁 Attack Replay Lab
+                        </h2>
+                        <p className="text-gray-300 text-sm mb-4">
+                            Replay historical cyberattack scenarios step-by-step to understand
+                            attacker behavior, detection timing, and response gaps.
+                        </p>
+                        <span className="inline-block px-3 py-1 text-xs rounded-full bg-yellow-500 text-black font-semibold">
+                            Demo
+                        </span>
+                    </div>
+                </Link>
 
-                {/* Lab 2 */}
-                <div className="p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl">
-                    <h2 className="text-xl font-semibold text-cyan-300 mb-2">
-                        🔁 Attack Replay Lab
-                    </h2>
-                    <p className="text-gray-300 text-sm mb-4">
-                        Replay historical cyberattack scenarios step-by-step to understand
-                        attacker behavior, detection timing, and response gaps.
-                    </p>
-                    <span className="inline-block px-3 py-1 text-xs rounded-full bg-yellow-500 text-black font-semibold">
-                        Demo
-                    </span>
-                </div>
 
                 {/* Lab 3 */}
                 <div className="p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl opacity-80">
@@ -109,6 +109,7 @@ export default function DigitalFortLabs() {
                 </div>
 
                 {/* Lab 4 */}
+                {role === "admin" && (
                 <div className="p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl opacity-80">
                     <h2 className="text-xl font-semibold text-cyan-300 mb-2">
                         🤖 AI SOC Assistant
@@ -121,6 +122,7 @@ export default function DigitalFortLabs() {
                         Coming Soon
                     </span>
                 </div>
+                )}
 
                 {/* Lab 5 */}
                 <div className="p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl opacity-80">
@@ -138,9 +140,7 @@ export default function DigitalFortLabs() {
 
             </div>
 
-            {/* --------------------------------------------------
-         FOOTER NOTE
-      -------------------------------------------------- */}
+            {/* FOOTER NOTE */}
             <div className="mt-14 max-w-3xl text-gray-400 text-sm">
                 This labs environment will continuously evolve. Future updates will
                 integrate AI-driven analysis, private cloud workspaces, and advanced

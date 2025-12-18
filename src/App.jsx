@@ -67,6 +67,8 @@ import CloudRegister from "./pages/CloudRegister";
 import DigitalFort from "./pages/DigitalFort";
 import DigitalFortLabs from "./pages/DigitalFortLabs";
 import GlobalThreatSimulatorLab from "./pages/GlobalThreatSimulatorLab";
+import AttackReplayLab from "./pages/AttackReplayLab";
+
 
 
 
@@ -328,6 +330,11 @@ function AppInner() {
                 path="/digital-fort/labs/global-threat-simulator"
                 element={<GlobalThreatSimulatorLab />}
               />
+              <Route
+                path="/digital-fort/labs/attack-replay"
+                element={<AttackReplayLab />}
+              />
+
 
 
 
