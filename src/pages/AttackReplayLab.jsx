@@ -6,6 +6,8 @@
 --------------------------------------------------------*/
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import GlobeSimulator from "../components/simulations/GlobeSimulator";
+
 
 const ATTACK_STEPS = [
     {
@@ -190,9 +192,9 @@ export default function AttackReplayLab() {
             </div>
 
             {/* MAIN PANEL */}
-            <div className="grid lg:grid-cols-3 gap-10 max-w-7xl">
+            <div className="grid lg:grid-cols-4 gap-10 max-w-7xl">
                 {/* LEFT — TIMELINE */}
-                <div className="space-y-3">
+                <div className="space-y-3 lg:col-span-1">
                     {ATTACK_STEPS.map((s, index) => (
                         <div
                             key={s.id}
@@ -218,6 +220,10 @@ export default function AttackReplayLab() {
                     transition={{ duration: 0.4 }}
                     className="lg:col-span-2 p-8 rounded-xl bg-slate-900 border border-slate-700 shadow-xl"
                 >
+                    <div className="lg:col-span-1 relative h-[520px] border border-slate-700 rounded-xl overflow-hidden">
+                        <GlobeSimulator />
+                    </div>
+
                     <h2 className={`text-2xl font-bold mb-2 ${step.color}`}>
                         {step.title}
                     </h2>
