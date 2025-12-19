@@ -220,9 +220,6 @@ export default function AttackReplayLab() {
                     transition={{ duration: 0.4 }}
                     className="lg:col-span-2 p-8 rounded-xl bg-slate-900 border border-slate-700 shadow-xl"
                 >
-                    <div className="lg:col-span-1 relative h-[520px] border border-slate-700 rounded-xl overflow-hidden">
-                        <GlobeSimulator />
-                    </div>
 
                     <h2 className={`text-2xl font-bold mb-2 ${step.color}`}>
                         {step.title}
@@ -242,6 +239,11 @@ export default function AttackReplayLab() {
                         </p>
                     </div>
                 </motion.div>
+                {/* RIGHT — GLOBE */}
+                <div className="lg:col-span-1 relative h-[520px] border border-slate-700 rounded-xl overflow-hidden">
+                    <GlobeSimulator />
+                </div>
+
             </div>
 
             <div className="mt-12 max-w-7xl grid md:grid-cols-3 gap-6">
