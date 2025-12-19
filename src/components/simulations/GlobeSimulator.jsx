@@ -7,6 +7,7 @@
    + Radar Rings
    + HUD Scan Lines
    + Replay Step Visual Annotations (Pins / Pulses / Labels)
+   + Resolved Arc State (Replay Mitigation)
    ALL original logic preserved — ONLY enhancements added
 --------------------------------------------------------*/
 import React, { useEffect, useRef } from "react";
@@ -189,8 +190,20 @@ export default function GlobeSimulator() {
                 globe.arcsData([attack]);
             },
 
+            // 🟢 ADDITION: resolved / mitigated arc state
+            resolveAttack: (attack) => {
+                if (!attack) return;
+                globe
+                    .arcDashAnimateTime(3200)   // slower
+                    .arcAltitude(0.18)          // lower
+                    .arcStroke(1.1)             // thinner
+                    .arcColor(() => "lime");    // resolved = green
+                globe.arcsData([attack]);
+            },
+
             restoreLive: () => {
                 globe.arcDashAnimateTime(2200).arcAltitude(0.28).arcStroke(1.3);
+                globe.arcColor(d => d.color);
                 globe.arcsData(liveAttacksRef.current || initialAttacks);
             },
 

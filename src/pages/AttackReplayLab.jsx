@@ -165,6 +165,11 @@ export default function AttackReplayLab() {
                 color: geo.color,
             });
         } else if (lastGeoRef.current) {
+            // 🟢 RESOLVED ARC STATE for Mitigation & Intelligence Stored
+            if (currentStep >= 6) {
+                globe.resolveAttack?.(lastGeoRef.current);
+            }
+
             // Keep replay context for non-geo steps
             globe.showReplayAnnotation?.({
                 lat: lastGeoRef.current.endLat,
@@ -273,7 +278,6 @@ export default function AttackReplayLab() {
                     transition={{ duration: 0.4 }}
                     className="lg:col-span-2 p-8 rounded-xl bg-slate-900 border border-slate-700 shadow-xl"
                 >
-
                     <h2 className={`text-2xl font-bold mb-2 ${step.color}`}>
                         {step.title}
                     </h2>
