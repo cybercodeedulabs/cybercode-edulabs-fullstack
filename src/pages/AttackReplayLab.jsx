@@ -287,14 +287,14 @@ export default function AttackReplayLab() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="lg:col-span-2 p-8 rounded-xl bg-slate-900 border border-slate-700 shadow-xl"
+                    className="lg:col-span-2 p-6 rounded-xl bg-slate-900 border border-slate-700 shadow-xl max-h-[520px] overflow-y-auto"
                 >
-                    <h2 className={`text-2xl font-bold mb-2 ${step.color}`}>
+                    <h2 className={`text-xl font-bold mb-2 ${step.color}`}>
                         {step.title}
                     </h2>
                     <h3 className="text-gray-400 mb-6">{step.subtitle}</h3>
 
-                    <p className="text-gray-300 leading-relaxed text-lg mb-6">
+                    <p className="text-gray-300 leading-relaxed text-base mb-4">
                         {step.description}
                     </p>
 
@@ -302,19 +302,19 @@ export default function AttackReplayLab() {
                         <p className="text-sm text-gray-400 mb-2">
                             {view === "attacker" ? "Attacker Perspective" : "Defender Perspective"}
                         </p>
-                        <p className="text-lg text-gray-200">
+                        <p className="text-base text-gray-200">
                             {view === "attacker" ? step.attackerView : step.defenderView}
                         </p>
                     </div>
                 </motion.div>
 
                 {/* RIGHT — GLOBE */}
-                <div className="lg:col-span-2 h-[600px] relative border border-slate-700 rounded-xl overflow-hidden">
+                <div className="lg:col-span-2 h-[620px] relative border border-slate-700 rounded-xl overflow-hidden">
                     <GlobeSimulator />
                 </div>
 
                 {/* 🔮 AI INSIGHT PANEL — PHASE B1 (ADD ONLY) */}
-                <div className="lg:col-span-1 h-[600px] bg-slate-950 border border-slate-700 rounded-xl p-4 flex flex-col">
+                <div className="lg:col-span-1 h-[620px] bg-slate-950 border border-slate-700 rounded-xl p-3 flex flex-col text-sm">
                     <h3 className="text-sm font-semibold text-cyan-300 mb-2">
                         🤖 DigitalFort AI Insight
                     </h3>
@@ -323,7 +323,7 @@ export default function AttackReplayLab() {
                         Context-aware analysis (Phase B)
                     </div>
 
-                    <div className="flex-1 bg-black border border-slate-700 rounded-lg p-3 text-sm text-gray-300 overflow-auto">
+                    <div className="flex-1 bg-black border border-slate-700 rounded-lg p-2 text-xs text-gray-300 overflow-auto">
                         <p className="mb-2 text-cyan-300 font-semibold">
                             Current Stage: {step.title}
                         </p>
