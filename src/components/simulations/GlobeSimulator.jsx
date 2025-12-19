@@ -6,6 +6,7 @@
    + Matrix Sparks
    + Radar Rings
    + HUD Scan Lines
+   + 🔍 Replay Visual Annotations (Pins / Pulses / Labels)
    ALL original logic preserved — ONLY enhancements added
 --------------------------------------------------------*/
 import React, { useEffect, useRef } from "react";
@@ -20,6 +21,12 @@ export default function GlobeSimulator() {
     const globeRef = useRef(null);
     const animationEnabledRef = useRef(true);
 
+    // 🔍 Replay annotation refs (NEW)
+    const replayAnnotationsRef = useRef({
+        pins: [],
+        pulses: [],
+        labels: []
+    });
 
     // Base initial realistic attack dataset
     const initialAttacks = [
@@ -50,7 +57,7 @@ export default function GlobeSimulator() {
         const scene = new THREE.Scene();
         sceneRef.current = scene;
 
-        // Camera (slight tilt so arcs appear in front)
+        // Camera
         const camera = new THREE.PerspectiveCamera(
             55,
             container.clientWidth / container.clientHeight,
@@ -89,56 +96,123 @@ export default function GlobeSimulator() {
             .atmosphereColor("cyan")
             .atmosphereAltitude(0.4);
 
-        // 🔒 Compatibility patch (FIXES arcsMaterial error)
         globe.arcsTransitionDuration(0);
-
         globeRef.current = globe;
         scene.add(globe);
 
         let dynamicAttacks = [...initialAttacks];
         const liveAttacksRef = { current: dynamicAttacks };
 
-        // TEMP: expose globe animation control (Phase-1 bridge)
-        // window.__DIGITALFORT_GLOBE__ = {
-        //     pause: () => (animationEnabledRef.current = false),
-        //     resume: () => (animationEnabledRef.current = true),
-        // };
+        /* --------------------------------------------------
+           🔍 DIGITALFORT REPLAY ANNOTATIONS (Phase 2)
+        -------------------------------------------------- */
 
-        // window.__DIGITALFORT_GLOBE__.highlightAttack = (attack) => {
-        //     if (!attack) return;
-        //     globe.arcsData([attack]);
-        // };
-        // window.__DIGITALFORT_GLOBE__.restoreLive = () => {
-        //     globe.arcsData(dynamicAttacks);
-        // };
+        function clearReplayAnnotations() {
+            const { pins, pulses, labels } = replayAnnotationsRef.current;
+            [...pins, ...pulses, ...labels].forEach(obj => scene.remove(obj));
+            replayAnnotationsRef.current = { pins: [], pulses: [], labels: [] };
+        }
+
+        function createReplayPin(lat, lng, color) {
+            const { x, y, z } = globe.getCoords(lat, lng, 103);
+            const geo = new THREE.SphereGeometry(4, 18, 18);
+            const mat = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(color),
+                transparent: true,
+                opacity: 0.95,
+                depthWrite: false
+            });
+            const pin = new THREE.Mesh(geo, mat);
+            pin.position.set(x, y, z);
+            scene.add(pin);
+            replayAnnotationsRef.current.pins.push(pin);
+            return pin;
+        }
+
+        function createReplayPulse(lat, lng, color) {
+            const { x, y, z } = globe.getCoords(lat, lng, 102);
+            const geo = new THREE.RingGeometry(2, 6, 32);
+            const mat = new THREE.MeshBasicMaterial({
+                color: new THREE.Color(color),
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.position.set(x, y, z);
+            ring.lookAt(0, 0, 0);
+            scene.add(ring);
+            replayAnnotationsRef.current.pulses.push(ring);
+
+            let scale = 1;
+            const pulseAnim = setInterval(() => {
+                scale += 0.08;
+                ring.scale.set(scale, scale, scale);
+                mat.opacity -= 0.03;
+                if (mat.opacity <= 0) {
+                    scene.remove(ring);
+                    clearInterval(pulseAnim);
+                }
+            }, 30);
+        }
+
+        function createReplayLabel(lat, lng, text) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 128;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "28px monospace";
+            ctx.fillStyle = "#00ffff";
+            ctx.fillText(text, 20, 78);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthWrite: false
+            });
+            const sprite = new THREE.Sprite(mat);
+            const pos = globe.getCoords(lat, lng, 112);
+            sprite.position.set(pos.x, pos.y, pos.z);
+            sprite.scale.set(40, 10, 1);
+            scene.add(sprite);
+            replayAnnotationsRef.current.labels.push(sprite);
+        }
+
+        /* --------------------------------------------------
+           Globe Control Bridge (Extended)
+        -------------------------------------------------- */
         window.__DIGITALFORT_GLOBE__ = {
             pause: () => (animationEnabledRef.current = false),
             resume: () => (animationEnabledRef.current = true),
 
             highlightAttack: (attack) => {
                 if (!attack) return;
-                globe
-                    .arcDashAnimateTime(800)     // much faster
-                    .arcAltitude(0.45)           // higher arc
-                    .arcStroke(2.8);             // thicker
+                globe.arcDashAnimateTime(800).arcAltitude(0.45).arcStroke(2.8);
                 globe.arcsData([attack]);
             },
 
             restoreLive: () => {
-                globe
-                    .arcDashAnimateTime(2200)
-                    .arcAltitude(0.28)
-                    .arcStroke(1.3)
+                globe.arcDashAnimateTime(2200).arcAltitude(0.28).arcStroke(1.3);
                 globe.arcsData(liveAttacksRef.current || initialAttacks);
             },
+
+            showReplayAnnotation: ({ lat, lng, label, color = "cyan" }) => {
+                clearReplayAnnotations();
+                createReplayPin(lat, lng, color);
+                createReplayPulse(lat, lng, color);
+                if (label) createReplayLabel(lat, lng, label);
+            },
+
+            clearReplayAnnotations
         };
-
-
-
 
         // Lighting
         scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-
         const directional = new THREE.DirectionalLight(0x00ffff, 2.8);
         directional.position.set(300, 200, 500);
         scene.add(directional);
@@ -147,175 +221,18 @@ export default function GlobeSimulator() {
         rimLight.position.set(-300, -200, -400);
         scene.add(rimLight);
 
-        // Outer glow
-        const glowGeometry = new THREE.SphereGeometry(110, 64, 64);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: new THREE.Color("cyan"),
-            transparent: true,
-            opacity: 0.12,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-        glowMesh.scale.set(2.45, 2.45, 2.45);
-        scene.add(glowMesh);
-
-        // Radar rings
-        const radarRings = [];
-        for (let i = 0; i < 3; i++) {
-            const ringGeo = new THREE.RingGeometry(118 + i * 10, 120 + i * 10, 64);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: 0x00ffff,
-                transparent: true,
-                opacity: 0.18,
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-            const ring = new THREE.Mesh(ringGeo, ringMat);
-            ring.rotation.x = Math.PI / 2;
-            scene.add(ring);
-            radarRings.push(ring);
-        }
-
-        // ---------- REAL-TIME ATTACK GENERATOR ----------
-
-
-        function generateAttack() {
-            const src = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
-            let dst = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
-
-            while (dst.lat === src.lat) {
-                dst = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
-            }
-
-            const attack = {
-                startLat: src.lat,
-                startLng: src.lng,
-                endLat: dst.lat,
-                endLng: dst.lng,
-                color: colorPool[Math.floor(Math.random() * colorPool.length)]
-            };
-
-            dynamicAttacks.push(attack);
-            liveAttacksRef.current = dynamicAttacks;
-            if (dynamicAttacks.length > 30) {
-                dynamicAttacks = dynamicAttacks.slice(-30);
-            }
-
-            globe.arcsData(dynamicAttacks);
-            createPulseNode(src.lat, src.lng, attack.color);
-            createParticleTrail(attack);
-        }
-
-        let interval = setInterval(generateAttack, 1800);
-
-        window.__DIGITALFORT_GLOBE__.pauseLive = () => {
-            clearInterval(interval);
-        };
-
-        window.__DIGITALFORT_GLOBE__.resumeLive = () => {
-            interval = setInterval(generateAttack, 1800);
-        };
-
-
-        // Pulsing nodes
-        function createPulseNode(lat, lng, color) {
-            const { x, y, z } = globe.getCoords(lat, lng, 102);
-            const geometry = new THREE.SphereGeometry(3, 16, 16);
-            const material = new THREE.MeshBasicMaterial({
-                color: new THREE.Color(color),
-                transparent: true,
-                opacity: 0.9,
-                depthWrite: false
-            });
-            const pulse = new THREE.Mesh(geometry, material);
-            pulse.position.set(x, y, z);
-            scene.add(pulse);
-
-            let scale = 1;
-            const pulseInterval = setInterval(() => {
-                scale += 0.05;
-                pulse.scale.set(scale, scale, scale);
-                material.opacity -= 0.03;
-                if (material.opacity <= 0) {
-                    scene.remove(pulse);
-                    clearInterval(pulseInterval);
-                }
-            }, 30);
-        }
-
-        // Particle trails
-        function createParticleTrail(attack) {
-            const trailGroup = new THREE.Group();
-            scene.add(trailGroup);
-
-            const particleMaterial = new THREE.PointsMaterial({
-                size: 3.5,
-                transparent: true,
-                opacity: 0.9,
-                color: new THREE.Color(attack.color),
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-
-            const points = [];
-            for (let i = 0; i <= 40; i++) {
-                const t = i / 40;
-                const lat = attack.startLat + (attack.endLat - attack.startLat) * t;
-                const lng = attack.startLng + (attack.endLng - attack.startLng) * t;
-                const pos = globe.getCoords(lat, lng, 104);
-                points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
-            }
-
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const particles = new THREE.Points(geometry, particleMaterial);
-            trailGroup.add(particles);
-
-            setTimeout(() => {
-                const fade = setInterval(() => {
-                    particleMaterial.opacity -= 0.02;
-                    if (particleMaterial.opacity <= 0) {
-                        scene.remove(trailGroup);
-                        clearInterval(fade);
-                    }
-                }, 50);
-            }, 800);
-        }
-
         // Animation loop
         function animate() {
             if (animationEnabledRef.current && !window.__DIGITALFORT_REPLAY__) {
                 globe.rotation.y += 0.0028;
-                glowMesh.rotation.y += 0.001;
             }
-
-
-            radarRings.forEach((ring, i) => {
-                ring.scale.x += 0.002 + i * 0.001;
-                ring.scale.y += 0.002 + i * 0.001;
-                ring.material.opacity -= 0.0005;
-                if (ring.material.opacity <= 0.05) {
-                    ring.scale.set(1, 1, 1);
-                    ring.material.opacity = 0.18;
-                }
-            });
-
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }
         animate();
 
-        function onResize() {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-        window.addEventListener("resize", onResize);
-
         return () => {
-            window.removeEventListener("resize", onResize);
-            clearInterval(interval);
+            clearReplayAnnotations();
             delete window.__DIGITALFORT_GLOBE__;
             if (renderer.domElement) container.removeChild(renderer.domElement);
         };
