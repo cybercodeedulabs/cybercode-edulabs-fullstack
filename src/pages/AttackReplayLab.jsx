@@ -178,8 +178,8 @@ export default function AttackReplayLab() {
                 color: step.color.includes("green")
                     ? "green"
                     : step.color.includes("cyan")
-                    ? "cyan"
-                    : "yellow",
+                        ? "cyan"
+                        : "yellow",
             });
         }
 
@@ -223,7 +223,14 @@ export default function AttackReplayLab() {
             {/* CONTROLS BAR */}
             <div className="flex flex-wrap gap-4 mb-10">
                 <button
-                    onClick={() => setPlaying(!playing)}
+                    onClick={() => {
+                        if (!playing && currentStep === ATTACK_STEPS.length - 1) {
+                            setCurrentStep(0);      // 🔁 reset to Step 1
+                            lastGeoRef.current = null;
+                        }
+                        setPlaying(!playing);
+                    }}
+
                     className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-black rounded-lg font-semibold"
                 >
                     {playing ? "Pause" : "Play"}
@@ -261,11 +268,10 @@ export default function AttackReplayLab() {
                                 setPlaying(false);
                                 setCurrentStep(index);
                             }}
-                            className={`p-4 rounded-lg border cursor-pointer transition ${
-                                index === currentStep
+                            className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
                                     ? "border-cyan-400 bg-slate-900"
                                     : "border-slate-700 bg-slate-950 hover:bg-slate-900"
-                            }`}
+                                }`}
                         >
                             <div className="text-xs text-gray-400">Step {s.id}</div>
                             <div className={`font-semibold ${s.color}`}>
@@ -328,10 +334,10 @@ export default function AttackReplayLab() {
                         </p>
 
                         <p className="text-xs text-gray-500">
-                            ▶ Future: LLM-driven reasoning  
-                            ▶ MITRE ATT&CK mapping  
-                            ▶ Risk scoring  
-                            ▶ Recommended counter-actions  
+                            ▶ Future: LLM-driven reasoning
+                            ▶ MITRE ATT&CK mapping
+                            ▶ Risk scoring
+                            ▶ Recommended counter-actions
                         </p>
                     </div>
 
