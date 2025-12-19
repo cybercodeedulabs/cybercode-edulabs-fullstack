@@ -129,9 +129,11 @@ export default function AttackReplayLab() {
         if (!playing) return;
 
         const timer = setTimeout(() => {
-            setCurrentStep((prev) =>
-                prev < ATTACK_STEPS.length - 1 ? prev + 1 : prev
-            );
+            setCurrentStep((prev) => {
+                if (prev < ATTACK_STEPS.length - 1) return prev + 1;
+                setPlaying(false); // ✅ stop autoplay at final step
+                return prev;
+            });
         }, 3000 / speed);
 
         return () => clearTimeout(timer);
@@ -145,11 +147,15 @@ export default function AttackReplayLab() {
 
         globe.pauseLive?.();
 
+        // Reset geo context when replay restarts
+        if (currentStep === 0) {
+            lastGeoRef.current = null;
+        }
+
         // Freeze globe after initial compromise
         if (currentStep >= 4) globe.pause();
         else globe.resume();
 
-        // Always clear previous annotations first
         globe.clearReplayAnnotations?.();
 
         if (GEO_MAP[currentStep]) {
@@ -165,12 +171,10 @@ export default function AttackReplayLab() {
                 color: geo.color,
             });
         } else if (lastGeoRef.current) {
-            // 🟢 RESOLVED ARC STATE for Mitigation & Intelligence Stored
             if (currentStep >= 6) {
                 globe.resolveAttack?.(lastGeoRef.current);
             }
 
-            // Keep replay context for non-geo steps
             globe.showReplayAnnotation?.({
                 lat: lastGeoRef.current.endLat,
                 lng: lastGeoRef.current.endLng,
@@ -256,7 +260,10 @@ export default function AttackReplayLab() {
                     {ATTACK_STEPS.map((s, index) => (
                         <div
                             key={s.id}
-                            onClick={() => setCurrentStep(index)}
+                            onClick={() => {
+                                setPlaying(false); // ✅ manual override pauses autoplay
+                                setCurrentStep(index);
+                            }}
                             className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
                                 ? "border-cyan-400 bg-slate-900"
                                 : "border-slate-700 bg-slate-950 hover:bg-slate-900"
