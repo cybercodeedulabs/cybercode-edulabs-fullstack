@@ -95,7 +95,7 @@ export default function GlobeSimulator() {
         globeRef.current = globe;
         scene.add(globe);
 
-         let dynamicAttacks = [...initialAttacks];
+        let dynamicAttacks = [...initialAttacks];
         const liveAttacksRef = { current: dynamicAttacks };
 
         // TEMP: expose globe animation control (Phase-1 bridge)
@@ -117,10 +117,18 @@ export default function GlobeSimulator() {
 
             highlightAttack: (attack) => {
                 if (!attack) return;
+                globe
+                    .arcDashAnimateTime(800)     // much faster
+                    .arcAltitude(0.45)           // higher arc
+                    .arcStroke(2.8);             // thicker
                 globe.arcsData([attack]);
             },
 
             restoreLive: () => {
+                globe
+                    .arcDashAnimateTime(2200)
+                    .arcAltitude(0.28)
+                    .arcStroke(1.3)
                 globe.arcsData(liveAttacksRef.current || initialAttacks);
             },
         };
@@ -171,7 +179,7 @@ export default function GlobeSimulator() {
         }
 
         // ---------- REAL-TIME ATTACK GENERATOR ----------
-       
+
 
         function generateAttack() {
             const src = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
@@ -200,7 +208,16 @@ export default function GlobeSimulator() {
             createParticleTrail(attack);
         }
 
-        const interval = setInterval(generateAttack, 1800);
+        let interval = setInterval(generateAttack, 1800);
+
+        window.__DIGITALFORT_GLOBE__.pauseLive = () => {
+            clearInterval(interval);
+        };
+
+        window.__DIGITALFORT_GLOBE__.resumeLive = () => {
+            interval = setInterval(generateAttack, 1800);
+        };
+
 
         // Pulsing nodes
         function createPulseNode(lat, lng, color) {
@@ -268,7 +285,7 @@ export default function GlobeSimulator() {
 
         // Animation loop
         function animate() {
-            if (animationEnabledRef.current) {
+            if (animationEnabledRef.current && !window.__DIGITALFORT_REPLAY__) {
                 globe.rotation.y += 0.0028;
                 glowMesh.rotation.y += 0.001;
             }

@@ -139,6 +139,7 @@ export default function AttackReplayLab() {
     useEffect(() => {
         const globe = window.__DIGITALFORT_GLOBE__;
         if (!globe) return;
+        globe.pauseLive();
 
         if (currentStep >= 4) globe.pause();
         else globe.resume();
@@ -148,7 +149,18 @@ export default function AttackReplayLab() {
         } else {
             globe.restoreLive?.();
         }
+        return () => {
+            globe.resumeLive();
+        };
     }, [currentStep]);
+
+    useEffect(() => {
+        window.__DIGITALFORT_REPLAY__ = true;
+        return () => {
+            window.__DIGITALFORT_REPLAY__ = false;
+        };
+    }, []);
+
 
 
     return (
