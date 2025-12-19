@@ -4,7 +4,7 @@
    Timeline • Speed Control • POV Toggle
    No backend | No globe dependency (yet)
 --------------------------------------------------------*/
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import GlobeSimulator from "../components/simulations/GlobeSimulator";
 
@@ -107,6 +107,7 @@ const ATTACK_STEPS = [
         color: "text-green-500",
     },
 ];
+
 const GEO_MAP = {
     0: { startLat: 40.7, startLng: -74, endLat: 28.6, endLng: 77.2, color: "yellow" },
     1: { startLat: 35.8, startLng: 104.1, endLat: 28.6, endLng: 77.2, color: "orange" },
@@ -114,12 +115,14 @@ const GEO_MAP = {
     3: { startLat: 52.5, startLng: 13.4, endLat: 28.6, endLng: 77.2, color: "red" },
 };
 
-
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState(1);
     const [view, setView] = useState("defender");
+
+    // 🔒 Remember last geo position for non-geo steps
+    const lastGeoRef = useRef(null);
 
     // Auto-play logic with speed control
     useEffect(() => {
@@ -139,18 +142,44 @@ export default function AttackReplayLab() {
     useEffect(() => {
         const globe = window.__DIGITALFORT_GLOBE__;
         if (!globe) return;
-        globe.pauseLive();
 
+        globe.pauseLive?.();
+
+        // Freeze globe after initial compromise
         if (currentStep >= 4) globe.pause();
         else globe.resume();
 
+        // Always clear previous annotations first
+        globe.clearReplayAnnotations?.();
+
         if (GEO_MAP[currentStep]) {
-            globe.highlightAttack(GEO_MAP[currentStep]);
-        } else {
-            globe.restoreLive?.();
+            const geo = GEO_MAP[currentStep];
+            lastGeoRef.current = geo;
+
+            globe.highlightAttack(geo);
+
+            globe.showReplayAnnotation?.({
+                lat: geo.endLat,
+                lng: geo.endLng,
+                label: step.title,
+                color: geo.color,
+            });
+        } else if (lastGeoRef.current) {
+            // Keep replay context for non-geo steps
+            globe.showReplayAnnotation?.({
+                lat: lastGeoRef.current.endLat,
+                lng: lastGeoRef.current.endLng,
+                label: step.title,
+                color: step.color.includes("green")
+                    ? "green"
+                    : step.color.includes("cyan")
+                        ? "cyan"
+                        : "yellow",
+            });
         }
+
         return () => {
-            globe.resumeLive();
+            globe.resumeLive?.();
         };
     }, [currentStep]);
 
@@ -161,10 +190,22 @@ export default function AttackReplayLab() {
         };
     }, []);
 
-
-
     return (
-        <div className="min-h-screen bg-black text-white p-10">
+        <div className="min-h-screen bg-black text-white p-10 relative">
+
+            {/* REPLAY STEP LEGEND */}
+            <div className="fixed top-6 left-6 z-40 bg-black/80 border border-slate-700 rounded-xl px-5 py-4">
+                <div className="text-xs text-gray-400 mb-1">
+                    Step {step.id} / {ATTACK_STEPS.length}
+                </div>
+                <div className={`font-bold ${step.color}`}>
+                    {step.title}
+                </div>
+                <div className="text-sm text-gray-400">
+                    {step.subtitle}
+                </div>
+            </div>
+
             {/* HEADER */}
             <h1 className="text-4xl font-bold text-cyan-300 mb-2">
                 🔁 Attack Replay Lab
@@ -251,11 +292,11 @@ export default function AttackReplayLab() {
                         </p>
                     </div>
                 </motion.div>
+
                 {/* RIGHT — GLOBE */}
                 <div className="lg:col-span-2 h-[600px] relative border border-slate-700 rounded-xl overflow-hidden">
                     <GlobeSimulator />
                 </div>
-
             </div>
 
             <div className="mt-12 max-w-7xl grid md:grid-cols-3 gap-6">
@@ -280,7 +321,6 @@ export default function AttackReplayLab() {
                     </p>
                 </div>
             </div>
-
 
             {/* FOOTER NOTE */}
             <div className="mt-16 max-w-4xl text-gray-400 text-sm">
