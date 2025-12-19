@@ -131,7 +131,7 @@ export default function AttackReplayLab() {
         const timer = setTimeout(() => {
             setCurrentStep((prev) => {
                 if (prev < ATTACK_STEPS.length - 1) return prev + 1;
-                setPlaying(false); // ✅ stop autoplay at final step
+                setPlaying(false);
                 return prev;
             });
         }, 3000 / speed);
@@ -147,12 +147,8 @@ export default function AttackReplayLab() {
 
         globe.pauseLive?.();
 
-        // Reset geo context when replay restarts
-        if (currentStep === 0) {
-            lastGeoRef.current = null;
-        }
+        if (currentStep === 0) lastGeoRef.current = null;
 
-        // Freeze globe after initial compromise
         if (currentStep >= 4) globe.pause();
         else globe.resume();
 
@@ -182,8 +178,8 @@ export default function AttackReplayLab() {
                 color: step.color.includes("green")
                     ? "green"
                     : step.color.includes("cyan")
-                        ? "cyan"
-                        : "yellow",
+                    ? "cyan"
+                    : "yellow",
             });
         }
 
@@ -254,20 +250,22 @@ export default function AttackReplayLab() {
             </div>
 
             {/* MAIN PANEL */}
-            <div className="grid lg:grid-cols-5 gap-10 max-w-7xl">
+            <div className="grid lg:grid-cols-6 gap-10 max-w-7xl">
+
                 {/* LEFT — TIMELINE */}
                 <div className="space-y-3 lg:col-span-1">
                     {ATTACK_STEPS.map((s, index) => (
                         <div
                             key={s.id}
                             onClick={() => {
-                                setPlaying(false); // ✅ manual override pauses autoplay
+                                setPlaying(false);
                                 setCurrentStep(index);
                             }}
-                            className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
-                                ? "border-cyan-400 bg-slate-900"
-                                : "border-slate-700 bg-slate-950 hover:bg-slate-900"
-                                }`}
+                            className={`p-4 rounded-lg border cursor-pointer transition ${
+                                index === currentStep
+                                    ? "border-cyan-400 bg-slate-900"
+                                    : "border-slate-700 bg-slate-950 hover:bg-slate-900"
+                            }`}
                         >
                             <div className="text-xs text-gray-400">Step {s.id}</div>
                             <div className={`font-semibold ${s.color}`}>
@@ -307,6 +305,39 @@ export default function AttackReplayLab() {
                 {/* RIGHT — GLOBE */}
                 <div className="lg:col-span-2 h-[600px] relative border border-slate-700 rounded-xl overflow-hidden">
                     <GlobeSimulator />
+                </div>
+
+                {/* 🔮 AI INSIGHT PANEL — PHASE B1 (ADD ONLY) */}
+                <div className="lg:col-span-1 h-[600px] bg-slate-950 border border-slate-700 rounded-xl p-4 flex flex-col">
+                    <h3 className="text-sm font-semibold text-cyan-300 mb-2">
+                        🤖 DigitalFort AI Insight
+                    </h3>
+
+                    <div className="text-xs text-gray-400 mb-3">
+                        Context-aware analysis (Phase B)
+                    </div>
+
+                    <div className="flex-1 bg-black border border-slate-700 rounded-lg p-3 text-sm text-gray-300 overflow-auto">
+                        <p className="mb-2 text-cyan-300 font-semibold">
+                            Current Stage: {step.title}
+                        </p>
+
+                        <p className="mb-3">
+                            AI is analyzing attacker behavior, defensive posture,
+                            and historical threat intelligence related to this phase.
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                            ▶ Future: LLM-driven reasoning  
+                            ▶ MITRE ATT&CK mapping  
+                            ▶ Risk scoring  
+                            ▶ Recommended counter-actions  
+                        </p>
+                    </div>
+
+                    <div className="mt-3 text-[10px] text-gray-500">
+                        AI engine inactive (UI-only in Phase A/B1)
+                    </div>
                 </div>
             </div>
 
