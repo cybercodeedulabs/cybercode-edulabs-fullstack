@@ -95,18 +95,34 @@ export default function GlobeSimulator() {
         globeRef.current = globe;
         scene.add(globe);
 
+         let dynamicAttacks = [...initialAttacks];
+        const liveAttacksRef = { current: dynamicAttacks };
+
         // TEMP: expose globe animation control (Phase-1 bridge)
+        // window.__DIGITALFORT_GLOBE__ = {
+        //     pause: () => (animationEnabledRef.current = false),
+        //     resume: () => (animationEnabledRef.current = true),
+        // };
+
+        // window.__DIGITALFORT_GLOBE__.highlightAttack = (attack) => {
+        //     if (!attack) return;
+        //     globe.arcsData([attack]);
+        // };
+        // window.__DIGITALFORT_GLOBE__.restoreLive = () => {
+        //     globe.arcsData(dynamicAttacks);
+        // };
         window.__DIGITALFORT_GLOBE__ = {
             pause: () => (animationEnabledRef.current = false),
             resume: () => (animationEnabledRef.current = true),
-        };
 
-        window.__DIGITALFORT_GLOBE__.highlightAttack = (attack) => {
-            if (!attack) return;
-            globe.arcsData([attack]);
-        };
-        window.__DIGITALFORT_GLOBE__.restoreLive = () => {
-            globe.arcsData(dynamicAttacks);
+            highlightAttack: (attack) => {
+                if (!attack) return;
+                globe.arcsData([attack]);
+            },
+
+            restoreLive: () => {
+                globe.arcsData(liveAttacksRef.current || initialAttacks);
+            },
         };
 
 
@@ -155,7 +171,7 @@ export default function GlobeSimulator() {
         }
 
         // ---------- REAL-TIME ATTACK GENERATOR ----------
-        let dynamicAttacks = [...initialAttacks];
+       
 
         function generateAttack() {
             const src = ATTACK_POINTS[Math.floor(Math.random() * ATTACK_POINTS.length)];
@@ -174,6 +190,7 @@ export default function GlobeSimulator() {
             };
 
             dynamicAttacks.push(attack);
+            liveAttacksRef.current = dynamicAttacks;
             if (dynamicAttacks.length > 30) {
                 dynamicAttacks = dynamicAttacks.slice(-30);
             }

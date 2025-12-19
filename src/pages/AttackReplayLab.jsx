@@ -192,7 +192,7 @@ export default function AttackReplayLab() {
             </div>
 
             {/* MAIN PANEL */}
-            <div className="grid lg:grid-cols-4 gap-10 max-w-7xl">
+            <div className="grid lg:grid-cols-5 gap-10 max-w-7xl">
                 {/* LEFT — TIMELINE */}
                 <div className="space-y-3 lg:col-span-1">
                     {ATTACK_STEPS.map((s, index) => (
@@ -240,7 +240,7 @@ export default function AttackReplayLab() {
                     </div>
                 </motion.div>
                 {/* RIGHT — GLOBE */}
-                <div className="lg:col-span-1 relative h-[520px] border border-slate-700 rounded-xl overflow-hidden">
+                <div className="lg:col-span-2 h-[600px] relative border border-slate-700 rounded-xl overflow-hidden">
                     <GlobeSimulator />
                 </div>
 
