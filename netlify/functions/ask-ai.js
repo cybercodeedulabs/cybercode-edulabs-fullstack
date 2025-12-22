@@ -85,7 +85,8 @@ export async function handler(event) {
       mode = "chat",
       user: clientUser = null,
       projectSpec = null,
-      monthTitle
+      monthTitle,
+      attackContext = null
     } = body;
 
     // check API key
@@ -131,7 +132,12 @@ export async function handler(event) {
       model = roadmapModel;      // use the 70B model for consistency
       maxTokens = 300;           // explanations are short
       temperature = 0.2;
+    } else if (mode === "attack_replay") {
+      model = chatModel;
+      maxTokens = 300;
+      temperature = 0.2;
     }
+
 
 
     // SYSTEM PROMPTS
@@ -205,8 +211,30 @@ ${JSON.stringify(userGoals)}
 USER PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
-          : mode === "project"
+          : mode === "attack_replay"
             ? `
+You are DigitalFort AI — a cyber defense intelligence engine.
+
+Analyze the given cyber attack phase and return a concise,
+professional security insight in clean markdown.
+
+Include:
+- What the attacker is doing
+- Why this behavior is risky
+- What DigitalFort detects at this stage
+- Likely MITRE ATT&CK techniques (IDs optional)
+- Recommended defensive action
+
+Keep it under 120 words.
+No emojis.
+No code blocks.
+
+ATTACK CONTEXT:
+${JSON.stringify(attackContext || {})}
+  `.trim()
+
+            : mode === "project"
+              ? `
 You are Cybercode EduLabs Project Generator.
 
 Return ONLY VALID JSON.
@@ -240,7 +268,7 @@ ${JSON.stringify(projectSpec || {})}
 USER_PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
-            : `
+              : `
 You are Cybercode EduLabs AI Advisor.
 Reply in clean markdown.
 Be crisp unless deep detail is asked.
@@ -260,7 +288,9 @@ Use userGoals/persona/stats for guidance.
       userStats,
       mode,
       projectSpec,
-      monthTitle: monthTitle || ""
+      monthTitle: monthTitle || "",
+      attackContext
+
     };
 
     const cacheKey = hashPayload(payloadForCache);

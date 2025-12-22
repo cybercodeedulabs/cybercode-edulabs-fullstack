@@ -120,6 +120,9 @@ export default function AttackReplayLab() {
     const [playing, setPlaying] = useState(false);
     const [speed, setSpeed] = useState(1);
     const [view, setView] = useState("defender");
+    const [aiInsight, setAiInsight] = useState("AI analysis pending…");
+    const [aiLoading, setAiLoading] = useState(false);
+
 
     // 🔒 Remember last geo position for non-geo steps
     const lastGeoRef = useRef(null);
@@ -140,6 +143,50 @@ export default function AttackReplayLab() {
     }, [playing, currentStep, speed]);
 
     const step = ATTACK_STEPS[currentStep];
+    // 🤖 Phase B2 — Fetch AI insight per replay step
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchAIInsight() {
+            try {
+                setAiLoading(true);
+
+                const res = await fetch("/.netlify/functions/ask-ai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        mode: "attack_replay",
+                        attackContext: {
+                            stepId: step.id,
+                            title: step.title,
+                            subtitle: step.subtitle,
+                            attackerView: step.attackerView,
+                            defenderView: step.defenderView,
+                        },
+                    }),
+                });
+
+                const data = await res.json();
+                const content = data?.choices?.[0]?.message?.content;
+
+                if (!cancelled) {
+                    setAiInsight(content || "No AI insight available for this phase.");
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setAiInsight("AI engine unavailable.");
+                }
+            } finally {
+                if (!cancelled) setAiLoading(false);
+            }
+        }
+
+        fetchAIInsight();
+        return () => {
+            cancelled = true;
+        };
+    }, [currentStep]);
+
 
     useEffect(() => {
         const globe = window.__DIGITALFORT_GLOBE__;
@@ -269,8 +316,8 @@ export default function AttackReplayLab() {
                                 setCurrentStep(index);
                             }}
                             className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
-                                    ? "border-cyan-400 bg-slate-900"
-                                    : "border-slate-700 bg-slate-950 hover:bg-slate-900"
+                                ? "border-cyan-400 bg-slate-900"
+                                : "border-slate-700 bg-slate-950 hover:bg-slate-900"
                                 }`}
                         >
                             <div className="text-xs text-gray-400">Step {s.id}</div>
@@ -328,10 +375,16 @@ export default function AttackReplayLab() {
                             Current Stage: {step.title}
                         </p>
 
-                        <p className="mb-3">
-                            AI is analyzing attacker behavior, defensive posture,
-                            and historical threat intelligence related to this phase.
-                        </p>
+                        {aiLoading ? (
+                            <p className="text-gray-500 italic">
+                                Analyzing current attack phase…
+                            </p>
+                        ) : (
+                            <div className="whitespace-pre-wrap leading-relaxed">
+                                {aiInsight}
+                            </div>
+                        )}
+
 
                         <p className="text-xs text-gray-500">
                             ▶ Future: LLM-driven reasoning
