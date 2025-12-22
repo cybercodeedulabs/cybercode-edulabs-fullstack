@@ -176,6 +176,64 @@ function normalizeAIInsight(raw = "") {
     return buckets;
 }
 
+/* ======================================================
+   🧠 PHASE D — THREAT SCORING ENGINE (ADD)
+   Deterministic SOC-style assessment per replay step
+====================================================== */
+function computeThreatAssessment(stepId) {
+    if (stepId <= 2) {
+        return {
+            severity: 3.5,
+            confidence: 45,
+            posture: "Monitoring",
+            verdict: "Reconnaissance activity observed"
+        };
+    }
+
+    if (stepId === 3) {
+        return {
+            severity: 6.5,
+            confidence: 70,
+            posture: "Elevated",
+            verdict: "Malicious payload execution detected"
+        };
+    }
+
+    if (stepId === 4) {
+        return {
+            severity: 8.5,
+            confidence: 88,
+            posture: "Critical",
+            verdict: "Lateral movement in progress"
+        };
+    }
+
+    if (stepId === 5) {
+        return {
+            severity: 9.2,
+            confidence: 95,
+            posture: "Critical",
+            verdict: "Confirmed active intrusion"
+        };
+    }
+
+    if (stepId === 6) {
+        return {
+            severity: 7.0,
+            confidence: 92,
+            posture: "Contained",
+            verdict: "Threat containment initiated"
+        };
+    }
+
+    return {
+        severity: 2.0,
+        confidence: 98,
+        posture: "Monitoring",
+        verdict: "Threat neutralized and logged"
+    };
+}
+
 
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
@@ -184,6 +242,8 @@ export default function AttackReplayLab() {
     const [view, setView] = useState("defender");
     const [aiInsight, setAiInsight] = useState("AI analysis pending…");
     const [aiLoading, setAiLoading] = useState(false);
+    const [threat, setThreat] = useState(null);
+
 
 
     // 🔒 Remember last geo position for non-geo steps
@@ -205,8 +265,12 @@ export default function AttackReplayLab() {
     }, [playing, currentStep, speed]);
 
     const step = ATTACK_STEPS[currentStep];
-    const aiSections = parseAISections(aiInsight);
+    // const aiSections = parseAISections(aiInsight);
     const normalizedInsight = normalizeAIInsight(aiInsight);
+    useEffect(() => {
+        setThreat(computeThreatAssessment(step.id));
+    }, [currentStep]);
+
 
     // — Fetch AI insight per replay step
     useEffect(() => {
@@ -424,6 +488,31 @@ export default function AttackReplayLab() {
                 <div className="lg:col-span-2 h-[620px] relative border border-slate-700 rounded-xl overflow-hidden">
                     <GlobeSimulator />
                 </div>
+
+                {threat && (
+                    <div className="lg:col-span-6 mb-4 p-4 bg-slate-950 border border-slate-700 rounded-xl">
+                        <div className="text-xs text-gray-400 mb-1">
+                            DigitalFort SOC Verdict
+                        </div>
+
+                        <div className="text-lg font-bold text-cyan-300">
+                            {threat.verdict}
+                        </div>
+
+                        <div className="flex gap-6 mt-2 text-sm text-gray-300">
+                            <span>
+                                Severity: <span className="text-white">{threat.severity}/10</span>
+                            </span>
+                            <span>
+                                Confidence: <span className="text-white">{threat.confidence}%</span>
+                            </span>
+                            <span>
+                                Posture: <span className="text-white">{threat.posture}</span>
+                            </span>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* 🔮 AI INSIGHT PANEL — PHASE C2 */}
                 <div className="lg:col-span-1 h-[620px] bg-slate-950 border border-slate-700 rounded-xl p-3 flex flex-col text-sm">
