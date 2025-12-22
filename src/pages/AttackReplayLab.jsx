@@ -397,7 +397,7 @@ export default function AttackReplayLab() {
             </p>
 
             {/* CONTROLS BAR */}
-            <div className="flex flex-wrap gap-4 mb-10">
+            <div className="flex flex-wrap gap-4 mb-6">
                 <button
                     onClick={() => {
                         if (!playing && currentStep === ATTACK_STEPS.length - 1) {
@@ -431,6 +431,30 @@ export default function AttackReplayLab() {
                     View: {view === "attacker" ? "Attacker POV" : "Defender POV"}
                 </button>
             </div>
+            {threat && (
+                <div className="lg:col-span-6 mb-4 p-4 bg-slate-950 border border-slate-700 rounded-xl">
+                    <div className="text-xs text-gray-400 mb-1">
+                        DigitalFort SOC Verdict
+                    </div>
+
+                    <div className="text-lg font-bold text-cyan-300">
+                        {threat.verdict}
+                    </div>
+
+                    <div className="flex gap-6 mt-2 text-sm text-gray-300">
+                        <span>
+                            Severity: <span className="text-white">{threat.severity}/10</span>
+                        </span>
+                        <span>
+                            Confidence: <span className="text-white">{threat.confidence}%</span>
+                        </span>
+                        <span>
+                            Posture: <span className="text-white">{threat.posture}</span>
+                        </span>
+                    </div>
+                </div>
+            )}
+
 
             {/* MAIN PANEL */}
             <div className="grid lg:grid-cols-6 gap-10 max-w-7xl">
@@ -489,29 +513,6 @@ export default function AttackReplayLab() {
                     <GlobeSimulator />
                 </div>
 
-                {threat && (
-                    <div className="lg:col-span-6 mb-4 p-4 bg-slate-950 border border-slate-700 rounded-xl">
-                        <div className="text-xs text-gray-400 mb-1">
-                            DigitalFort SOC Verdict
-                        </div>
-
-                        <div className="text-lg font-bold text-cyan-300">
-                            {threat.verdict}
-                        </div>
-
-                        <div className="flex gap-6 mt-2 text-sm text-gray-300">
-                            <span>
-                                Severity: <span className="text-white">{threat.severity}/10</span>
-                            </span>
-                            <span>
-                                Confidence: <span className="text-white">{threat.confidence}%</span>
-                            </span>
-                            <span>
-                                Posture: <span className="text-white">{threat.posture}</span>
-                            </span>
-                        </div>
-                    </div>
-                )}
 
 
                 {/* 🔮 AI INSIGHT PANEL — PHASE C2 */}
