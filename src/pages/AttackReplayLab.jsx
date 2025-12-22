@@ -135,6 +135,48 @@ function parseAISections(text = "") {
     return sections;
 }
 
+/* ======================================================
+   🧠 PHASE C3 — AI INSIGHT NORMALIZER (ADD)
+   Guarantees structured SOC-style output
+====================================================== */
+function normalizeAIInsight(raw = "") {
+    const buckets = {
+        "Attacker Activity": [],
+        "Security Risk": [],
+        "DigitalFort Detection": [],
+        "MITRE / Techniques": [],
+        "Recommended Actions": [],
+    };
+
+    const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+
+    let current = null;
+
+    lines.forEach(line => {
+        const lower = line.toLowerCase();
+
+        if (lower.includes("attacker")) current = "Attacker Activity";
+        else if (lower.includes("risk")) current = "Security Risk";
+        else if (lower.includes("detect")) current = "DigitalFort Detection";
+        else if (lower.includes("mitre") || lower.includes("t1")) current = "MITRE / Techniques";
+        else if (lower.includes("recommend") || lower.includes("action")) current = "Recommended Actions";
+
+        if (current) {
+            buckets[current].push(
+                line.replace(/^[-*#]+\s*/, "")
+            );
+        }
+    });
+
+    // Fallback: dump everything into Attacker Activity
+    if (Object.values(buckets).every(v => v.length === 0)) {
+        buckets["Attacker Activity"].push(raw);
+    }
+
+    return buckets;
+}
+
+
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
     const [playing, setPlaying] = useState(false);
@@ -164,8 +206,9 @@ export default function AttackReplayLab() {
 
     const step = ATTACK_STEPS[currentStep];
     const aiSections = parseAISections(aiInsight);
+    const normalizedInsight = normalizeAIInsight(aiInsight);
 
-    // 🤖 Phase B2 — Fetch AI insight per replay step
+    // — Fetch AI insight per replay step
     useEffect(() => {
         let cancelled = false;
 
@@ -402,13 +445,9 @@ export default function AttackReplayLab() {
                                 Analyzing current attack phase…
                             </p>
                         ) : (
-                            <div className="space-y-3">
-                                {Object.keys(aiSections).length === 0 ? (
-                                    <div className="whitespace-pre-wrap leading-relaxed">
-                                        {aiInsight}
-                                    </div>
-                                ) : (
-                                    Object.entries(aiSections).map(([section, lines]) => (
+                            <div className="space-y-4">
+                                {Object.entries(normalizedInsight).map(([section, lines]) =>
+                                    lines.length ? (
                                         <div key={section}>
                                             <div className="text-cyan-400 font-semibold mb-1">
                                                 {section}
@@ -419,9 +458,10 @@ export default function AttackReplayLab() {
                                                 ))}
                                             </ul>
                                         </div>
-                                    ))
+                                    ) : null
                                 )}
                             </div>
+
 
                         )}
 
@@ -435,7 +475,7 @@ export default function AttackReplayLab() {
                     </div>
 
                     <div className="mt-3 text-[10px] text-gray-500">
-                        AI engine inactive (UI-only in Phase A/B1)
+                        Phase C3 — Normalized AI Intelligence
                     </div>
                 </div>
             </div>
