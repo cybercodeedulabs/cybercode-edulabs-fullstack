@@ -115,6 +115,61 @@ const GEO_MAP = {
     3: { startLat: 52.5, startLng: 13.4, endLat: 28.6, endLng: 77.2, color: "red" },
 };
 
+/* ======================================================
+   🧠 PHASE E — MITRE ATT&CK STATIC MAP (ADD)
+====================================================== */
+const MITRE_MAP = {
+    1: {
+        tactic: "Reconnaissance",
+        techniques: [
+            { id: "T1595", name: "Active Scanning" }
+        ]
+    },
+    2: {
+        tactic: "Initial Access",
+        techniques: [
+            { id: "T1078", name: "Valid Accounts" },
+            { id: "T1110", name: "Brute Force" }
+        ]
+    },
+    3: {
+        tactic: "Execution",
+        techniques: [
+            { id: "T1059", name: "Command and Scripting Interpreter" }
+        ]
+    },
+    4: {
+        tactic: "Lateral Movement",
+        techniques: [
+            { id: "T1021", name: "Remote Services" }
+        ]
+    },
+    5: {
+        tactic: "Detection",
+        techniques: [
+            { id: "Defensive", name: "Behavioral Correlation" }
+        ]
+    },
+    6: {
+        tactic: "Containment",
+        techniques: [
+            { id: "Response", name: "Network Isolation" }
+        ]
+    },
+    7: {
+        tactic: "Mitigation",
+        techniques: [
+            { id: "Response", name: "Threat Neutralization" }
+        ]
+    },
+    8: {
+        tactic: "Impact",
+        techniques: [
+            { id: "T1485", name: "Data Destruction (Prevented)" }
+        ]
+    }
+};
+
 /* --------------------------------------------------
    🧠 Phase C2 — AI Markdown Section Parser (ADD)
 -------------------------------------------------- */
@@ -267,6 +322,8 @@ export default function AttackReplayLab() {
     const step = ATTACK_STEPS[currentStep];
     // const aiSections = parseAISections(aiInsight);
     const normalizedInsight = normalizeAIInsight(aiInsight);
+    const mitre = MITRE_MAP[step.id];
+
     useEffect(() => {
         setThreat(computeThreatAssessment(step.id));
     }, [currentStep]);
@@ -454,6 +511,27 @@ export default function AttackReplayLab() {
                     </div>
                 </div>
             )}
+
+            {mitre && (
+                <div className="mb-8 p-4 bg-black border border-slate-700 rounded-xl max-w-7xl">
+                    <div className="text-xs text-gray-400 mb-1">
+                        MITRE ATT&CK Mapping
+                    </div>
+
+                    <div className="text-sm text-cyan-300 font-semibold">
+                        Tactic: {mitre.tactic}
+                    </div>
+
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-300 space-y-1">
+                        {mitre.techniques.map((t) => (
+                            <li key={t.id}>
+                                <span className="text-white font-mono">{t.id}</span> — {t.name}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
 
 
             {/* MAIN PANEL */}
