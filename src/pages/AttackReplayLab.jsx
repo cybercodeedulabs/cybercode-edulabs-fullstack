@@ -115,6 +115,26 @@ const GEO_MAP = {
     3: { startLat: 52.5, startLng: 13.4, endLat: 28.6, endLng: 77.2, color: "red" },
 };
 
+/* --------------------------------------------------
+   🧠 Phase C2 — AI Markdown Section Parser (ADD)
+-------------------------------------------------- */
+function parseAISections(text = "") {
+    const sections = {};
+    let current = null;
+
+    text.split("\n").forEach((line) => {
+        const h = line.match(/^[-*]?\s*(What|Why|Detection|Likely|Recommended)/i);
+        if (h) {
+            current = h[0].replace(/[:*-]/g, "").trim();
+            sections[current] = [];
+        } else if (current && line.trim()) {
+            sections[current].push(line.replace(/^[-*]\s*/, ""));
+        }
+    });
+
+    return sections;
+}
+
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
     const [playing, setPlaying] = useState(false);
@@ -143,6 +163,8 @@ export default function AttackReplayLab() {
     }, [playing, currentStep, speed]);
 
     const step = ATTACK_STEPS[currentStep];
+    const aiSections = parseAISections(aiInsight);
+
     // 🤖 Phase B2 — Fetch AI insight per replay step
     useEffect(() => {
         let cancelled = false;
@@ -360,7 +382,7 @@ export default function AttackReplayLab() {
                     <GlobeSimulator />
                 </div>
 
-                {/* 🔮 AI INSIGHT PANEL — PHASE B1 (ADD ONLY) */}
+                {/* 🔮 AI INSIGHT PANEL — PHASE C2 */}
                 <div className="lg:col-span-1 h-[620px] bg-slate-950 border border-slate-700 rounded-xl p-3 flex flex-col text-sm">
                     <h3 className="text-sm font-semibold text-cyan-300 mb-2">
                         🤖 DigitalFort AI Insight
@@ -380,9 +402,27 @@ export default function AttackReplayLab() {
                                 Analyzing current attack phase…
                             </p>
                         ) : (
-                            <div className="whitespace-pre-wrap leading-relaxed">
-                                {aiInsight}
+                            <div className="space-y-3">
+                                {Object.keys(aiSections).length === 0 ? (
+                                    <div className="whitespace-pre-wrap leading-relaxed">
+                                        {aiInsight}
+                                    </div>
+                                ) : (
+                                    Object.entries(aiSections).map(([section, lines]) => (
+                                        <div key={section}>
+                                            <div className="text-cyan-400 font-semibold mb-1">
+                                                {section}
+                                            </div>
+                                            <ul className="list-disc list-inside text-gray-300 space-y-1">
+                                                {lines.map((l, i) => (
+                                                    <li key={i}>{l}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))
+                                )}
                             </div>
+
                         )}
 
 
