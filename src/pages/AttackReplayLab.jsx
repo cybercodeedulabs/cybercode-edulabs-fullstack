@@ -475,6 +475,11 @@ export default function AttackReplayLab() {
             if (lastGeoRef.current) {
                 globe?.resolveAttack?.(lastGeoRef.current);
             }
+            // 🟢 After resolution, restore live globe state
+            setTimeout(() => {
+                globe?.restoreLive?.();
+            }, 1200);
+
 
             // ✅ Jump to Intelligence Stored step
             setCurrentStep(7);
@@ -751,6 +756,7 @@ export default function AttackReplayLab() {
                             lastGeoRef.current = null;
                             setSocDecision(null);
                             setIncidentStatus("active");
+                            window.__DIGITALFORT_GLOBE__?.restoreLive?.();
                         }
                         setPlaying(!playing);
                     }}
@@ -900,6 +906,7 @@ export default function AttackReplayLab() {
                                 setCurrentStep(index);
                                 setSocDecision(null);
                                 setIncidentStatus("active");
+                                window.__DIGITALFORT_GLOBE__?.restoreLive?.();
                             }}
                             className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
                                 ? "border-cyan-400 bg-slate-900"
