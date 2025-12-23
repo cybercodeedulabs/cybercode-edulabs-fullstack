@@ -369,6 +369,68 @@ function evaluateSocDecision({ stepId, severity, decision }) {
     };
 }
 
+/* ======================================================
+   🧠 PHASE I.1 — DECISION IMPACT MODEL
+   Counterfactual SOC outcome simulator
+====================================================== */
+const DECISION_IMPACT_MAP = {
+    monitor: {
+        label: "Monitor Closely",
+        impact: ({ stepId, severity }) => ({
+            replayFromStep: stepId,
+            severityDelta: +1.2,
+            outcome: "Attacker continued activity",
+            consequence: [
+                "Lateral movement likelihood increased",
+                "Detection delayed",
+                "Higher blast radius risk"
+            ]
+        })
+    },
+
+    isolate: {
+        label: "Isolate Assets",
+        impact: ({ stepId, severity }) => ({
+            replayFromStep: Math.max(stepId - 1, 0),
+            severityDelta: -2.0,
+            outcome: "Threat contained earlier",
+            consequence: [
+                "Lateral movement restricted",
+                "Partial attacker visibility lost",
+                "Faster stabilization"
+            ]
+        })
+    },
+
+    neutralize: {
+        label: "Block & Neutralize",
+        impact: ({ stepId, severity }) => ({
+            replayFromStep: Math.max(stepId - 2, 0),
+            severityDelta: -3.5,
+            outcome: "Attack chain broken",
+            consequence: [
+                "Persistence eliminated",
+                "Indicators captured early",
+                "Minimal infrastructure impact"
+            ]
+        })
+    },
+
+    escalate: {
+        label: "Escalate Incident",
+        impact: ({ stepId, severity }) => ({
+            replayFromStep: stepId,
+            severityDelta: -0.5,
+            outcome: "Human IR engaged",
+            consequence: [
+                "Response coordination improved",
+                "Manual containment delay possible",
+                "Operational overhead increased"
+            ]
+        })
+    }
+};
+
 
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
@@ -387,6 +449,12 @@ export default function AttackReplayLab() {
     const [decisionAudit, setDecisionAudit] = useState(null);
     const [decisionAiCritique, setDecisionAiCritique] = useState(null);
     const [decisionAiLoading, setDecisionAiLoading] = useState(false);
+    // 🧠 Phase I — Decision Impact Snapshot
+    const [decisionImpact, setDecisionImpact] = useState(null);
+    // 🧠 Phase I.2 — Impact Replay Mode
+    const [impactReplayMode, setImpactReplayMode] = useState(false);
+    const [impactReplayStep, setImpactReplayStep] = useState(null);
+
 
 
 
@@ -411,15 +479,23 @@ export default function AttackReplayLab() {
         return () => clearTimeout(timer);
     }, [playing, currentStep, speed]);
 
-    const step = ATTACK_STEPS[currentStep];
+    const effectiveStepIndex = impactReplayMode && impactReplayStep !== null
+        ? impactReplayStep
+        : currentStep;
+
+    const step = ATTACK_STEPS[effectiveStepIndex];
+
     // const aiSections = parseAISections(aiInsight);
     const normalizedInsight = normalizeAIInsight(aiInsight);
     const mitre = MITRE_MAP[step.id];
 
     useEffect(() => {
         if (incidentStatus !== "active") return;
+        if (impactReplayMode) return; // 🛑 prevent recompute during replay
+
         setThreat(computeThreatAssessment(step.id));
-    }, [currentStep, incidentStatus]);
+    }, [currentStep, incidentStatus, impactReplayMode]);
+
 
 
 
@@ -465,24 +541,29 @@ export default function AttackReplayLab() {
         return () => {
             cancelled = true;
         };
-    }, [currentStep]);
+    }, [effectiveStepIndex]);
 
 
     useEffect(() => {
         const globe = window.__DIGITALFORT_GLOBE__;
         if (!globe) return;
 
+        const stepIndex =
+            impactReplayMode && impactReplayStep !== null
+                ? impactReplayStep
+                : currentStep;
+
         globe.pauseLive?.();
 
-        if (currentStep === 0) lastGeoRef.current = null;
+        if (stepIndex === 0) lastGeoRef.current = null;
 
-        if (currentStep >= 4) globe.pause();
+        if (stepIndex >= 4) globe.pause();
         else globe.resume();
 
         globe.clearReplayAnnotations?.();
 
-        if (GEO_MAP[currentStep]) {
-            const geo = GEO_MAP[currentStep];
+        if (GEO_MAP[stepIndex]) {
+            const geo = GEO_MAP[stepIndex];
             lastGeoRef.current = geo;
 
             globe.highlightAttack(geo);
@@ -490,30 +571,31 @@ export default function AttackReplayLab() {
             globe.showReplayAnnotation?.({
                 lat: geo.endLat,
                 lng: geo.endLng,
-                label: step.title,
-                color: geo.color,
+                label: ATTACK_STEPS[stepIndex].title,
+                color: geo.color, // ✅ UNCHANGED
             });
         } else if (lastGeoRef.current) {
-            if (currentStep >= 6) {
+            if (stepIndex >= 6) {
                 globe.resolveAttack?.(lastGeoRef.current);
             }
 
             globe.showReplayAnnotation?.({
                 lat: lastGeoRef.current.endLat,
                 lng: lastGeoRef.current.endLng,
-                label: step.title,
-                color: step.color.includes("green")
+                label: ATTACK_STEPS[stepIndex].title,
+                color: ATTACK_STEPS[stepIndex].color.includes("green")
                     ? "green"
-                    : step.color.includes("cyan")
+                    : ATTACK_STEPS[stepIndex].color.includes("cyan")
                         ? "cyan"
-                        : "yellow",
+                        : "yellow", // ✅ UNCHANGED
             });
         }
 
         return () => {
             globe.resumeLive?.();
         };
-    }, [currentStep]);
+    }, [currentStep, impactReplayMode, impactReplayStep]);
+
 
     useEffect(() => {
         window.__DIGITALFORT_REPLAY__ = true;
@@ -522,10 +604,46 @@ export default function AttackReplayLab() {
         };
     }, []);
 
+    /* ======================================================
+   🧠 PHASE I.2 — Timeline Rewind Controller
+====================================================== */
+    useEffect(() => {
+        if (!impactReplayMode || impactReplayStep === null) return;
+
+        setCurrentStep(impactReplayStep);
+        setSocDecision(null);
+
+        const globe = window.__DIGITALFORT_GLOBE__;
+        globe?.restoreLive?.();
+
+    }, [impactReplayMode, impactReplayStep]);
+
+
     // 🛡️ Phase G — SOC Decision Engine (SIMULATED)
     function handleSocDecision(action) {
         const globe = window.__DIGITALFORT_GLOBE__;
+        let impactResult = null;
         setSocDecision(action);
+        // 🧠 Phase I — compute counterfactual impact
+        const impactEngine = DECISION_IMPACT_MAP[action];
+        if (impactEngine && threat) {
+            impactResult = impactEngine.impact({
+                stepId: step.id,
+                severity: threat.severity
+            });
+
+            setDecisionImpact({
+                decision: action,
+                atStep: step.id,
+                originalSeverity: threat.severity,
+                simulatedSeverity: Math.max(
+                    0,
+                    Number((threat.severity + impactResult.severityDelta).toFixed(1))
+                ),
+                ...impactResult
+            });
+        }
+
         // 🧠 Phase H — run deterministic audit
         const audit = evaluateSocDecision({
             stepId: step.id,
@@ -631,6 +749,22 @@ export default function AttackReplayLab() {
             setSpeed(0.5); // slow playback to show seriousness
             setPlaying(true);
         }
+        // 🧠 Phase I.2 — Activate impact replay (ONLY for learning paths)
+        if (
+            (action === "monitor" || action === "isolate") &&
+            impactResult
+        ) {
+            const replayStep = impactResult.replayFromStep;
+
+            setTimeout(() => {
+                setImpactReplayMode(true);
+                setImpactReplayStep(replayStep);
+                setPlaying(false);
+            }, 600);
+        }
+
+
+
     }
 
 
@@ -874,6 +1008,11 @@ export default function AttackReplayLab() {
             <div className="flex flex-wrap gap-4 mb-6">
                 <button
                     onClick={() => {
+                        if (impactReplayMode) {
+                            setImpactReplayMode(false);
+                            setImpactReplayStep(null);
+                            setDecisionImpact(null);
+                        }
                         if (!playing && currentStep === ATTACK_STEPS.length - 1) {
                             setCurrentStep(0);      // 🔁 reset to Step 1
                             lastGeoRef.current = null;
@@ -881,7 +1020,13 @@ export default function AttackReplayLab() {
                             setIncidentStatus("active");
                             window.__DIGITALFORT_GLOBE__?.restoreLive?.();
                         }
+                        if (impactReplayMode) {
+                            setImpactReplayMode(false);
+                            setImpactReplayStep(null);
+                            setDecisionImpact(null);
+                        }
                         setPlaying(!playing);
+
                     }}
 
                     className="px-6 py-2 bg-cyan-500 hover:bg-cyan-600 text-black rounded-lg font-semibold"
@@ -1001,10 +1146,10 @@ export default function AttackReplayLab() {
                     </div>
 
                     <div className={`text-lg font-semibold ${decisionAudit.rating === "correct"
-                            ? "text-green-400"
-                            : decisionAudit.rating === "risky"
-                                ? "text-yellow-400"
-                                : "text-red-400"
+                        ? "text-green-400"
+                        : decisionAudit.rating === "risky"
+                            ? "text-yellow-400"
+                            : "text-red-400"
                         }`}>
                         {decisionAudit.summary}
                     </div>
@@ -1053,7 +1198,43 @@ export default function AttackReplayLab() {
                 </div>
             )}
 
+            {impactReplayMode && decisionImpact && (
+                <div className="mb-6 p-5 border border-purple-600 bg-purple-950/40 rounded-xl max-w-7xl">
+                    <div className="text-xs text-purple-300 mb-1">
+                        Decision Impact Replay
+                    </div>
 
+                    <div className="text-lg font-semibold text-purple-200">
+                        Alternate Outcome Simulation
+                    </div>
+
+                    <p className="text-sm text-gray-300 mt-2">
+                        Based on choosing <span className="text-white font-semibold">
+                            {DECISION_IMPACT_MAP[decisionImpact.decision].label}
+                        </span>, this replay shows how the incident trajectory changes.
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-6 text-sm">
+                        <span>
+                            Original Severity:
+                            <span className="text-white ml-1">
+                                {decisionImpact.originalSeverity}/10
+                            </span>
+                        </span>
+
+                        <span>
+                            Simulated Severity:
+                            <span className="text-purple-300 ml-1">
+                                {decisionImpact.simulatedSeverity}/10
+                            </span>
+                        </span>
+
+                        <span className="text-gray-400">
+                            Outcome: {decisionImpact.outcome}
+                        </span>
+                    </div>
+                </div>
+            )}
 
             {/* MAIN PANEL */}
             <div className="grid lg:grid-cols-6 gap-10 max-w-7xl">
@@ -1064,6 +1245,7 @@ export default function AttackReplayLab() {
                         <div
                             key={s.id}
                             onClick={() => {
+                                if (impactReplayMode) return;
                                 setPlaying(false);
                                 setCurrentStep(index);
                                 setSocDecision(null);
