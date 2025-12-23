@@ -298,6 +298,9 @@ export default function AttackReplayLab() {
     const [aiInsight, setAiInsight] = useState("AI analysis pending…");
     const [aiLoading, setAiLoading] = useState(false);
     const [threat, setThreat] = useState(null);
+    // 🧠 Phase G — SOC decision tracking
+    const [socDecision, setSocDecision] = useState(null);
+
 
 
 
@@ -427,6 +430,55 @@ export default function AttackReplayLab() {
             window.__DIGITALFORT_REPLAY__ = false;
         };
     }, []);
+
+    // 🛡️ Phase G — SOC Decision Engine (SIMULATED)
+    function handleSocDecision(action) {
+        const globe = window.__DIGITALFORT_GLOBE__;
+        setSocDecision(action);
+
+        if (action === "monitor") {
+            // No intervention, continue replay
+            setPlaying(true);
+            return;
+        }
+
+        if (action === "isolate") {
+            setThreat({
+                severity: 4,
+                confidence: 92,
+                posture: "Contained",
+                verdict: "Assets isolated. Lateral movement blocked.",
+            });
+            globe?.resolveAttack?.();
+            setPlaying(false);
+            return;
+        }
+
+        if (action === "neutralize") {
+            setThreat({
+                severity: 2,
+                confidence: 98,
+                posture: "Monitoring",
+                verdict: "Threat neutralized and logged",
+            });
+            globe?.resolveAttack?.();
+            setCurrentStep(7); // jump to Mitigation / Intelligence Stored
+            setPlaying(true);
+            return;
+        }
+
+        if (action === "escalate") {
+            setThreat({
+                severity: 9.5,
+                confidence: 97,
+                posture: "Critical",
+                verdict: "Incident escalated to Incident Response team",
+            });
+            setSpeed(0.5); // slow playback to show seriousness
+            setPlaying(true);
+        }
+    }
+
 
     return (
         <div className="min-h-screen bg-black text-white p-10 relative">
@@ -724,7 +776,7 @@ export default function AttackReplayLab() {
             )}
 
             {/* 🛡️ DEFENSE DECISION PANEL — PHASE F */}
-            {threat && threat.severity >= 6 && (
+            {threat && threat.severity >= 6 && !socDecision && (
                 <div className="mb-6 p-5 bg-black border border-cyan-700 rounded-xl max-w-7xl">
 
                     <div className="text-xs text-gray-400 mb-1">
@@ -742,21 +794,37 @@ export default function AttackReplayLab() {
 
                     <div className="flex flex-wrap gap-4">
 
-                        <button className="px-5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-sm">
+                        <button
+                            onClick={() => handleSocDecision("monitor")}
+                            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-sm"
+                        >
                             Monitor Closely
                         </button>
 
-                        <button className="px-5 py-2 bg-yellow-600/80 hover:bg-yellow-600 text-black rounded-lg text-sm font-semibold">
+
+                        <button
+                            onClick={() => handleSocDecision("isolate")}
+                            className="px-5 py-2 bg-yellow-600/80 hover:bg-yellow-600 text-black rounded-lg text-sm font-semibold"
+                        >
                             Isolate Affected Assets
                         </button>
 
-                        <button className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">
+
+                        <button
+                            onClick={() => handleSocDecision("neutralize")}
+                            className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold"
+                        >
                             Block & Neutralize
                         </button>
 
-                        <button className="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-black rounded-lg text-sm font-semibold">
+
+                        <button
+                            onClick={() => handleSocDecision("escalate")}
+                            className="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-black rounded-lg text-sm font-semibold"
+                        >
                             Escalate to Incident Response
                         </button>
+
 
                     </div>
 
