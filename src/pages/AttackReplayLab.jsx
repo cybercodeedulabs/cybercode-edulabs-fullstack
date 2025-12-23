@@ -723,6 +723,52 @@ export default function AttackReplayLab() {
                 </div>
             )}
 
+            {/* 🛡️ DEFENSE DECISION PANEL — PHASE F */}
+            {threat && threat.severity >= 6 && (
+                <div className="mb-6 p-5 bg-black border border-cyan-700 rounded-xl max-w-7xl">
+
+                    <div className="text-xs text-gray-400 mb-1">
+                        SOC Decision Required
+                    </div>
+
+                    <div className="text-lg font-semibold text-cyan-300 mb-3">
+                        Choose a Defensive Action
+                    </div>
+
+                    <p className="text-sm text-gray-300 mb-4">
+                        Based on current threat severity and confidence, select how the SOC
+                        should respond. This mirrors real-world incident response decisions.
+                    </p>
+
+                    <div className="flex flex-wrap gap-4">
+
+                        <button className="px-5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-sm">
+                            Monitor Closely
+                        </button>
+
+                        <button className="px-5 py-2 bg-yellow-600/80 hover:bg-yellow-600 text-black rounded-lg text-sm font-semibold">
+                            Isolate Affected Assets
+                        </button>
+
+                        <button className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold">
+                            Block & Neutralize
+                        </button>
+
+                        <button className="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-black rounded-lg text-sm font-semibold">
+                            Escalate to Incident Response
+                        </button>
+
+                    </div>
+
+                    <div className="mt-3 text-[11px] text-gray-500">
+                        Decisions are simulated in demo mode. In future phases, these actions
+                        will trigger real infrastructure and AI workflows.
+                    </div>
+
+                </div>
+            )}
+
+
             {mitre && (
                 <div className="mb-8 p-4 bg-black border border-slate-700 rounded-xl max-w-7xl">
                     <div className="text-xs text-gray-400 mb-1">
