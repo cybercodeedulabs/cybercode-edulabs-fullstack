@@ -618,6 +618,14 @@ export default function AttackReplayLab() {
 
     }, [impactReplayMode, impactReplayStep]);
 
+    useEffect(() => {
+        if (incidentStatus === "active") {
+            setDecisionAudit(null);
+            setDecisionAiCritique(null);
+        }
+    }, [incidentStatus]);
+
+
 
     // 🛡️ Phase G — SOC Decision Engine (SIMULATED)
     function handleSocDecision(action) {
@@ -1008,6 +1016,10 @@ export default function AttackReplayLab() {
             <div className="flex flex-wrap gap-4 mb-6">
                 <button
                     onClick={() => {
+                        // 🔥 RESET SOC REVIEW STATES
+                        setDecisionAudit(null);
+                        setDecisionAiCritique(null);
+                        setDecisionAiLoading(false);
                         if (impactReplayMode) {
                             setImpactReplayMode(false);
                             setImpactReplayStep(null);
@@ -1250,6 +1262,10 @@ export default function AttackReplayLab() {
                                 setCurrentStep(index);
                                 setSocDecision(null);
                                 setIncidentStatus("active");
+                                // 🔥 CLEAR PREVIOUS SOC AUDIT
+                                setDecisionAudit(null);
+                                setDecisionAiCritique(null);
+                                setDecisionAiLoading(false);
                                 window.__DIGITALFORT_GLOBE__?.restoreLive?.();
                             }}
                             className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
