@@ -452,6 +452,217 @@ export default function AttackReplayLab() {
                 Replay real-world cyberattack scenarios step-by-step. Observe both
                 attacker behavior and DigitalFort’s defensive response.
             </p>
+            {/* PRODUCT OVERVIEW */}
+            <div className="max-w-6xl mb-12 space-y-10 text-gray-300 leading-relaxed">
+
+                <div>
+                    <h2 className="text-2xl font-bold text-cyan-300 mb-3">
+                        See Cyberattacks the Way a Real SOC Sees Them
+                    </h2>
+
+                    <p className="mb-3">
+                        <span className="text-cyan-300 font-semibold">Attack Replay Lab</span> is an
+                        interactive cyber-defense simulation that lets you replay real-world
+                        cyberattacks step-by-step, exactly as they unfold inside a modern
+                        Security Operations Center (SOC).
+                    </p>
+
+                    <p className="mb-3">
+                        Instead of reading theory, you observe attacker behavior, defensive
+                        detection, risk scoring, and response decisions in real time — all
+                        visualized across a global threat map.
+                    </p>
+
+                    <p>
+                        This is how cyber incidents are actually analyzed, detected, and
+                        neutralized in the real world.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🧠 What You Experience Inside the Lab
+                    </h3>
+
+                    <p className="mb-3">
+                        Attack Replay Lab walks you through the full cyber kill chain, from the
+                        first scan to final mitigation:
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li><span className="text-yellow-300">Reconnaissance</span> — attackers scan exposed systems</li>
+                        <li><span className="text-orange-300">Initial Access</span> — credentials or exploits are abused</li>
+                        <li><span className="text-red-400">Payload Delivery</span> — malicious code executes</li>
+                        <li><span className="text-red-500">Lateral Movement</span> — attackers spread internally</li>
+                        <li><span className="text-cyan-300">Detection</span> — DigitalFort identifies anomalies</li>
+                        <li><span className="text-cyan-400">Isolation & Mitigation</span> — threats are contained</li>
+                        <li><span className="text-green-400">Intelligence Stored</span> — knowledge retained for the future</li>
+                    </ul>
+
+                    <p className="mt-4">
+                        Each phase is explained from both perspectives:
+                    </p>
+
+                    <ul className="list-disc list-inside ml-2 mt-2">
+                        <li>🟥 Attacker actions</li>
+                        <li>🟦 Defender (SOC) response</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        You don’t just see what happened — you understand <em>why</em> it happened.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🌍 Global Threat Visualization
+                    </h3>
+
+                    <p className="mb-3">
+                        Every attack is visualized on a live 3D cyber globe, showing:
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Attack origin and target locations</li>
+                        <li>Active and resolved attack paths</li>
+                        <li>Realistic global attack flows</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        This gives learners and professionals a true sense of scale, showing how
+                        cyber threats operate across borders in real time.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🧩 AI-Driven SOC Intelligence
+                    </h3>
+
+                    <p className="mb-3">
+                        At every step, DigitalFort’s AI generates SOC-style intelligence reports,
+                        including:
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Attacker Activity Analysis</li>
+                        <li>Security Risk Assessment</li>
+                        <li>Detection Signals</li>
+                        <li>MITRE ATT&CK Technique Mapping</li>
+                        <li>Recommended Defensive Actions</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        This mirrors how real SOC analysts reason during live incidents.
+                        <br />
+                        <span className="text-cyan-300 font-semibold">
+                            No generic explanations — only operational security intelligence.
+                        </span>
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🛡️ SOC Verdict & Risk Scoring
+                    </h3>
+
+                    <p className="mb-3">
+                        Each replay step produces a DigitalFort SOC Verdict, showing:
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Threat Severity (0–10)</li>
+                        <li>Confidence Level</li>
+                        <li>Security Posture (Monitoring, Elevated, Critical, Contained)</li>
+                        <li>Final Incident Verdict</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        Users learn how risk evolves, when alerts escalate, and when an incident
+                        is officially closed.
+                        <br />
+                        <span className="text-cyan-300 font-semibold">
+                            This is exactly how enterprise SOCs operate.
+                        </span>
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🎯 Who Is This Lab For?
+                    </h3>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Students & Learners — understand real cyberattacks, not just theory</li>
+                        <li>Blue Team & SOC Analysts — sharpen detection and response thinking</li>
+                        <li>Cloud & Security Engineers — see how infrastructure attacks unfold</li>
+                        <li>Decision Makers — understand incident impact and response flow</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        Whether you’re learning cybersecurity or operating it — this lab speaks
+                        your language.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🚀 Why Attack Replay Lab Is Different
+                    </h3>
+
+                    <p className="mb-2">Most platforms teach tools.</p>
+                    <p className="mb-3 text-cyan-300 font-semibold">
+                        Attack Replay Lab teaches thinking like a SOC.
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Realistic attack flow</li>
+                        <li>Defender-first perspective</li>
+                        <li>Intelligence-driven analysis</li>
+                        <li>Visual + narrative learning</li>
+                        <li>Built for real-world readiness</li>
+                    </ul>
+
+                    <p className="mt-3 font-semibold">
+                        This is not a demo.
+                        <br />
+                        <span className="text-cyan-300">
+                            This is operational cyber defense training.
+                        </span>
+                    </p>
+                </div>
+
+                <div>
+                    <h3 className="text-xl font-semibold text-cyan-300 mb-3">
+                        🔮 What’s Coming Next
+                    </h3>
+
+                    <p className="mb-3">
+                        Attack Replay Lab is built to evolve. Upcoming phases will integrate:
+                    </p>
+
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Real infrastructure telemetry</li>
+                        <li>Cloud & OpenStack-based environments</li>
+                        <li>Persistent threat intelligence storage</li>
+                        <li>Advanced ML-based risk scoring</li>
+                    </ul>
+
+                    <p className="mt-3">
+                        What you see today is the foundation of a full SOC intelligence platform.
+                    </p>
+                </div>
+
+                <div className="pt-6 border-t border-slate-700 text-lg font-semibold text-cyan-300">
+                    🔐 Learn. Observe. Think Like a Defender.
+                    <p className="text-gray-300 text-base mt-2 font-normal">
+                        Attack Replay Lab brings the reality of cyber defense into your hands —
+                        one attack, one decision, one lesson at a time.
+                    </p>
+                </div>
+
+            </div>
+
 
             {/* CONTROLS BAR */}
             <div className="flex flex-wrap gap-4 mb-6">
