@@ -136,7 +136,12 @@ export async function handler(event) {
       model = chatModel;
       maxTokens = 300;
       temperature = 0.2;
+    } else if (mode === "soc_decision_review") {
+      model = roadmapModel;
+      maxTokens = 220;
+      temperature = 0.2;
     }
+
 
 
 
@@ -233,8 +238,26 @@ ATTACK CONTEXT:
 ${JSON.stringify(attackContext || {})}
   `.trim()
 
-            : mode === "project"
+            : mode === "soc_decision_review"
               ? `
+You are a senior SOC analyst reviewing an incident response decision.
+
+Evaluate:
+- Whether the decision aligns with real SOC playbooks
+- What risk it reduced or introduced
+- What could be improved
+
+Be professional, concise, and realistic.
+Do not repeat the audit.
+Under 120 words.
+
+INPUT:
+${JSON.stringify(attackContext || {})}
+`.trim()
+
+
+              : mode === "project"
+                ? `
 You are Cybercode EduLabs Project Generator.
 
 Return ONLY VALID JSON.
@@ -268,7 +291,7 @@ ${JSON.stringify(projectSpec || {})}
 USER_PROFILE:
 ${JSON.stringify(userStats)}
         `.trim()
-              : `
+                : `
 You are Cybercode EduLabs AI Advisor.
 Reply in clean markdown.
 Be crisp unless deep detail is asked.

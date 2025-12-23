@@ -289,6 +289,86 @@ function computeThreatAssessment(stepId) {
     };
 }
 
+/* ======================================================
+   🧠 PHASE H1 — SOC DECISION AUDIT ENGINE
+   Deterministic rule-based evaluation
+====================================================== */
+function evaluateSocDecision({ stepId, severity, decision }) {
+    // Early-stage actions
+    if (stepId <= 2) {
+        if (decision === "neutralize" || decision === "isolate") {
+            return {
+                rating: "incorrect",
+                summary: "Premature response",
+                reasoning: [
+                    "Threat confidence is too low at this stage",
+                    "SOC should observe before disrupting assets"
+                ]
+            };
+        }
+        return {
+            rating: "correct",
+            summary: "Appropriate early monitoring",
+            reasoning: [
+                "Reconnaissance requires validation",
+                "Monitoring avoids false positives"
+            ]
+        };
+    }
+
+    // Active intrusion
+    if (stepId >= 3 && stepId <= 5) {
+        if (decision === "monitor") {
+            return {
+                rating: "risky",
+                summary: "Delayed response",
+                reasoning: [
+                    "Active compromise detected",
+                    "Delaying response increases blast radius"
+                ]
+            };
+        }
+        if (decision === "isolate") {
+            return {
+                rating: "correct",
+                summary: "Containment executed correctly",
+                reasoning: [
+                    "Isolation limits lateral movement",
+                    "SOC containment playbooks followed"
+                ]
+            };
+        }
+        if (decision === "neutralize") {
+            return {
+                rating: "correct",
+                summary: "Threat neutralized at correct stage",
+                reasoning: [
+                    "High confidence intrusion confirmed",
+                    "Neutralization prevents persistence"
+                ]
+            };
+        }
+    }
+
+    // Post-containment / mitigation
+    if (stepId >= 6) {
+        return {
+            rating: "correct",
+            summary: "Incident closure phase",
+            reasoning: [
+                "Threat already contained",
+                "Focus shifts to recovery and intelligence"
+            ]
+        };
+    }
+
+    return {
+        rating: "risky",
+        summary: "Unclear decision outcome",
+        reasoning: ["Decision did not match SOC playbooks"]
+    };
+}
+
 
 export default function AttackReplayLab() {
     const [currentStep, setCurrentStep] = useState(0);
@@ -303,6 +383,11 @@ export default function AttackReplayLab() {
     // 🧠 Phase G — Incident lifecycle
     const [incidentStatus, setIncidentStatus] = useState("active");
     // active | resolved
+    // 🧠 Phase H — Decision Audit & AI Critique
+    const [decisionAudit, setDecisionAudit] = useState(null);
+    const [decisionAiCritique, setDecisionAiCritique] = useState(null);
+    const [decisionAiLoading, setDecisionAiLoading] = useState(false);
+
 
 
 
@@ -441,6 +526,14 @@ export default function AttackReplayLab() {
     function handleSocDecision(action) {
         const globe = window.__DIGITALFORT_GLOBE__;
         setSocDecision(action);
+        // 🧠 Phase H — run deterministic audit
+        const audit = evaluateSocDecision({
+            stepId: step.id,
+            severity: threat?.severity || 0,
+            decision: action
+        });
+        setDecisionAudit(audit);
+        setDecisionAiCritique(null);
 
         if (action === "monitor") {
             // No intervention, continue replay
@@ -493,6 +586,36 @@ export default function AttackReplayLab() {
             setTimeout(() => {
                 setSocDecision(null);
             }, 2000);
+
+            // 🤖 Phase H — AI SOC critique (learning-only)
+            (async () => {
+                try {
+                    setDecisionAiLoading(true);
+
+                    const res = await fetch("/.netlify/functions/ask-ai", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            mode: "soc_decision_review",
+                            attackContext: {
+                                stepId: step.id,
+                                stepTitle: step.title,
+                                severity: threat?.severity,
+                                decision: action,
+                                auditResult: audit
+                            }
+                        })
+                    });
+
+                    const data = await res.json();
+                    const content = data?.choices?.[0]?.message?.content;
+                    setDecisionAiCritique(content || "AI critique unavailable.");
+                } catch {
+                    setDecisionAiCritique("AI critique unavailable.");
+                } finally {
+                    setDecisionAiLoading(false);
+                }
+            })();
 
             return;
         }
@@ -870,6 +993,45 @@ export default function AttackReplayLab() {
                 </div>
             )}
 
+            {/* 🧠 PHASE H — SOC DECISION AUDIT */}
+            {decisionAudit && (
+                <div className="mb-6 p-5 bg-slate-950 border border-slate-600 rounded-xl max-w-7xl">
+                    <div className="text-xs text-gray-400 mb-1">
+                        SOC Decision Audit
+                    </div>
+
+                    <div className={`text-lg font-semibold ${decisionAudit.rating === "correct"
+                            ? "text-green-400"
+                            : decisionAudit.rating === "risky"
+                                ? "text-yellow-400"
+                                : "text-red-400"
+                        }`}>
+                        {decisionAudit.summary}
+                    </div>
+
+                    <ul className="mt-2 list-disc list-inside text-sm text-gray-300 space-y-1">
+                        {decisionAudit.reasoning.map((r, i) => (
+                            <li key={i}>{r}</li>
+                        ))}
+                    </ul>
+
+                    <div className="mt-4 text-xs text-gray-400">
+                        AI SOC Critique
+                    </div>
+
+                    {decisionAiLoading ? (
+                        <p className="text-sm text-gray-500 italic mt-1">
+                            AI reviewing SOC decision…
+                        </p>
+                    ) : (
+                        decisionAiCritique && (
+                            <p className="text-sm text-gray-300 mt-1 whitespace-pre-line">
+                                {decisionAiCritique}
+                            </p>
+                        )
+                    )}
+                </div>
+            )}
 
             {mitre && (
                 <div className="mb-8 p-4 bg-black border border-slate-700 rounded-xl max-w-7xl">
