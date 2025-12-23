@@ -300,6 +300,10 @@ export default function AttackReplayLab() {
     const [threat, setThreat] = useState(null);
     // 🧠 Phase G — SOC decision tracking
     const [socDecision, setSocDecision] = useState(null);
+    // 🧠 Phase G — Incident lifecycle
+    const [incidentStatus, setIncidentStatus] = useState("active");
+    // active | resolved
+
 
 
 
@@ -328,8 +332,10 @@ export default function AttackReplayLab() {
     const mitre = MITRE_MAP[step.id];
 
     useEffect(() => {
+        if (incidentStatus !== "active") return;
         setThreat(computeThreatAssessment(step.id));
-    }, [currentStep]);
+    }, [currentStep, incidentStatus]);
+
 
 
     // — Fetch AI insight per replay step
@@ -461,11 +467,31 @@ export default function AttackReplayLab() {
                 posture: "Monitoring",
                 verdict: "Threat neutralized and logged",
             });
-            globe?.resolveAttack?.();
-            setCurrentStep(7); // jump to Mitigation / Intelligence Stored
-            setPlaying(true);
+            // 🔒 Lock incident — stop further scoring
+            setIncidentStatus("resolved");
+
+
+            // ✅ Resolve the last active attack arc visually
+            if (lastGeoRef.current) {
+                globe?.resolveAttack?.(lastGeoRef.current);
+            }
+
+            // ✅ Jump to Intelligence Stored step
+            setCurrentStep(7);
+
+            // ✅ Resume replay AFTER state settles
+            setTimeout(() => {
+                setPlaying(true);
+            }, 400);
+
+            // ✅ Allow new SOC decision in next incident
+            setTimeout(() => {
+                setSocDecision(null);
+            }, 2000);
+
             return;
         }
+
 
         if (action === "escalate") {
             setThreat({
@@ -723,6 +749,8 @@ export default function AttackReplayLab() {
                         if (!playing && currentStep === ATTACK_STEPS.length - 1) {
                             setCurrentStep(0);      // 🔁 reset to Step 1
                             lastGeoRef.current = null;
+                            setSocDecision(null);
+                            setIncidentStatus("active");
                         }
                         setPlaying(!playing);
                     }}
@@ -870,6 +898,8 @@ export default function AttackReplayLab() {
                             onClick={() => {
                                 setPlaying(false);
                                 setCurrentStep(index);
+                                setSocDecision(null);
+                                setIncidentStatus("active");
                             }}
                             className={`p-4 rounded-lg border cursor-pointer transition ${index === currentStep
                                 ? "border-cyan-400 bg-slate-900"
