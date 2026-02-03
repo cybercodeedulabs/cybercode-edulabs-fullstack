@@ -1151,7 +1151,6 @@ export const UserProvider = ({ children }) => {
   // }, [token]); // ensure this runs when token changes during runtime
 
 useEffect(() => {
-  if (hydrated) return;
   const init = async () => {
     if (!token) {
       setLoading(false);
@@ -1180,7 +1179,7 @@ useEffect(() => {
   };
 
   init();
-}, [token, hydrated, API, authHeaders, loadUserProfile, applyToken]);
+}, [token, API, authHeaders, loadUserProfile, applyToken]);
 
 
 
