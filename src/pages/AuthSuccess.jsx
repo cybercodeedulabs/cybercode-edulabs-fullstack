@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 
 export default function AuthSuccess() {
   const navigate = useNavigate();
-  const { applyToken } = useUser();
+  const { user, hydrated, applyToken } = useUser();
 
+  // STEP 1: Save token using applyToken()
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
@@ -15,15 +16,17 @@ export default function AuthSuccess() {
       return;
     }
 
-    // 1️⃣ Save token (state + localStorage)
-    applyToken(token);
+    applyToken(token); // ✅ This updates state + localStorage correctly
+  }, []);
 
-    // 2️⃣ Clean URL (remove token from address bar)
-    window.history.replaceState({}, document.title, "/dashboard");
+  // STEP 2: Redirect only AFTER hydration + user load
+  useEffect(() => {
+    if (!hydrated) return;
 
-    // 3️⃣ Redirect immediately
-    navigate("/dashboard", { replace: true });
-  }, [applyToken, navigate]);
+    if (user && user.uid) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [hydrated, user]);
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center text-gray-500 text-lg">

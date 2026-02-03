@@ -1151,17 +1151,11 @@ export const UserProvider = ({ children }) => {
   // }, [token]); // ensure this runs when token changes during runtime
 
 useEffect(() => {
-  // 🚫 Prevent duplicate hydration
   if (hydrated) return;
-
-  let cancelled = false;
-
   const init = async () => {
     if (!token) {
-      if (!cancelled) {
-        setLoading(false);
-        setHydrated(true);
-      }
+      setLoading(false);
+      setHydrated(true);
       return;
     }
 
@@ -1173,31 +1167,20 @@ useEffect(() => {
       if (!meRes.ok) throw new Error("auth/me failed");
 
       const me = await meRes.json();
-
-      if (!cancelled && me?.user?.uid) {
+      if (me?.user?.uid) {
         await loadUserProfile(me.user.uid, token);
       }
     } catch (err) {
       console.warn("Hydration failed:", err);
-      if (!cancelled) {
-        applyToken(null);
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-        setHydrated(true);
-      }
+      applyToken(null);
     }
+
+    setLoading(false);
+    setHydrated(true);
   };
 
   init();
-
-  // 🧹 Cleanup to avoid double execution / race conditions
-  return () => {
-    cancelled = true;
-  };
 }, [token, hydrated, API, authHeaders, loadUserProfile, applyToken]);
-
 
 
 
