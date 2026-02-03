@@ -115,27 +115,27 @@ const normalizeGoals = (raw) => {
  * Extracts payload from a JWT (base64url decode) and returns parsed object or null.
  * Used only to obtain uid for client-side hydration when token exists.
  */
-// const decodeJwt = (token) => {
-//   try {
-//     if (!token || typeof token !== "string") return null;
-//     const parts = token.split(".");
-//     if (parts.length < 2) return null;
-//     const base64Url = parts[1];
-//     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-//     // atob expects padded base64 length; add padding if necessary
-//     const padded = base64 + "==".slice((base64.length + 3) % 4);
-//     const jsonPayload = decodeURIComponent(
-//       atob(padded)
-//         .split("")
-//         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-//         .join("")
-//     );
-//     return JSON.parse(jsonPayload);
-//   } catch (err) {
-//     // silent fail
-//     return null;
-//   }
-// };
+const decodeJwt = (token) => {
+  try {
+    if (!token || typeof token !== "string") return null;
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    // atob expects padded base64 length; add padding if necessary
+    const padded = base64 + "==".slice((base64.length + 3) % 4);
+    const jsonPayload = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    // silent fail
+    return null;
+  }
+};
 
 // ---------- Provider ----------
 export const UserProvider = ({ children }) => {
@@ -376,85 +376,55 @@ export const UserProvider = ({ children }) => {
   // );
 
   // ---------- ENROLL ----------
-  // const enrollInCourse = useCallback(
-  //   async (courseSlug) => {
-  //     // optimistic local update even if server call fails
-  //     if (!courseSlug) return false;
-  //     if (!token || !user?.uid) {
-  //       // cannot call server; do local optimistic
-  //       setEnrolledCourses((prev) => {
-  //         if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
-  //         return [...(Array.isArray(prev) ? prev : []), courseSlug];
-  //       });
-  //       return true;
-  //     }
-
-  //     try {
-  //       const res = await fetch(`${API}/user/enroll`, {
-  //         method: "POST",
-  //         headers: authHeaders(),
-  //         body: JSON.stringify({ courseSlug }),
-  //       });
-
-  //       if (!res.ok) {
-  //         throw new Error("Enroll failed");
-  //       }
-
-  //       // reflect on UI
-  //       setEnrolledCourses((prev) => {
-  //         if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
-  //         return [...(Array.isArray(prev) ? prev : []), courseSlug];
-  //       });
-
-  //       // try refresh profile
-  //       if (typeof loadUserProfile === "function" && user?.uid) {
-  //         await loadUserProfile(user.uid).catch(() => { });
-  //       }
-
-  //       return true;
-  //     } catch (err) {
-  //       console.error("enrollInCourse error:", err);
-  //       // fallback to local update
-  //       setEnrolledCourses((prev) =>
-  //         Array.isArray(prev) && prev.includes(courseSlug)
-  //           ? prev
-  //           : [...(Array.isArray(prev) ? prev : []), courseSlug]
-  //       );
-  //       return false;
-  //     }
-  //   },
-  //   [API, token, user, loadUserProfile, authHeaders]
-  // );
-
   const enrollInCourse = useCallback(
-  async (courseSlug) => {
-    if (!courseSlug) return false;
-    if (!token || !user?.uid) return false;
-
-    try {
-      const res = await fetch(`${API}/user/enroll`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ courseSlug }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Enroll failed: ${res.status} ${text}`);
+    async (courseSlug) => {
+      // optimistic local update even if server call fails
+      if (!courseSlug) return false;
+      if (!token || !user?.uid) {
+        // cannot call server; do local optimistic
+        setEnrolledCourses((prev) => {
+          if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
+          return [...(Array.isArray(prev) ? prev : []), courseSlug];
+        });
+        return true;
       }
 
-      // 🔁 Always re-fetch from backend (single source of truth)
-      await loadUserProfile(user.uid);
+      try {
+        const res = await fetch(`${API}/user/enroll`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ courseSlug }),
+        });
 
-      return true;
-    } catch (err) {
-      console.error("enrollInCourse failed (no optimistic fallback):", err);
-      return false;
-    }
-  },
-  [API, token, user, loadUserProfile, authHeaders]
-);
+        if (!res.ok) {
+          throw new Error("Enroll failed");
+        }
 
+        // reflect on UI
+        setEnrolledCourses((prev) => {
+          if (Array.isArray(prev) && prev.includes(courseSlug)) return prev;
+          return [...(Array.isArray(prev) ? prev : []), courseSlug];
+        });
+
+        // try refresh profile
+        if (typeof loadUserProfile === "function" && user?.uid) {
+          await loadUserProfile(user.uid).catch(() => { });
+        }
+
+        return true;
+      } catch (err) {
+        console.error("enrollInCourse error:", err);
+        // fallback to local update
+        setEnrolledCourses((prev) =>
+          Array.isArray(prev) && prev.includes(courseSlug)
+            ? prev
+            : [...(Array.isArray(prev) ? prev : []), courseSlug]
+        );
+        return false;
+      }
+    },
+    [API, token, user, loadUserProfile, authHeaders]
+  );
 
   // ---------- PROGRESS: completeLesson (server) ----------
   const completeLesson = useCallback(
@@ -1100,88 +1070,55 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   // ---------- Hydration ----------
-  // useEffect(() => {
-  //   const init = async () => {
-  //     // if token present, try load user profile
-  //     if (token) {
-  //       try {
-  //         // attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
-  //         const cachedUser = safeGet("cybercode_user_cache", null);
-  //         if (cachedUser?.uid) {
-  //           setUser(cachedUser);
-  //           await loadUserProfile(cachedUser.uid, token);
-  //         } else {
-  //           // if no cached user, attempt to extract uid from JWT and load profile
-  //           try {
-  //             const payload = decodeJwt(token);
+  useEffect(() => {
+    const init = async () => {
+      // if token present, try load user profile
+      if (token) {
+        try {
+          // attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
+          const cachedUser = safeGet("cybercode_user_cache", null);
+          if (cachedUser?.uid) {
+            setUser(cachedUser);
+            await loadUserProfile(cachedUser.uid, token);
+          } else {
+            // if no cached user, attempt to extract uid from JWT and load profile
+            try {
+              const payload = decodeJwt(token);
 
-  //             if (payload && payload.uid) {
-  //               await loadUserProfile(payload.uid, token);
-  //             } else {
-  //               console.warn("Token decoded but UID missing — using /auth/me fallback");
-  //               const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
-  //               const me = await meRes.json().catch(() => null);
-  //               if (me?.user?.uid) {
-  //                 await loadUserProfile(me.user.uid, token);
-  //               }
-  //             }
-  //           } catch (err) {
-  //             console.warn("Token decode failed, using /auth/me fallback", err);
+              if (payload && payload.uid) {
+                await loadUserProfile(payload.uid, token);
+              } else {
+                console.warn("Token decoded but UID missing — using /auth/me fallback");
+                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
+                const me = await meRes.json().catch(() => null);
+                if (me?.user?.uid) {
+                  await loadUserProfile(me.user.uid, token);
+                }
+              }
+            } catch (err) {
+              console.warn("Token decode failed, using /auth/me fallback", err);
 
-  //             try {
-  //               const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
-  //               const me = await meRes.json().catch(() => null);
-  //               if (me?.user?.uid) {
-  //                 await loadUserProfile(me.user.uid, token);
-  //               }
-  //             } catch { }
-  //           }
+              try {
+                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
+                const me = await meRes.json().catch(() => null);
+                if (me?.user?.uid) {
+                  await loadUserProfile(me.user.uid, token);
+                }
+              } catch { }
+            }
 
-  //         }
-  //       } catch (err) {
-  //         console.warn("hydration loadUserProfile failed", err);
-  //       }
-  //     }
-  //     setLoading(false);
-  //     setHydrated(true);
-  //   };
-
-  //   init();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [token]); // ensure this runs when token changes during runtime
-
-useEffect(() => {
-  const init = async () => {
-    if (!token) {
+          }
+        } catch (err) {
+          console.warn("hydration loadUserProfile failed", err);
+        }
+      }
       setLoading(false);
       setHydrated(true);
-      return;
-    }
+    };
 
-    try {
-      const meRes = await fetch(`${API}/auth/me`, {
-        headers: authHeaders({}, token),
-      });
-
-      if (!meRes.ok) throw new Error("auth/me failed");
-
-      const me = await meRes.json();
-      if (me?.user?.uid) {
-        await loadUserProfile(me.user.uid, token);
-      }
-    } catch (err) {
-      console.warn("Hydration failed:", err);
-      applyToken(null);
-    }
-
-    setLoading(false);
-    setHydrated(true);
-  };
-
-  init();
-}, [token, API, authHeaders, loadUserProfile, applyToken]);
-
-
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]); // ensure this runs when token changes during runtime
 
   // Save minimal user cache whenever user updates (speed up hydration next time)
   useEffect(() => {
