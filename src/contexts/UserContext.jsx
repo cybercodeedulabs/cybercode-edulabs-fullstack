@@ -1069,56 +1069,52 @@ export const UserProvider = ({ children }) => {
     } catch { }
   }, []);
 
-  // ---------- Hydration ----------
-  useEffect(() => {
-    const init = async () => {
-      // if token present, try load user profile
-      if (token) {
-        try {
-          // attempt to reuse cached user if exist in localStorage to avoid extra request (compat)
-          const cachedUser = safeGet("cybercode_user_cache", null);
-          if (cachedUser?.uid) {
-            setUser(cachedUser);
-            await loadUserProfile(cachedUser.uid, token);
-          } else {
-            // if no cached user, attempt to extract uid from JWT and load profile
-            try {
-              const payload = decodeJwt(token);
+// ---------- Hydration ----------
+useEffect(() => {
+  const init = async () => {
+    // If token exists, hydrate user from backend
+    if (token) {
+      try {
+        // Try cached user first (fast path)
+        const cachedUser = safeGet("cybercode_user_cache", null);
 
-              if (payload && payload.uid) {
-                await loadUserProfile(payload.uid, token);
+        if (cachedUser?.uid) {
+          setUser(cachedUser);
+          await loadUserProfile(cachedUser.uid, token);
+        } else {
+          // Authoritative path: always resolve UID from backend
+          try {
+            const meRes = await fetch(`${API}/auth/me`, {
+              headers: authHeaders({}, token),
+            });
+
+            if (!meRes.ok) {
+              console.warn("/auth/me failed during hydration", meRes.status);
+            } else {
+              const me = await meRes.json().catch(() => null);
+              if (me?.user?.uid) {
+                await loadUserProfile(me.user.uid, token);
               } else {
-                console.warn("Token decoded but UID missing — using /auth/me fallback");
-                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
-                const me = await meRes.json().catch(() => null);
-                if (me?.user?.uid) {
-                  await loadUserProfile(me.user.uid, token);
-                }
+                console.warn("/auth/me did not return uid");
               }
-            } catch (err) {
-              console.warn("Token decode failed, using /auth/me fallback", err);
-
-              try {
-                const meRes = await fetch(`${API}/auth/me`, { headers: authHeaders({}, token) });
-                const me = await meRes.json().catch(() => null);
-                if (me?.user?.uid) {
-                  await loadUserProfile(me.user.uid, token);
-                }
-              } catch { }
             }
-
+          } catch (err) {
+            console.warn("hydration /auth/me error", err);
           }
-        } catch (err) {
-          console.warn("hydration loadUserProfile failed", err);
         }
+      } catch (err) {
+        console.warn("hydration loadUserProfile failed", err);
       }
-      setLoading(false);
-      setHydrated(true);
-    };
+    }
 
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]); // ensure this runs when token changes during runtime
+    setLoading(false);
+    setHydrated(true);
+  };
+
+  init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [token]);
+
 
   // Save minimal user cache whenever user updates (speed up hydration next time)
   useEffect(() => {
