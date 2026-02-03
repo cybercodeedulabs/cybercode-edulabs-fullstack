@@ -1,4 +1,4 @@
 // src/config/api.js
-const API_URL = "https://cybercode-backend.onrender.com"; // Render backend URL
+const API_URL = "https://api.cybercodeedulabs.com";
 
 export default API_URL;
