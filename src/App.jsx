@@ -68,6 +68,7 @@ import DigitalFort from "./pages/DigitalFort";
 import DigitalFortLabs from "./pages/DigitalFortLabs";
 import GlobalThreatSimulatorLab from "./pages/GlobalThreatSimulatorLab";
 import AttackReplayLab from "./pages/AttackReplayLab";
+import WebTerminal from "./pages/WebTerminal";
 
 
 
@@ -340,6 +341,7 @@ function AppInner() {
 
               {/* CLOUD */}
               <Route path="/cloud" element={<CybercodeCloud />} />
+              <Route path="/cloud/terminal" element={<WebTerminal />} />
 
               <Route
                 path="/cloud/dashboard"

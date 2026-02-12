@@ -468,7 +468,7 @@ export default function CloudDashboard() {
                           </div>
                           <div className="flex flex-col gap-2">
                             <Button size="sm" asChild>
-                              <a href={ins.url || "#"} target="_blank" rel="noreferrer">Open</a>
+                              <a href={`/cloud/terminal?container=${ins.name}`} target="_blank" rel="noreferrer">Open</a>
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => handleTerminate(ins.id)}>Terminate</Button>
                           </div>
