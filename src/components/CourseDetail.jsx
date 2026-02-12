@@ -5,7 +5,9 @@ import lessonsData from "../data/lessonsData";
 import { useUser } from "../contexts/UserContext";
 import CertificatePreview from "./CertificatePreview";
 import { quickCoursePersonaDelta } from "../utils/personaEngine";
-import API_URL from "../config/api";
+// import API_URL from "../config/api";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 /**
  * CourseDetail.jsx

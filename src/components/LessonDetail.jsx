@@ -14,10 +14,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { useUser } from "../contexts/UserContext";
-import API_URL from "../config/api";
+// import API_URL from "../config/api";
 import ReactComponentSimulator from "../components/simulations/global/ReactComponentSimulator";
 import { quickLessonPersonaDelta } from "../utils/personaEngine";
 import courseData from "../data/courseData";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function LessonDetail() {
   const { courseSlug, lessonSlug } = useParams();
