@@ -467,9 +467,19 @@ export default function CloudDashboard() {
                             <div className="text-xs text-slate-400 mt-2">{ins.cpu} vCPU • {ins.ram} GB RAM • {ins.disk} GB</div>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Button size="sm" asChild>
+                            {/* <Button size="sm" asChild>
                               <a href={`/cloud/terminal?container=${ins.name}`} target="_blank" rel="noreferrer">Open</a>
+                            </Button> */}
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                const url = `${window.location.origin}/cloud/terminal?container=${encodeURIComponent(ins.name)}`;
+                                window.open(url, "_blank");
+                              }}
+                            >
+                              Open
                             </Button>
+
                             <Button size="sm" variant="ghost" onClick={() => handleTerminate(ins.id)}>Terminate</Button>
                           </div>
                         </div>
