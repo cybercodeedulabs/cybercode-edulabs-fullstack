@@ -404,10 +404,12 @@ export default function CloudDashboard() {
                     <label className="text-xs text-slate-300">Image</label>
                     <select value={launchImage} onChange={(e) => setLaunchImage(e.target.value)} className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm">
                       <option value="ubuntu-22.04">Ubuntu 22.04</option>
-                      <option value="debian-12">Debian 12</option>
+                      <option value="ubuntu-20.04">Ubuntu 20.04</option>
                       <option value="python-lab">Python Lab (env)</option>
                       <option value="golang-lab">Golang Lab (env)</option>
-                      <option value="docker-container">Container (Docker)</option>
+                      <option value="devops-lab">DevOps Lab</option>
+                      <option value="docker-lab">Docker Lab</option>
+                      <option value="security-lab">Cyber Security Lab</option>
                     </select>
                   </div>
 
