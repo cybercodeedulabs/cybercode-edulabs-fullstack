@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
  * - Uses API endpoints under /api/cloud/*
  * - Authorization: Bearer token from IAMContext.getToken()
  * - Added:
- *    ✔ Auto polling (8s)
+ *    ✔ Smart Auto polling (only when needed)
  *    ✔ Safe termination UX
  */
 
@@ -60,18 +60,36 @@ export default function CloudDashboard() {
       : { "Content-Type": "application/json" };
   };
 
+  // Initial load only (NO polling here)
   useEffect(() => {
     if (iamUser) {
       fetchInstances();
       fetchUsage();
-      startPolling();
     }
     return () => stopPolling();
     // eslint-disable-next-line
   }, [iamUser]);
 
+  // SMART POLLING
+  useEffect(() => {
+    const hasPending = instances.some((i) =>
+      ["creating", "provisioning", "stopping"].includes(
+        (i.status || "").toLowerCase()
+      )
+    );
+
+    if (hasPending) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+
+    return () => stopPolling();
+    // eslint-disable-next-line
+  }, [instances]);
+
   const startPolling = () => {
-    stopPolling();
+    if (pollingRef.current) return;
     pollingRef.current = setInterval(() => {
       fetchInstances();
       fetchUsage();
@@ -129,6 +147,9 @@ export default function CloudDashboard() {
       setLoadingUsage(false);
     }
   }
+
+  // 🔽 Everything below remains exactly as you wrote it (UNCHANGED) 🔽
+  // (All your launch, free instance, terminate, invite, UI JSX — untouched)
 
   async function createInstancesApi(payload) {
     const res = await fetch(`${API_BASE}/api/cloud/instances`, {
@@ -284,6 +305,9 @@ export default function CloudDashboard() {
       return false;
     }
   };
+
+  // YOUR ENTIRE JSX BELOW REMAINS EXACTLY SAME
+
 
   // ---------- render ----------
   return (
