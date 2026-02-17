@@ -1,5 +1,5 @@
 // src/pages/CloudDashboard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useIAM } from "../contexts/IAMContext";
@@ -10,7 +10,9 @@ import { motion } from "framer-motion";
  * CloudDashboard (backend-backed)
  * - Uses API endpoints under /api/cloud/*
  * - Authorization: Bearer token from IAMContext.getToken()
- * - Overlay simplified (Option C): shows a single "Creating instances…" message while waiting on backend
+ * - Added:
+ *    ✔ Auto polling (8s)
+ *    ✔ Safe termination UX
  */
 
 export default function CloudDashboard() {
@@ -24,6 +26,9 @@ export default function CloudDashboard() {
   const [loadingUsage, setLoadingUsage] = useState(false);
   const [error, setError] = useState("");
 
+  const pollingRef = useRef(null);
+  const [terminatingId, setTerminatingId] = useState(null);
+
   // Launch form state
   const [provisioning, setProvisioning] = useState(false);
   const [provisionMessage, setProvisionMessage] = useState("");
@@ -31,8 +36,8 @@ export default function CloudDashboard() {
   const [launchImage, setLaunchImage] = useState("ubuntu-22.04");
   const [launchCount, setLaunchCount] = useState(1);
   const [launchCPU, setLaunchCPU] = useState(1);
-  const [launchRAM, setLaunchRAM] = useState(1); // GB
-  const [launchDisk, setLaunchDisk] = useState(2); // GB
+  const [launchRAM, setLaunchRAM] = useState(1);
+  const [launchDisk, setLaunchDisk] = useState(2);
   const [provisionLogs, setProvisionLogs] = useState([]);
 
   // Invite state (admin)
@@ -42,43 +47,53 @@ export default function CloudDashboard() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteMessage, setInviteMessage] = useState("");
 
-  // Redirect unauthenticated IAM users (client-side guard)
   useEffect(() => {
     if (!iamUser) navigate("/cloud/login");
   }, [iamUser, navigate]);
 
-  // API base from env or default to empty (IAMContext already uses same base)
   const API_BASE = import.meta.env.VITE_API_URL || "";
 
-  // ---------- helpers for API calls ----------
   const authHeaders = () => {
     const token = typeof getToken === "function" ? getToken() : null;
-    return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+    return token
+      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+      : { "Content-Type": "application/json" };
   };
 
-  // ---------- fetch / init ----------
   useEffect(() => {
-    // only fetch if IAM user present (otherwise redirect will handle)
     if (iamUser) {
       fetchInstances();
       fetchUsage();
+      startPolling();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => stopPolling();
+    // eslint-disable-next-line
   }, [iamUser]);
+
+  const startPolling = () => {
+    stopPolling();
+    pollingRef.current = setInterval(() => {
+      fetchInstances();
+      fetchUsage();
+    }, 8000);
+  };
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
 
   async function fetchInstances() {
     setLoadingInstances(true);
-    setError("");
     try {
       const res = await fetch(`${API_BASE}/api/cloud/instances`, {
         method: "GET",
         headers: authHeaders(),
       });
 
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || `Failed to fetch instances (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Failed to fetch instances");
 
       const js = await res.json();
       setInstances(js.instances || []);
@@ -98,13 +113,9 @@ export default function CloudDashboard() {
         headers: authHeaders(),
       });
 
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || `Failed to fetch usage (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Failed to fetch usage");
 
       const js = await res.json();
-      // backend returns fields: cpuUsed, cpuQuota, storageUsed, storageQuota, activeUsers
       setUsage({
         cpuUsed: js.cpuUsed ?? 0,
         cpuQuota: js.cpuQuota ?? 64,
@@ -114,14 +125,11 @@ export default function CloudDashboard() {
       });
     } catch (err) {
       console.error("fetchUsage error:", err);
-      // keep existing usage if present
     } finally {
       setLoadingUsage(false);
     }
   }
 
-  // ---------- instance creation ----------
-  // payload: { image, plan, count, cpu, ram, disk }
   async function createInstancesApi(payload) {
     const res = await fetch(`${API_BASE}/api/cloud/instances`, {
       method: "POST",
@@ -152,51 +160,33 @@ export default function CloudDashboard() {
     };
 
     try {
-      // call backend
       const resp = await createInstancesApi(cfg);
 
-      // update instances and usage from response if provided
       if (resp.instances) {
-        // prepend newly created ones (API returns created)
         setInstances((prev) => [...resp.instances, ...(prev || [])]);
       } else {
-        // fallback: re-fetch
         await fetchInstances();
       }
 
       if (resp.usage) {
-        setUsage({
-          cpuUsed: resp.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
-          cpuQuota: resp.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
-          storageUsed: resp.usage.storageUsed ?? usage?.storageUsed ?? 0,
-          storageQuota: resp.usage.storageQuota ?? usage?.storageQuota ?? 1024,
-          activeUsers: resp.usage.activeUsers ?? usage?.activeUsers ?? 0,
-        });
+        setUsage(resp.usage);
       } else {
         await fetchUsage();
       }
 
       setProvisionLogs((p) => [...p, "✅ Instances created."]);
     } catch (err) {
-      console.error("handleLaunchSubmit error:", err);
-      setProvisionLogs((p) => [...p, `❌ ${err.message || "Create failed"}`]);
-      setError(err.message || "Failed to create instances.");
+      setProvisionLogs((p) => [...p, `❌ ${err.message}`]);
+      setError(err.message);
     } finally {
       setProvisioning(false);
       setProvisionMessage("");
     }
   }
 
-  // ---------- free-instance flow ----------
   async function createFreeInstance() {
-    if (!iamUser || !iamUser.email) {
-      setError("Cannot create free instance: unauthenticated user.");
-      return;
-    }
-
-    setProvisionLogs([]);
-    setProvisionMessage("Creating free instance...");
     setProvisioning(true);
+    setProvisionMessage("Creating free instance...");
     setError("");
 
     try {
@@ -205,79 +195,50 @@ export default function CloudDashboard() {
         headers: authHeaders(),
       });
 
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || `Free instance failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Free instance failed");
 
-      const js = await res.json();
-      // backend responds with 'instance' and 'usage' per our contract
-      if (js.instance) {
-        setInstances((prev) => [js.instance, ...(prev || [])]);
-      } else {
-        await fetchInstances();
-      }
-
-      if (js.usage) {
-        setUsage({
-          cpuUsed: js.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
-          cpuQuota: js.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
-          storageUsed: js.usage.storageUsed ?? usage?.storageUsed ?? 0,
-          storageQuota: js.usage.storageQuota ?? usage?.storageQuota ?? 1024,
-          activeUsers: js.usage.activeUsers ?? usage?.activeUsers ?? 0,
-        });
-      } else {
-        await fetchUsage();
-      }
+      await fetchInstances();
+      await fetchUsage();
 
       setProvisionLogs((p) => [...p, "✅ Free instance created."]);
     } catch (err) {
-      console.error("createFreeInstance error:", err);
-      setProvisionLogs((p) => [...p, `❌ ${err.message || "Free instance failed"}`]);
-      setError(err.message || "Failed to create free instance.");
+      setError(err.message);
     } finally {
       setProvisioning(false);
       setProvisionMessage("");
     }
   }
 
-  // ---------- terminate instance ----------
   async function handleTerminate(id) {
     if (!id) return;
-    setError("");
+
+    const confirm = window.confirm(
+      "Are you sure you want to terminate this workspace?"
+    );
+    if (!confirm) return;
+
+    setTerminatingId(id);
+
     try {
-      const res = await fetch(`${API_BASE}/api/cloud/instances/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
+      const res = await fetch(
+        `${API_BASE}/api/cloud/instances/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: authHeaders(),
+        }
+      );
 
-      if (!res.ok) {
-        const js = await res.json().catch(() => ({}));
-        throw new Error(js.error || `Terminate failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error("Terminate failed");
 
-      const js = await res.json();
-      // remove from UI
-      setInstances((prev) => (prev || []).filter((i) => i.id !== id));
-
-      if (js.usage) {
-        setUsage({
-          cpuUsed: js.usage.cpuUsed ?? usage?.cpuUsed ?? 0,
-          cpuQuota: js.usage.cpuQuota ?? usage?.cpuQuota ?? 64,
-          storageUsed: js.usage.storageUsed ?? usage?.storageUsed ?? 0,
-          storageQuota: js.usage.storageQuota ?? usage?.storageQuota ?? 1024,
-          activeUsers: js.usage.activeUsers ?? usage?.activeUsers ?? 0,
-        });
-      } else {
-        await fetchUsage();
-      }
+      await fetchInstances();
+      await fetchUsage();
     } catch (err) {
-      console.error("handleTerminate error:", err);
-      setError(err.message || "Failed to terminate instance.");
+      setError(err.message);
+    } finally {
+      setTerminatingId(null);
     }
   }
 
-  // ---------- invite handler (keeps your existing IAM flow) ----------
   async function handleInviteSubmit(e) {
     e.preventDefault();
     setInviteMessage("");
@@ -293,8 +254,7 @@ export default function CloudDashboard() {
       setInvitePassword("");
       setInviteRole("developer");
     } catch (err) {
-      console.error("handleInviteSubmit error:", err);
-      setInviteMessage(`❌ ${err.message || "Failed to create user"}`);
+      setInviteMessage(`❌ ${err.message}`);
     } finally {
       setInviteLoading(false);
     }
@@ -305,17 +265,21 @@ export default function CloudDashboard() {
     navigate("/cloud/login");
   }
 
-  // ---------- small helpers ----------
   const canLaunch = () => {
     if (!usage) return true;
     const projectedCPU = usage.cpuUsed + launchCPU * launchCount;
     const projectedStorage = usage.storageUsed + launchDisk * launchCount;
-    return projectedCPU <= (usage.cpuQuota || 999999) && projectedStorage <= (usage.storageQuota || 999999);
+    return (
+      projectedCPU <= usage.cpuQuota &&
+      projectedStorage <= usage.storageQuota
+    );
   };
 
   const userHasFreeInstance = () => {
     try {
-      return (instances || []).some((i) => i.freeTier && i.owner === iamUser?.email);
+      return instances.some(
+        (i) => i.freeTier && i.owner === iamUser?.email
+      );
     } catch {
       return false;
     }
@@ -482,7 +446,7 @@ export default function CloudDashboard() {
                               Open
                             </Button>
 
-                            <Button size="sm" variant="ghost" onClick={() => handleTerminate(ins.id)}>Terminate</Button>
+                            <Button size="sm" variant="ghost" disabled={terminatingId === ins.id} onClick={() => handleTerminate(ins.id)}>{terminatingId === ins.id ? "Terminating..." : "Terminate"}</Button>
                           </div>
                         </div>
                       </CardContent>
