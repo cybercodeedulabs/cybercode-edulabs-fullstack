@@ -75,27 +75,29 @@ export const IAMProvider = ({ children }) => {
   }, []);
 
   /** REGISTER */
-  const registerIAMUser = async ({ email, password, role }) => {
-    const res = await fetch(`${API_BASE}/api/iam/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, role }),
-    });
+/** REGISTER */
+const registerIAMUser = async (payload) => {
+  const res = await fetch(`${API_BASE}/api/iam/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload), // 🔥 send full payload
+  });
 
-    const js = await res.json();
-    if (!res.ok) throw new Error(js.error || "Registration failed");
+  const js = await res.json();
+  if (!res.ok) throw new Error(js.error || "Registration failed");
 
-    const safeUser = {
-      ...js.user,
-      role: js.user?.role || role || "developer",
-    };
-
-    localStorage.setItem(TOKEN_KEY, js.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-    setIamUser(safeUser);
-
-    return safeUser;
+  const safeUser = {
+    ...js.user,
+    role: js.user?.role || payload.role || "developer",
   };
+
+  localStorage.setItem(TOKEN_KEY, js.token);
+  localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+  setIamUser(safeUser);
+
+  return safeUser;
+};
+
 
   /** LOGIN */
   const loginIAMUser = async ({ email, password }) => {

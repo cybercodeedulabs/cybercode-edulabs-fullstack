@@ -1,4 +1,3 @@
-// src/pages/CloudDashboard.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -17,6 +16,7 @@ import { motion } from "framer-motion";
 
 export default function CloudDashboard() {
   const { iamUser, logoutIAM, registerIAMUser, getToken } = useIAM();
+  const orgPending = iamUser?.organization_status === "pending";
   const navigate = useNavigate();
 
   // UI state
@@ -60,17 +60,14 @@ export default function CloudDashboard() {
       : { "Content-Type": "application/json" };
   };
 
-  // Initial load only (NO polling here)
   useEffect(() => {
     if (iamUser) {
       fetchInstances();
       fetchUsage();
     }
     return () => stopPolling();
-    // eslint-disable-next-line
   }, [iamUser]);
 
-  // SMART POLLING
   useEffect(() => {
     const hasPending = instances.some((i) =>
       ["creating", "provisioning", "stopping"].includes(
@@ -85,7 +82,6 @@ export default function CloudDashboard() {
     }
 
     return () => stopPolling();
-    // eslint-disable-next-line
   }, [instances]);
 
   const startPolling = () => {
@@ -148,9 +144,6 @@ export default function CloudDashboard() {
     }
   }
 
-  // 🔽 Everything below remains exactly as you wrote it (UNCHANGED) 🔽
-  // (All your launch, free instance, terminate, invite, UI JSX — untouched)
-
   async function createInstancesApi(payload) {
     const res = await fetch(`${API_BASE}/api/cloud/instances`, {
       method: "POST",
@@ -166,6 +159,8 @@ export default function CloudDashboard() {
 
   async function handleLaunchSubmit(e) {
     e.preventDefault();
+    if (orgPending) return;
+
     setProvisionLogs([]);
     setProvisionMessage("Creating instances...");
     setProvisioning(true);
@@ -206,6 +201,8 @@ export default function CloudDashboard() {
   }
 
   async function createFreeInstance() {
+    if (orgPending) return;
+
     setProvisioning(true);
     setProvisionMessage("Creating free instance...");
     setError("");
@@ -231,7 +228,7 @@ export default function CloudDashboard() {
   }
 
   async function handleTerminate(id) {
-    if (!id) return;
+    if (!id || orgPending) return;
 
     const confirm = window.confirm(
       "Are you sure you want to terminate this workspace?"
@@ -262,6 +259,8 @@ export default function CloudDashboard() {
 
   async function handleInviteSubmit(e) {
     e.preventDefault();
+    if (orgPending) return;
+
     setInviteMessage("");
     setInviteLoading(true);
     try {
@@ -306,13 +305,9 @@ export default function CloudDashboard() {
     }
   };
 
-  // YOUR ENTIRE JSX BELOW REMAINS EXACTLY SAME
-
-
-  // ---------- render ----------
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
-      {/* ===== Header ===== */}
+
       <header className="backdrop-blur-lg bg-slate-900/90 border-b border-slate-800 shadow-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -329,25 +324,21 @@ export default function CloudDashboard() {
         </div>
       </header>
 
-      {/* ===== Main Body ===== */}
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
-        {/* Welcome + Quick Actions */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <Card className="p-6 bg-white/10 backdrop-blur-lg border border-slate-800">
+
+        {orgPending && (
+          <Card className="p-6 bg-yellow-900/20 border border-yellow-600">
             <CardContent>
-              <div className="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-cyan-400">Welcome, {iamUser?.email?.split("@")[0] || "User"}</h2>
-                  <p className="text-sm text-slate-300 mt-1">Manage your C3 workspaces, monitor usage, and create sandboxed labs with one click.</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-slate-400">Role</div>
-                  <div className="text-sm font-medium text-cyan-300">{iamUser?.role || "user"}</div>
-                </div>
-              </div>
+              <h3 className="text-lg font-semibold text-yellow-300">
+                Organization Pending Approval
+              </h3>
+              <p className="text-sm text-yellow-200 mt-2">
+                Your organization "{iamUser?.organization_name}" is under review.
+                Cloud access will be enabled once approved.
+              </p>
             </CardContent>
           </Card>
-        </motion.div>
+        )}
 
         {/* ===== Free Instance CTA (visible only if user hasn't created it) ===== */}
         {!userHasFreeInstance() && (
