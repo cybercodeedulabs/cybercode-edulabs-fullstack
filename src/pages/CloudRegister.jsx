@@ -12,7 +12,14 @@ export default function CloudRegister() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("developer");
+
+  // 🔹 NEW FIELDS
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [country, setCountry] = useState("");
+  const [pincode, setPincode] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -20,12 +27,36 @@ export default function CloudRegister() {
     e.preventDefault();
     setErr("");
 
-    if (!email.trim() || !password.trim()) return setErr("All fields required");
-    if (password.length < 6) return setErr("Password must be at least 6 characters");
+    if (
+      !email.trim() ||
+      !password.trim() ||
+      !phone.trim() ||
+      !city.trim() ||
+      !state.trim() ||
+      !country.trim() ||
+      !pincode.trim()
+    ) {
+      return setErr("All fields are required");
+    }
+
+    if (password.length < 6) {
+      return setErr("Password must be at least 6 characters");
+    }
 
     setLoading(true);
+
     try {
-      await registerIAMUser({ email: email.trim(), password, role });
+      await registerIAMUser({
+        registrationType: "individual",
+        email: email.trim().toLowerCase(),
+        password,
+        phone,
+        city,
+        state,
+        country,
+        pincode,
+      });
+
       navigate("/cloud/dashboard");
     } catch (error) {
       setErr(error.message || error.error || "Registration failed");
@@ -36,7 +67,7 @@ export default function CloudRegister() {
 
   return (
     <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg">
         <Card className="p-6 bg-white/5 border border-slate-800">
           <CardContent>
             <h2 className="text-xl font-semibold text-white mb-4">
@@ -44,6 +75,7 @@ export default function CloudRegister() {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
               <div>
                 <label className="text-sm text-slate-300">Email</label>
                 <Input
@@ -54,6 +86,7 @@ export default function CloudRegister() {
                 />
               </div>
 
+              {/* Password */}
               <div>
                 <label className="text-sm text-slate-300">Password</label>
                 <Input
@@ -64,16 +97,59 @@ export default function CloudRegister() {
                 />
               </div>
 
+              {/* Phone */}
               <div>
-                <label className="text-sm text-slate-300">Role</label>
-                <select
-                  className="w-full mt-1 p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <option value="developer">Developer</option>
-                  <option value="viewer">Viewer</option>
-                </select>
+                <label className="text-sm text-slate-300">Phone</label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  type="text"
+                  required
+                />
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="text-sm text-slate-300">City</label>
+                <Input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  type="text"
+                  required
+                />
+              </div>
+
+              {/* State */}
+              <div>
+                <label className="text-sm text-slate-300">State</label>
+                <Input
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  type="text"
+                  required
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="text-sm text-slate-300">Country</label>
+                <Input
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  type="text"
+                  required
+                />
+              </div>
+
+              {/* Pincode */}
+              <div>
+                <label className="text-sm text-slate-300">Pincode</label>
+                <Input
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  type="text"
+                  required
+                />
               </div>
 
               {err && <div className="text-sm text-rose-400">{err}</div>}
@@ -88,7 +164,11 @@ export default function CloudRegister() {
                   onClick={() => {
                     setEmail("");
                     setPassword("");
-                    setRole("developer");
+                    setPhone("");
+                    setCity("");
+                    setState("");
+                    setCountry("");
+                    setPincode("");
                   }}
                 >
                   Reset
