@@ -69,6 +69,7 @@ import DigitalFortLabs from "./pages/DigitalFortLabs";
 import GlobalThreatSimulatorLab from "./pages/GlobalThreatSimulatorLab";
 import AttackReplayLab from "./pages/AttackReplayLab";
 import WebTerminal from "./pages/WebTerminal";
+import CloudAdmin from "./pages/CloudAdmin";
 
 
 
@@ -351,6 +352,7 @@ function AppInner() {
                   </CloudProtectedRoute>
                 }
               />
+              <Route path="/cloud/admin" element={<CloudAdmin />} />
 
               <Route path="/admin/waitlist" element={<AdminWaitlist />} />
               <Route path="/legal" element={<LegalIndex />} />

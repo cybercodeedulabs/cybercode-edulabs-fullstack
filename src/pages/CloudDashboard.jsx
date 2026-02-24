@@ -319,8 +319,22 @@ export default function CloudDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden sm:block text-slate-300">{iamUser?.email}</span>
-            <Button variant="secondary" onClick={handleSignOut}>Sign out</Button>
+            <span className="hidden sm:block text-slate-300">
+              {iamUser?.email}
+            </span>
+
+            {iamUser?.role === "admin" && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/cloud/admin")}
+              >
+                Admin Panel
+              </Button>
+            )}
+
+            <Button variant="secondary" onClick={handleSignOut}>
+              Sign out
+            </Button>
           </div>
         </div>
       </header>
