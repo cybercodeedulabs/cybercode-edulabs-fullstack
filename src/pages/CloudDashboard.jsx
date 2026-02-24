@@ -414,7 +414,7 @@ export default function CloudDashboard() {
                   </div>
 
                   <div className="sm:col-span-2 flex items-center gap-3 mt-2">
-                    <Button type="submit" disabled={provisioning || !canLaunch()}>{provisioning ? "Provisioning…" : "Create Cloud"}</Button>
+                    <Button type="submit" disabled={provisioning || orgPending || !canLaunch()}>{provisioning ? "Provisioning…" : "Create Cloud"}</Button>
                     <Button variant="ghost" type="button" onClick={() => { setLaunchPlan("student"); setLaunchImage("ubuntu-22.04"); setLaunchCount(1); setLaunchCPU(1); setLaunchRAM(1); setLaunchDisk(2); }}>Reset</Button>
 
                     {orgPending && (
@@ -438,7 +438,7 @@ export default function CloudDashboard() {
                 <Card className="p-6 bg-white/10 text-center text-slate-300">
                   <p>No active workspaces yet.</p>
                   <div className="mt-4">
-                    <Button onClick={() => createFreeInstance()}>Create Free Workspace</Button>
+                    <Button onClick={() => createFreeInstance()} disabled={orgPending}>Create Free Workspace</Button>
                   </div>
                 </Card>
               ) : (

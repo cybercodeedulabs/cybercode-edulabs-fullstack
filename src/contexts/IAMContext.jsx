@@ -1,4 +1,3 @@
-// src/contexts/IAMContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 /**
@@ -19,6 +18,27 @@ export const IAMProvider = ({ children }) => {
   const [iamUser, setIamUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hydrated, setHydrated] = useState(false);
+
+  /** Helper: Fetch full user from /me */
+  const fetchFullUser = async (token) => {
+    const res = await fetch(`${API_BASE}/api/iam/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch user details");
+
+    const js = await res.json();
+
+    const safeUser = {
+      ...js.user,
+      role: js.user?.role || "developer",
+    };
+
+    localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
+    setIamUser(safeUser);
+
+    return safeUser;
+  };
 
   /** Load token + cached user on mount */
   useEffect(() => {
@@ -44,29 +64,14 @@ export const IAMProvider = ({ children }) => {
       return;
     }
 
-    // Validate token with backend
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/iam/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const js = await res.json();
-          const safeUser = {
-            ...js.user,
-            role: js.user?.role || "developer",
-          };
-
-          localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-          setIamUser(safeUser);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
-          setIamUser(null);
-        }
+        await fetchFullUser(token);
       } catch (e) {
         console.error("IAM /me error:", e);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setIamUser(null);
       } finally {
         setLoading(false);
         setHydrated(true);
@@ -75,29 +80,21 @@ export const IAMProvider = ({ children }) => {
   }, []);
 
   /** REGISTER */
-/** REGISTER */
-const registerIAMUser = async (payload) => {
-  const res = await fetch(`${API_BASE}/api/iam/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload), // 🔥 send full payload
-  });
+  const registerIAMUser = async (payload) => {
+    const res = await fetch(`${API_BASE}/api/iam/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  const js = await res.json();
-  if (!res.ok) throw new Error(js.error || "Registration failed");
+    const js = await res.json();
+    if (!res.ok) throw new Error(js.error || "Registration failed");
 
-  const safeUser = {
-    ...js.user,
-    role: js.user?.role || payload.role || "developer",
+    localStorage.setItem(TOKEN_KEY, js.token);
+
+    // 🔥 Immediately fetch full org details
+    return await fetchFullUser(js.token);
   };
-
-  localStorage.setItem(TOKEN_KEY, js.token);
-  localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-  setIamUser(safeUser);
-
-  return safeUser;
-};
-
 
   /** LOGIN */
   const loginIAMUser = async ({ email, password }) => {
@@ -110,16 +107,10 @@ const registerIAMUser = async (payload) => {
     const js = await res.json();
     if (!res.ok) throw new Error(js.error || "Login failed");
 
-    const safeUser = {
-      ...js.user,
-      role: js.user?.role || "developer",
-    };
-
     localStorage.setItem(TOKEN_KEY, js.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-    setIamUser(safeUser);
 
-    return safeUser;
+    // 🔥 Immediately fetch full org details
+    return await fetchFullUser(js.token);
   };
 
   /** LOGOUT */
