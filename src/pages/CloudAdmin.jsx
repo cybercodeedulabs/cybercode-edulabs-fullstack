@@ -17,6 +17,9 @@ export default function CloudAdmin() {
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
+  // Edit state per organization
+  const [editValues, setEditValues] = useState({});
+
   // 🔐 Role Guard
   useEffect(() => {
     if (!iamUser) return;
@@ -43,15 +46,25 @@ export default function CloudAdmin() {
     try {
       const res = await fetch(
         `${API_BASE}/api/admin/organizations?status=${statusFilter}`,
-        {
-          headers: authHeaders(),
-        }
+        { headers: authHeaders() }
       );
 
       if (!res.ok) throw new Error("Failed to fetch organizations");
 
       const js = await res.json();
       setOrganizations(js.organizations || []);
+
+      // Initialize edit values
+      const initialEdits = {};
+      (js.organizations || []).forEach((org) => {
+        initialEdits[org.id] = {
+          cpu: org.cpu_quota || 0,
+          storage: org.storage_quota || 0,
+          instances: org.instance_quota || 0,
+          extend: 0,
+        };
+      });
+      setEditValues(initialEdits);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -82,6 +95,56 @@ export default function CloudAdmin() {
       setError(err.message);
     } finally {
       setProcessingId(null);
+    }
+  }
+
+  async function updateOrg(id) {
+    const values = editValues[id];
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/admin/organizations/${id}/update`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            cpu_quota: Number(values.cpu),
+            storage_quota: Number(values.storage),
+            instance_quota: Number(values.instances),
+            extend_months: Number(values.extend) || undefined,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const js = await res.json();
+        throw new Error(js.error || "Update failed");
+      }
+
+      await fetchOrganizations();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function suspendOrg(id) {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/admin/organizations/${id}/suspend`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+        }
+      );
+
+      if (!res.ok) {
+        const js = await res.json();
+        throw new Error(js.error || "Suspend failed");
+      }
+
+      await fetchOrganizations();
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -120,7 +183,7 @@ export default function CloudAdmin() {
         </div>
 
         {loading && (
-          <Card className="p-6 bg-white/10 border border-slate-800 text-center">
+          <Card className="p-6 bg-white/10 text-center">
             Loading organizations...
           </Card>
         )}
@@ -130,7 +193,7 @@ export default function CloudAdmin() {
         )}
 
         {!loading && organizations.length === 0 && (
-          <Card className="p-6 bg-white/10 border border-slate-800 text-center">
+          <Card className="p-6 bg-white/10 text-center">
             No organizations found.
           </Card>
         )}
@@ -141,16 +204,16 @@ export default function CloudAdmin() {
               key={org.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
             >
               <Card className="p-6 bg-white/10 border border-slate-800">
                 <CardContent>
+
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-semibold text-cyan-300">
                         {org.name}
                       </h3>
-                      <div className="text-xs text-slate-400 mt-1">
+                      <div className="text-xs text-slate-400">
                         Type: {org.type}
                       </div>
                       <div className="text-xs text-slate-400">
@@ -160,14 +223,7 @@ export default function CloudAdmin() {
                         Payment: {org.payment_status}
                       </div>
                       <div className="text-xs text-slate-400">
-                        Requested Months: {org.requested_subscription_months}
-                      </div>
-
-                      <div className="mt-3 text-xs text-slate-300">
-                        Requested → Users: {org.requested_user_count || 0} |
-                        CPU: {org.requested_cpu_quota || 0} |
-                        Storage: {org.requested_storage_quota || 0} |
-                        Instances: {org.requested_instance_quota || 0}
+                        Subscription Ends: {org.subscription_end}
                       </div>
                     </div>
 
@@ -176,12 +232,96 @@ export default function CloudAdmin() {
                         disabled={processingId === org.id}
                         onClick={() => approveOrg(org.id)}
                       >
-                        {processingId === org.id
-                          ? "Approving..."
-                          : "Approve"}
+                        {processingId === org.id ? "Approving..." : "Approve"}
                       </Button>
                     )}
                   </div>
+
+                  {/* Editable Section for Approved Orgs */}
+                  {org.status === "approved" && (
+                    <div className="mt-6 border-t border-slate-700 pt-4 space-y-4">
+
+                      <div className="grid grid-cols-4 gap-3">
+                        <input
+                          type="number"
+                          value={editValues[org.id]?.cpu ?? 0}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [org.id]: {
+                                ...prev[org.id],
+                                cpu: e.target.value,
+                              },
+                            }))
+                          }
+                          className="p-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                          placeholder="CPU"
+                        />
+
+                        <input
+                          type="number"
+                          value={editValues[org.id]?.storage ?? 0}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [org.id]: {
+                                ...prev[org.id],
+                                storage: e.target.value,
+                              },
+                            }))
+                          }
+                          className="p-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                          placeholder="Storage"
+                        />
+
+                        <input
+                          type="number"
+                          value={editValues[org.id]?.instances ?? 0}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [org.id]: {
+                                ...prev[org.id],
+                                instances: e.target.value,
+                              },
+                            }))
+                          }
+                          className="p-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                          placeholder="Instances"
+                        />
+
+                        <input
+                          type="number"
+                          value={editValues[org.id]?.extend ?? 0}
+                          onChange={(e) =>
+                            setEditValues((prev) => ({
+                              ...prev,
+                              [org.id]: {
+                                ...prev[org.id],
+                                extend: e.target.value,
+                              },
+                            }))
+                          }
+                          className="p-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                          placeholder="Extend (months)"
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button onClick={() => updateOrg(org.id)}>
+                          Update
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => suspendOrg(org.id)}
+                        >
+                          Suspend
+                        </Button>
+                      </div>
+
+                    </div>
+                  )}
+
                 </CardContent>
               </Card>
             </motion.div>
