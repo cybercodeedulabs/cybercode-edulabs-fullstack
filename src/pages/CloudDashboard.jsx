@@ -417,13 +417,16 @@ export default function CloudDashboard() {
                     <Button type="submit" disabled={provisioning || orgPending || !canLaunch()}>{provisioning ? "Provisioning…" : "Create Cloud"}</Button>
                     <Button variant="ghost" type="button" onClick={() => { setLaunchPlan("student"); setLaunchImage("ubuntu-22.04"); setLaunchCount(1); setLaunchCPU(1); setLaunchRAM(1); setLaunchDisk(2); }}>Reset</Button>
 
-                    {orgPending && (
-                      <div className="text-xs text-yellow-400 ml-2">Organization is pending admin approval.</div>                      
-                    )}
-                    {orgPending && !canLaunch() && (
-                      <div className="text-xs text-yellow-400 ml-2">Exceeds quota - adjust resources or upgrade plan.</div>                      
-                    )}
-                    
+                    {orgPending ? (
+                      <div className="text-xs text-yellow-400 ml-2">
+                        Organization is pending admin approval.
+                      </div>
+                    ) : !canLaunch() ? (
+                      <div className="text-xs text-yellow-400 ml-2">
+                        Exceeds quota - adjust resources or upgrade plan.
+                      </div>
+                    ) : null}
+
                   </div>
                 </form>
               </CardContent>
