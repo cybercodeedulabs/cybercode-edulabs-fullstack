@@ -31,6 +31,7 @@ export default function CloudRegister() {
   const [requestedCpuQuota, setRequestedCpuQuota] = useState(20);
   const [requestedStorageQuota, setRequestedStorageQuota] = useState(100);
   const [requestedInstanceQuota, setRequestedInstanceQuota] = useState(50);
+  const [requestedSubscriptionMonths, setRequestedSubscriptionMonths] = useState(12);
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -50,6 +51,7 @@ export default function CloudRegister() {
         if (
           !email || !phone || !city || !state || !country || !pincode
         ) {
+          setLoading(false);
           return setErr("All fields are required");
         }
 
@@ -72,8 +74,10 @@ export default function CloudRegister() {
           !city ||
           !state ||
           !country ||
-          !pincode
+          !pincode ||
+          !requestedSubscriptionMonths
         ) {
+          setLoading(false);
           return setErr("All fields are required");
         }
 
@@ -91,6 +95,7 @@ export default function CloudRegister() {
           requested_cpu_quota: Number(requestedCpuQuota),
           requested_storage_quota: Number(requestedStorageQuota),
           requested_instance_quota: Number(requestedInstanceQuota),
+          requested_subscription_months: Number(requestedSubscriptionMonths),
           email: email.toLowerCase().trim(), // admin email
           password,
         });
@@ -155,6 +160,18 @@ export default function CloudRegister() {
                     value={orgEmail}
                     onChange={(e) => setOrgEmail(e.target.value)}
                   />
+
+                  {/* NEW: Subscription Duration */}
+                  <select
+                    className="w-full p-2 rounded bg-slate-900 border border-slate-700 text-slate-100 text-sm"
+                    value={requestedSubscriptionMonths}
+                    onChange={(e) => setRequestedSubscriptionMonths(e.target.value)}
+                  >
+                    <option value={3}>3 Months</option>
+                    <option value={6}>6 Months</option>
+                    <option value={12}>12 Months</option>
+                    <option value={24}>24 Months</option>
+                  </select>
                 </>
               )}
 

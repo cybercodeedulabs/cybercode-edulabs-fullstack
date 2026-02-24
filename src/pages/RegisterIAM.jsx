@@ -11,7 +11,7 @@ const RegisterIAM = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("developer");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,13 @@ const RegisterIAM = () => {
     setLoading(true);
 
     try {
-      const user = await registerIAMUser({ email, password, role });
+      const user = await registerIAMUser({
+        email,
+        password,
+        phone,
+        registrationType: "individual"
+      });
+
       setSuccess("IAM user registered successfully!");
       setTimeout(() => navigate("/cloud/login"), 1500);
     } catch (err) {
@@ -67,6 +73,18 @@ const RegisterIAM = () => {
           </div>
 
           <div>
+            <label className="block text-gray-300 text-sm mb-2">Phone Number</label>
+            <input
+              type="tel"
+              className="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Enter phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
             <label className="block text-gray-300 text-sm mb-2">Password</label>
             <input
               type="password"
@@ -76,19 +94,6 @@ const RegisterIAM = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-
-          <div>
-            <label className="block text-gray-300 text-sm mb-2">Select Role</label>
-            <select
-              className="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="admin">Admin</option>
-              <option value="developer">Developer</option>
-              <option value="viewer">Viewer</option>
-            </select>
           </div>
 
           {error && (

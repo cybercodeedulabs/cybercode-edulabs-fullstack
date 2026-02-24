@@ -286,6 +286,7 @@ export default function CloudDashboard() {
   }
 
   const canLaunch = () => {
+    if (orgPending) return false;
     if (!usage) return true;
     const projectedCPU = usage.cpuUsed + launchCPU * launchCount;
     const projectedStorage = usage.storageUsed + launchDisk * launchCount;
@@ -416,9 +417,13 @@ export default function CloudDashboard() {
                     <Button type="submit" disabled={provisioning || !canLaunch()}>{provisioning ? "Provisioning…" : "Create Cloud"}</Button>
                     <Button variant="ghost" type="button" onClick={() => { setLaunchPlan("student"); setLaunchImage("ubuntu-22.04"); setLaunchCount(1); setLaunchCPU(1); setLaunchRAM(1); setLaunchDisk(2); }}>Reset</Button>
 
-                    {!canLaunch() && (
-                      <div className="text-xs text-amber-300 ml-2">Exceeds quota — adjust resources or upgrade plan.</div>
+                    {orgPending && (
+                      <div className="text-xs text-yellow-400 ml-2">Organization is pending admin approval.</div>                      
                     )}
+                    {orgPending && !canLaunch() && (
+                      <div className="text-xs text-yellow-400 ml-2">Exceeds quota - adjust resources or upgrade plan.</div>                      
+                    )}
+                    
                   </div>
                 </form>
               </CardContent>
@@ -504,7 +509,7 @@ export default function CloudDashboard() {
             </motion.div>
 
             {/* IAM Admin Invite */}
-            {iamUser?.role === "admin" && (
+            {["admin", "org_admin"].includes(iamUser?.role) && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
                 <Card className="p-4 bg-white/10 border border-slate-800">
                   <CardContent>
