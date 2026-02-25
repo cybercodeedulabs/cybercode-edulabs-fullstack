@@ -192,7 +192,7 @@ export default function CloudAdmin() {
 
                 {/* Filter Tabs */}
                 <div className="flex gap-3">
-                    {["pending", "approved"].map((s) => (
+                    {["pending", "approved", "suspended"].map((s) => (
                         <Button
                             key={s}
                             variant={statusFilter === s ? "default" : "ghost"}
